@@ -8,5 +8,7 @@ class MapaConfig(AppConfig):
     def ready(self):
         import pyogrio
 
+        from . import signals  # noqa: F401  (registra las señales)
+
         # GDAL rechaza por defecto los GeoJSON con objetos de más de 200 MB, como la capa del IGN.
         pyogrio.set_gdal_config_options({'OGR_GEOJSON_MAX_OBJ_SIZE': 0})

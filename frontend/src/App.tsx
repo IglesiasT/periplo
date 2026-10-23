@@ -3,13 +3,14 @@ import { siguientePaso } from './ciclo'
 import Mapa from './components/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
-  useActualizarVisita, useBorrarVisita, useCrearRuta, useCrearVisita, useEstados, useRutas, useViajes,
+  useActualizarVisita, useBorrarVisita, useCrearRuta, useCrearVisita, useEstados, useFotos, useRutas, useViajes,
 } from './hooks/consultas'
 
 export default function App() {
   const estados = useEstados()
   const viajes = useViajes()
   const rutas = useRutas()
+  const fotos = useFotos()
   const [seleccion, setSeleccion] = useState<Seleccion>(null)
   const [modo, setModo] = useState<Modo>('ninguno')
   const [aviso, setAviso] = useState<string | null>(null)
@@ -65,6 +66,7 @@ export default function App() {
     <div className="app">
       <Panel
         viajes={viajes.data}
+        fotos={fotos.data}
         cargando={viajes.isPending}
         error={viajes.error}
         seleccion={seleccion}
@@ -81,6 +83,7 @@ export default function App() {
         viajeResaltado={viaje?.id ?? null}
         alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
         alTerminarDibujo={modo === 'dibujar' && viaje ? alTerminarDibujo : undefined}
+        fotos={fotos.data}
       />
     </div>
   )

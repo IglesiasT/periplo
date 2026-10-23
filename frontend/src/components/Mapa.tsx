@@ -5,7 +5,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { TerraDraw, TerraDrawLineStringMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
-import type { EstadoRegion, EstadosRegiones, Ruta } from '../types'
+import { formatearFecha } from '../etiquetas'
+import type { EstadoRegion, EstadosRegiones, Foto, Ruta } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
@@ -19,6 +20,7 @@ const COLORES = {
   resaltado: '#f4efe6',
   ruta: '#c9a13b',
   rutaResaltada: '#f2c14e',
+  foto: '#e8e6e3',
 } as const
 
 // De más a menos intenso; el deseo es un tono frío para que no se confunda con lo visitado.
@@ -95,6 +97,8 @@ const STYLE: StyleSpecification = {
     },
     // Las rutas llegan de la API: arranca vacía y se completa con setData().
     rutas: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+    // cluster: MapLibre agrupa las fotos cercanas en un solo círculo (con "point_count") hasta este zoom.
+    fotos: { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, cluster: true, clusterRadius: 40, clusterMaxZoom: 14 },
   },
   layers: [
     { id: 'fondo', type: 'background', paint: { 'background-color': COLORES.mar } },
@@ -187,6 +191,21 @@ const STYLE: StyleSpecification = {
       },
     },
 
+    // Fotos: grupos (más grandes cuantas más fotos) y fotos sueltas.
+    {
+      id: 'fotos-grupos', type: 'circle', source: 'fotos', filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': COLORES.foto,
+        'circle-radius': ['step', ['get', 'point_count'], 8, 5, 11, 20, 15],
+        'circle-stroke-color': COLORES.mar,
+        'circle-stroke-width': 2,
+      },
+    },
+    {
+      id: 'fotos-punto', type: 'circle', source: 'fotos', filter: ['!', ['has', 'point_count']],
+      paint: { 'circle-color': COLORES.foto, 'circle-radius': 5, 'circle-stroke-color': COLORES.mar, 'circle-stroke-width': 1.5 },
+    },
+
     // Contorno claro de las regiones del viaje elegido en el panel (feature-state "resaltada").
     {
       id: 'departamentos-resaltada', type: 'line', source: 'departamentos',
@@ -254,6 +273,31 @@ interface Props {
   viajeResaltado: number | null
   /** Si está, el mapa está en modo dibujo: al terminar una línea (Enter o click en el último punto) la manda acá. */
   alTerminarDibujo?: (coordenadas: [number, number][]) => void
+  fotos: Foto[] | undefined
+}
+
+const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
+
+function fotosComoGeoJSON(fotos: Foto[]): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: fotos
+      .filter((foto) => foto.lat !== null && foto.lon !== null)
+      .map((foto) => ({
+        type: 'Feature',
+        properties: {
+          archivo: foto.archivo,
+          miniatura: foto.miniatura ?? foto.archivo,
+          detalle: [foto.region_nombre, formatearFecha(foto.tomada_en?.slice(0, 10) ?? null)].filter(Boolean).join(' · '),
+        },
+        geometry: { type: 'Point', coordinates: [foto.lon!, foto.lat!] },
+      })),
+  }
+}
+
+/** Para meter texto en el HTML de un popup sin que se interprete como HTML. */
+function escapar(texto: string): string {
+  return texto.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 }
 
 function rutasComoGeoJSON(rutas: Ruta[], viajeResaltado: number | null): GeoJSON.FeatureCollection {
@@ -268,7 +312,7 @@ function rutasComoGeoJSON(rutas: Ruta[], viajeResaltado: number | null): GeoJSON
 }
 
 export default function Mapa({
-  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo,
+  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo, fotos,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -325,10 +369,34 @@ export default function Mapa({
     })
     map.getCanvas().addEventListener('mouseleave', () => popup.remove())
 
-    map.on('click', (e) => {
-      const feature = regionEn(e.point)
-      if (feature && alClickearRef.current) alClickearRef.current(String(feature.properties.codigo))
+    map.on('click', async (e) => {
+      if (alClickearRef.current) {
+        const feature = regionEn(e.point)
+        if (feature) alClickearRef.current(String(feature.properties.codigo))
+        return
+      }
+      if (alTerminarDibujoRef.current) return // los clicks son de terra-draw
+
+      const [foto] = map.queryRenderedFeatures(e.point, { layers: CAPAS_FOTOS })
+      if (!foto) return
+      const punto = (foto.geometry as GeoJSON.Point).coordinates as [number, number]
+      if (foto.properties.cluster_id !== undefined) {
+        // Un grupo: acercar hasta el zoom en el que se separa.
+        const zoom = await map.getSource<GeoJSONSource>('fotos')!.getClusterExpansionZoom(foto.properties.cluster_id)
+        map.easeTo({ center: punto, zoom })
+        return
+      }
+      const { archivo, miniatura, detalle } = foto.properties as Record<string, string>
+      new maplibregl.Popup({ offset: 8, maxWidth: '240px' })
+        .setLngLat(punto)
+        .setHTML(`<div class="popup-foto"><a href="${escapar(archivo)}" target="_blank" rel="noreferrer">`
+          + `<img src="${escapar(miniatura)}" alt=""></a>${escapar(detalle)}</div>`)
+        .addTo(map)
     })
+    // Cursor de "mano" sobre las fotos.
+    for (const capa of CAPAS_FOTOS) {
+      map.on('mouseenter', capa, () => { map.getCanvas().style.cursor = 'pointer' })
+    }
 
     return () => {
       map.remove()
@@ -366,6 +434,12 @@ export default function Mapa({
     if (!listo || !map) return
     map.getSource<GeoJSONSource>('rutas')?.setData(rutasComoGeoJSON(rutas ?? [], viajeResaltado))
   }, [rutas, viajeResaltado, listo])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map) return
+    map.getSource<GeoJSONSource>('fotos')?.setData(fotosComoGeoJSON(fotos ?? []))
+  }, [fotos, listo])
 
   // Modo dibujo con terra-draw: se crea al entrar al modo y se destruye al salir.
   const dibujando = Boolean(alTerminarDibujo)

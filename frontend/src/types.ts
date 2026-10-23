@@ -78,3 +78,20 @@ export interface Estadisticas {
     provincias_total: number
   }[]
 }
+
+export interface Foto {
+  id: number
+  viaje: number | null
+  visita: number | null
+  /** URLs relativas (/media/...): las sirve Django a través del proxy de Vite. */
+  archivo: string
+  miniatura: string | null
+  lat: number | null
+  lon: number | null
+  tomada_en: string | null
+  /** Región donde se sacó (si tenía GPS) y si el viaje ya la tiene. */
+  region: string | null
+  region_nombre: string | null
+  region_en_viaje: boolean | null
+  descripcion: string
+}

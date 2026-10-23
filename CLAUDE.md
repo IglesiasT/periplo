@@ -46,11 +46,16 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `desde_notion`: la creó el sync, que la regenera en cada corrida
 - **`Ruta`**
   - `viaje`: FK
-  - `coordenadas`: LineString guardado como JSON
+  - `nombre`
+  - `coordenadas`: LineString guardado como JSON (lista de `[lon, lat]`)
+  - `longitud_km`: geodésica, precalculada
+  - `origen`: GPX, KML o dibujada
 - **`Foto`**
   - `viaje` y/o `visita`: FK
-  - `archivo`
-  - `lat` y `lon`: opcionales; se leen del EXIF si están
+  - `archivo` y `miniatura`: van a `backend/media/`, que está fuera del repo
+  - `lat`, `lon` y `tomada_en`: opcionales; se leen del EXIF si están
+  - `region`: región donde cae la foto, calculada al subirla
+  - `descripcion`
 
 ### Fase 3
 

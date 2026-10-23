@@ -135,9 +135,4 @@ class FotoViewSet(viewsets.ModelViewSet):
         foto.miniatura.save(f'{Path(archivo.name).stem}.jpg', ContentFile(datos.miniatura), save=False)
         foto.save()
         return Response(FotoSerializer(foto).data, status=status.HTTP_201_CREATED)
-
-    def perform_destroy(self, foto):
-        # Borrar el registro no borra los archivos del disco: hay que hacerlo explícitamente.
-        foto.archivo.delete(save=False)
-        foto.miniatura.delete(save=False)
-        foto.delete()
+    # Al borrar, los archivos del disco los elimina la señal post_delete (signals.py).

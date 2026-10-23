@@ -402,6 +402,14 @@ class FotosApiTests(APITestCase):
         self.assertEqual(self.client.delete(f'/api/fotos/{foto.id}/').status_code, 204)
         self.assertFalse(any(Path(r).exists() for r in rutas))
 
+    def test_borrar_el_viaje_tambien_borra_los_archivos_de_sus_fotos(self):
+        foto = Foto.objects.get(id=self.subir().data['id'])
+        rutas = [foto.archivo.path, foto.miniatura.path]
+        viaje = Viaje.objects.create(nombre='Otro')
+        Foto.objects.filter(id=foto.id).update(viaje=viaje)
+        self.assertEqual(self.client.delete(f'/api/viajes/{viaje.id}/').status_code, 204)
+        self.assertFalse(any(Path(r).exists() for r in rutas))
+
     def test_archivo_invalido(self):
         archivo = SimpleUploadedFile('foto.heic', b'no soy una imagen', content_type='image/heic')
         respuesta = self.client.post('/api/fotos/', {'archivo': archivo}, format='multipart')

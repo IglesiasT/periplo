@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
-import type { Viaje } from '../types'
+import type { Foto, Viaje } from '../types'
 import Estadisticas from './Estadisticas'
+import FotosLista from './FotosLista'
 import RutasLista from './RutasLista'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
@@ -18,6 +19,7 @@ const FILTROS: Record<Filtro, (viaje: Viaje) => boolean> = {
 
 interface Props {
   viajes: Viaje[] | undefined
+  fotos: Foto[] | undefined
   cargando: boolean
   error: Error | null
   seleccion: Seleccion
@@ -33,7 +35,7 @@ interface Props {
 export type Modo = 'ninguno' | 'marcar' | 'dibujar'
 
 export default function Panel({
-  viajes, cargando, error, seleccion, onSeleccionar, modo, onCambiarModo, aviso, onAviso,
+  viajes, fotos, cargando, error, seleccion, onSeleccionar, modo, onCambiarModo, aviso, onAviso,
 }: Props) {
   const alternar = (m: Modo) => onCambiarModo(modo === m ? 'ninguno' : m)
   const [filtro, setFiltro] = useState<Filtro>('todos')
@@ -74,6 +76,8 @@ export default function Panel({
 
         <RutasLista viaje={viaje} dibujando={modo === 'dibujar'} onDibujar={() => alternar('dibujar')}
                     onAviso={onAviso} />
+
+        <FotosLista viaje={viaje} fotos={fotos?.filter((f) => f.viaje === viaje.id) ?? []} onAviso={onAviso} />
       </aside>
     )
   }

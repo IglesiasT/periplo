@@ -4,23 +4,45 @@ Mapa y diario de viajes personal: un mapa que se pinta a medida que viajo, al es
 
 La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 
-## Estado actual: Fase 1 en curso
+## Estado actual: Fases 1 y 2
 
+**El mapa (Fase 1)**
 - Mapa mundial en MapLibre con países y provincias de Natural Earth, y departamentos argentinos del IGN.
 - Zoom semántico: de lejos se ven países, al acercarse aparecen las provincias y, en Argentina, desde el zoom 7 los departamentos.
+- Colores por estado:
+  - gris para sin visitar;
+  - azul semitransparente con contorno para la lista de deseos;
+  - color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
+- Viajes y visitas sincronizados desde Notion (bases Destinations y Lugares).
 - La vista queda en la URL (`#zoom/lat/lon`): al recargar se mantiene y se puede guardar un enlace a una zona.
-- Colores por estado: gris para sin visitar, azul semitransparente con contorno para la lista de deseos, y color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
-- Regiones, viajes y visitas en SQLite (`Region`, `Viaje`, `Visita`), sincronizados desde Notion (bases Destinations y Lugares) o cargados a mano desde el admin de Django.
+
+**El diario (Fase 2)**, todo desde el panel lateral:
+- **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas.
+- **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: estadía → de paso → tránsito → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
+- **Rutas:**
+  - importar GPX o KML, o dibujarlas en el mapa (Enter termina, Escape descarta);
+  - se guarda su longitud real en km;
+  - "Marcar regiones atravesadas" agrega como tránsito todo lo que cruza la ruta.
+- **Fotos:**
+  - subir JPG, PNG o WebP;
+  - si tienen GPS en el EXIF, aparecen en el mapa (agrupadas cuando están cerca) y se ubican en su región;
+  - si el viaje no tiene esa región, el panel ofrece sumarla.
+- **Estadísticas:** % del mundo y km² recorridos, km de rutas, países por continente y avance por país.
+  - Solo cuentan las visitas realizadas, no los deseos.
+  - De las regiones visitadas se suman solo las que no están dentro de otra visitada, para no contar dos veces: si marcaste Jujuy entera, Tilcara ya está incluida.
+  - Los km de rutas son solo los de viajes hechos.
 
 ## Estructura
 
 ```
-backend/    Django + Django REST Framework + SQLite
-  config/   proyecto Django (settings, urls)
-  mapa/     app: modelos, GET /api/estados/ y management commands geográficos
-  data/raw/ descargas y GeoJSON completos (ignorado por git, se regenera)
-frontend/   React + TypeScript + Vite + MapLibre GL
-  public/geo/{paises,provincias}.geojson   geometrías simplificadas (generadas y commiteadas)
+backend/     Django + Django REST Framework + SQLite
+  config/    proyecto Django (settings, urls)
+  mapa/      app: modelos, API (/api/viajes, visitas, rutas, fotos, estados, estadisticas)
+             y management commands geográficos
+  data/raw/  descargas y GeoJSON completos (ignorado por git, se regenera)
+  media/     fotos subidas y miniaturas (ignorado por git)
+frontend/    React + TypeScript + Vite + MapLibre GL + TanStack Query + terra-draw
+  public/geo/{paises,provincias,departamentos}.geojson   geometrías simplificadas (generadas y commiteadas)
 ```
 
 ## Requisitos

@@ -8,6 +8,7 @@ const CLAVES = {
   viajes: ['viajes'],
   estadisticas: ['estadisticas'],
   rutas: ['rutas'],
+  fotos: ['fotos'],
 } as const
 
 export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: api.obtenerEstados })
@@ -15,6 +16,8 @@ export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: ap
 export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
 
 export const useRutas = () => useQuery({ queryKey: CLAVES.rutas, queryFn: api.listarRutas })
+
+export const useFotos = () => useQuery({ queryKey: CLAVES.fotos, queryFn: api.listarFotos })
 
 export const useViajes = () => useQuery({ queryKey: CLAVES.viajes, queryFn: api.listarViajes })
 
@@ -81,4 +84,17 @@ export function useBorrarRuta() {
 export function useMarcarTransito() {
   const invalidar = useInvalidar()
   return useMutation({ mutationFn: api.marcarTransito, onSuccess: invalidar })
+}
+
+export function useSubirFoto() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: ({ viaje, archivo }: { viaje: number; archivo: File }) => api.subirFoto(viaje, archivo),
+    onSuccess: invalidar,
+  })
+}
+
+export function useBorrarFoto() {
+  const invalidar = useInvalidar()
+  return useMutation({ mutationFn: api.borrarFoto, onSuccess: invalidar })
 }

@@ -1,4 +1,4 @@
-import type { DatosViaje, DatosVisita, Estadisticas, EstadosRegiones, Ruta, Viaje, Visita } from './types'
+import type { DatosViaje, DatosVisita, Estadisticas, EstadosRegiones, Foto, Ruta, Viaje, Visita } from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
 export class ErrorApi extends Error {
@@ -56,3 +56,12 @@ export function importarRutas(viaje: number, archivo: File) {
 }
 export const marcarTransito = (id: number) =>
   pedir<{ agregadas: string[]; ya_estaban: number }>('POST', `/api/rutas/${id}/marcar_transito/`)
+
+export const listarFotos = () => pedir<Foto[]>('GET', '/api/fotos/')
+export function subirFoto(viaje: number, archivo: File) {
+  const formulario = new FormData()
+  formulario.append('viaje', String(viaje))
+  formulario.append('archivo', archivo)
+  return pedir<Foto>('POST', '/api/fotos/', formulario)
+}
+export const borrarFoto = (id: number) => pedir<void>('DELETE', `/api/fotos/${id}/`)
