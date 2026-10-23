@@ -415,6 +415,8 @@ interface Props {
   /** Si está, el mapa está en modo dibujo: al terminar una línea (Enter o click en el último punto) la manda acá. */
   alTerminarDibujo?: (coordenadas: [number, number][]) => void
   fotos: Foto[] | undefined
+  /** Click en una región fuera de los modos de marcar y dibujar (y que no cae en una foto): abre su ficha. */
+  alElegirRegion?: (codigo: string) => void
   /** Si está, el mapa se pinta como era ese año: cada región con el color de su entidad. */
   epoca?: Epoca
   /** Controles superpuestos al mapa (el selector de época y su panel). */
@@ -457,7 +459,8 @@ function rutasComoGeoJSON(rutas: Ruta[], viajeResaltado: number | null): GeoJSON
 }
 
 export default function Mapa({
-  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo, fotos, epoca, children,
+  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo, alElegirRegion, fotos, epoca,
+  children,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -465,10 +468,12 @@ export default function Mapa({
   // verían siempre la versión de ese momento (un closure viejo). Leen la última desde este ref.
   const alClickearRef = useRef(alClickearRegion)
   const alTerminarDibujoRef = useRef(alTerminarDibujo)
+  const alElegirRegionRef = useRef(alElegirRegion)
   const epocaRef = useRef(epoca)
   useEffect(() => {
     alClickearRef.current = alClickearRegion
     alTerminarDibujoRef.current = alTerminarDibujo
+    alElegirRegionRef.current = alElegirRegion
     epocaRef.current = epoca
   })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
@@ -535,7 +540,11 @@ export default function Mapa({
       if (alTerminarDibujoRef.current) return // los clicks son de terra-draw
 
       const [foto] = map.queryRenderedFeatures(e.point, { layers: CAPAS_FOTOS })
-      if (!foto) return
+      if (!foto) {
+        const region = regionEn(e.point)
+        if (region) alElegirRegionRef.current?.(String(region.properties.codigo))
+        return
+      }
       const punto = (foto.geometry as GeoJSON.Point).coordinates as [number, number]
       if (foto.properties.cluster_id !== undefined) {
         // Un grupo: acercar hasta el zoom en el que se separa.

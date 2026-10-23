@@ -27,6 +27,33 @@ def aplicar_nombres_es(ruta: Path = NOMBRES_ES) -> int:
     return len(entidades)
 
 
+def linea_historica(region) -> list[dict]:
+    """A qué entidad perteneció la región en cada snapshot, juntando los consecutivos de la misma:
+    [{desde, hasta, entidad, nombre}]. `desde` y `hasta` son años de snapshot: entre uno y otro no hay datos."""
+    filas = (RegionEpoca.objects.filter(region=region).order_by('anio')
+             .values_list('anio', 'entidad__nombre', 'entidad__nombre_es', 'porcentaje_superficie'))
+    principal: dict[int, tuple[str, str, float]] = {}
+    for anio, entidad, nombre_es, porcentaje in filas:
+        peso = 100 if porcentaje is None else porcentaje
+        if anio not in principal or peso > principal[anio][2]:
+            principal[anio] = (entidad, nombre_es or entidad, peso)
+
+    # Un snapshot en el que la región no tiene entidad corta el tramo.
+    tramos: list[dict] = []
+    continua = False
+    for anio in anios_disponibles():
+        if anio not in principal:
+            continua = False
+            continue
+        entidad, nombre, _ = principal[anio]
+        if continua and tramos[-1]['entidad'] == entidad:
+            tramos[-1]['hasta'] = anio
+        else:
+            tramos.append({'desde': anio, 'hasta': anio, 'entidad': entidad, 'nombre': nombre})
+        continua = True
+    return tramos
+
+
 def anios_disponibles() -> list[int]:
     return list(RegionEpoca.objects.order_by('anio').values_list('anio', flat=True).distinct())
 

@@ -18,5 +18,8 @@ urlpatterns = [
     path('historia/', views.historia, name='historia'),
     # re_path y no <int:anio>: los años a. C. son negativos.
     re_path(r'^historia/(?P<anio>-?\d+)/$', views.epoca, name='epoca'),
+    path('fichas/', views.fichas, name='fichas'),
+    path('regiones/<str:codigo>/', views.region, name='region'),
+    path('regiones/<str:codigo>/ficha/', views.ficha, name='ficha'),
     *router.urls,
 ]

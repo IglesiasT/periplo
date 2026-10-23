@@ -31,13 +31,15 @@ export default function App() {
 
   const viaje = viajes.data?.find((v) => v.id === seleccion)
   const logro = seleccion === 'logros' ? logros.data?.find((l) => l.id === logroElegido) : undefined
+  const regionElegida = typeof seleccion === 'object' && seleccion !== null ? seleccion.region : null
 
   // Regiones del viaje elegido y las que las contienen: así se ve resaltado en cualquier nivel de zoom.
-  // Con un logro desplegado, las regiones de todos sus objetivos (cumplidos o no).
+  // Con un logro desplegado, las regiones de todos sus objetivos (cumplidos o no). Con una ficha abierta, su región.
   const resaltadas = useMemo(() => {
     if (logro) return new Set(logro.objetivos.flatMap((o) => o.regiones))
+    if (regionElegida) return new Set([regionElegida])
     return new Set(viaje?.visitas.flatMap((v) => [v.region, ...v.region_ancestros]) ?? [])
-  }, [viaje, logro])
+  }, [viaje, logro, regionElegida])
 
   const seleccionar = (nueva: Seleccion) => {
     setSeleccion(nueva)
@@ -99,6 +101,7 @@ export default function App() {
         viajeResaltado={viaje?.id ?? null}
         alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
         alTerminarDibujo={modo === 'dibujar' && viaje ? alTerminarDibujo : undefined}
+        alElegirRegion={(codigo) => seleccionar({ region: codigo })}
         fotos={fotos.data}
         epoca={epoca}
       >

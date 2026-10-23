@@ -95,6 +95,42 @@ export interface Logro {
   }[]
 }
 
+/** Texto en markdown escrito a mano sobre una región. */
+export interface Ficha {
+  texto: string
+  actualizada: string
+}
+
+/** Respuesta de /api/regiones/<codigo>/: todo lo de una región para su ficha. */
+export interface RegionDetalle {
+  codigo: string
+  nombre: string
+  nivel: NivelRegion
+  /** De la más chica a la más grande: provincia, país. */
+  ancestros: { codigo: string; nombre: string }[]
+  ficha: Ficha | null
+  /** Visitas a la región o a algo que está adentro (sus departamentos). */
+  visitas: {
+    id: number
+    viaje: number | null
+    viaje_nombre: string | null
+    viaje_inicio: string | null
+    region: string
+    region_nombre: string
+    tipo_presencia: TipoPresencia
+    realizada: boolean
+  }[]
+  /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido. */
+  historia: { desde: number; hasta: number; entidad: string; nombre: string }[]
+}
+
+/** Un elemento de /api/fichas/. */
+export interface FichaResumen {
+  codigo: string
+  nombre: string
+  actualizada: string
+}
+
 /** Respuesta de /api/historia/<anio>/: el mapa en un año histórico. */
 export interface Epoca {
   /** Los a. C. van en negativo. */

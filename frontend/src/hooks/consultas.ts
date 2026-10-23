@@ -12,6 +12,9 @@ const CLAVES = {
   fotos: ['fotos'],
   // Prefijo de los años disponibles y de cada época: invalidarlo recalcula las entidades pisadas.
   historia: ['historia'],
+  // Prefijo del detalle de cada región: sus visitas cambian con cualquier visita.
+  regiones: ['regiones'],
+  fichas: ['fichas'],
 } as const
 
 export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: api.obtenerEstados })
@@ -32,6 +35,23 @@ export const useEpoca = (anio: number | null) =>
 export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
 
 export const useLogros = () => useQuery({ queryKey: CLAVES.logros, queryFn: api.obtenerLogros })
+
+export const useRegion = (codigo: string | null) =>
+  useQuery({
+    queryKey: [...CLAVES.regiones, codigo],
+    queryFn: () => api.obtenerRegion(codigo!),
+    enabled: codigo !== null,
+  })
+
+export const useFichas = () => useQuery({ queryKey: CLAVES.fichas, queryFn: api.listarFichas })
+
+export function useGuardarFicha() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: ({ codigo, texto }: { codigo: string; texto: string }) => api.guardarFicha(codigo, texto),
+    onSuccess: invalidar,
+  })
+}
 
 export const useRutas = () => useQuery({ queryKey: CLAVES.rutas, queryFn: api.listarRutas })
 

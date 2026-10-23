@@ -1,5 +1,6 @@
 import type {
-  DatosViaje, DatosVisita, Epoca, Estadisticas, EstadosRegiones, Foto, Logro, Ruta, Viaje, Visita,
+  DatosViaje, DatosVisita, Epoca, Estadisticas, EstadosRegiones, Ficha, FichaResumen, Foto, Logro, RegionDetalle,
+  Ruta, Viaje, Visita,
 } from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
@@ -37,6 +38,14 @@ export const obtenerEstadisticas = () => pedir<Estadisticas>('GET', '/api/estadi
 export const obtenerLogros = () => pedir<Logro[]>('GET', '/api/logros/')
 export const obtenerAniosHistoricos = () => pedir<number[]>('GET', '/api/historia/')
 export const obtenerEpoca = (anio: number) => pedir<Epoca>('GET', `/api/historia/${anio}/`)
+
+// Algunos códigos de Natural Earth traen caracteres que no van sueltos en una URL ("ATA+00?").
+const urlRegion = (codigo: string) => `/api/regiones/${encodeURIComponent(codigo)}/`
+export const obtenerRegion = (codigo: string) => pedir<RegionDetalle>('GET', urlRegion(codigo))
+/** Un texto vacío borra la ficha (204, sin respuesta). */
+export const guardarFicha = (codigo: string, texto: string) =>
+  pedir<Ficha | undefined>('PUT', `${urlRegion(codigo)}ficha/`, { texto })
+export const listarFichas = () => pedir<FichaResumen[]>('GET', '/api/fichas/')
 
 export const listarViajes = () => pedir<Viaje[]>('GET', '/api/viajes/')
 export const crearViaje = (datos: DatosViaje) => pedir<Viaje>('POST', '/api/viajes/', datos)

@@ -129,6 +129,24 @@ class Foto(models.Model):
         return self.archivo.name
 
 
+class FichaRegion(models.Model):
+    """Texto en markdown escrito a mano sobre una región, al visitarla. No se genera solo."""
+
+    # PROTECT: cargar_regiones borra las regiones que ya no están en los datos, y una ficha no se pierde así.
+    region = models.OneToOneField(Region, on_delete=models.PROTECT, related_name='ficha')
+    texto = models.TextField()
+    creada = models.DateTimeField(auto_now_add=True)
+    actualizada = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-actualizada']
+        verbose_name = 'ficha de región'
+        verbose_name_plural = 'fichas de regiones'
+
+    def __str__(self):
+        return f'Ficha de {self.region}'
+
+
 class EntidadPoliticaHistorica(models.Model):
     """Imperio, reino, estado o cultura de los snapshots de historical-basemaps.
     El mismo nombre en distintos años es la misma entidad."""

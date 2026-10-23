@@ -576,6 +576,67 @@ textarea {
   font-style: italic;
 }
 
+/* --- Ficha de región --- */
+
+.ficha-texto {
+  line-height: 1.5;
+}
+
+.ficha-texto > :first-child {
+  margin-top: 0;
+}
+
+.ficha-texto h1,
+.ficha-texto h2,
+.ficha-texto h3 {
+  margin: 16px 0 6px;
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+}
+
+.ficha-texto blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--borde);
+  color: var(--tenue);
+  font-style: italic;
+}
+
+.ficha-texto a {
+  color: var(--carmin-oscuro);
+}
+
+.ficha-texto ul,
+.ficha-texto ol {
+  padding-left: 22px;
+}
+
+.fichas-lista {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.linea-historica {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linea-historica li {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.tramo-anios {
+  color: var(--tenue);
+  font-variant-numeric: oldstyle-nums;
+}
+
 /* --- Lista de visitas --- */
 
 .visitas li {

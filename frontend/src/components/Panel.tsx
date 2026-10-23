@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
+import { useFichas } from '../hooks/consultas'
 import type { Foto, Logro, Viaje } from '../types'
 import Estadisticas from './Estadisticas'
 import FotosLista from './FotosLista'
 import { LogrosLista, LogrosResumen } from './Logros'
+import RegionFicha from './RegionFicha'
 import RutasLista from './RutasLista'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
 
-export type Seleccion = number | 'nuevo' | 'logros' | null
+/** Qué muestra el panel: un viaje (por id), el formulario de uno nuevo, los logros o la ficha de una región. */
+export type Seleccion = number | 'nuevo' | 'logros' | { region: string } | null
 
 type Filtro = 'todos' | 'hechos' | 'planes'
 
@@ -53,6 +56,15 @@ export default function Panel({
         <button className="volver" onClick={() => onSeleccionar(null)}>← Viajes</button>
         <h2>Nuevo viaje</h2>
         <ViajeForm onGuardado={(nuevo) => onSeleccionar(nuevo.id)} />
+      </aside>
+    )
+  }
+
+  if (typeof seleccion === 'object' && seleccion !== null) {
+    return (
+      <aside className="panel">
+        <button className="volver" onClick={() => onSeleccionar(null)}>← Viajes</button>
+        <RegionFicha codigo={seleccion.region} onElegirViaje={onSeleccionar} />
       </aside>
     )
   }
@@ -118,6 +130,8 @@ export default function Panel({
 
       {logros && <LogrosResumen logros={logros} onVerTodos={() => onSeleccionar('logros')} />}
 
+      <FichasResumen onElegir={(codigo) => onSeleccionar({ region: codigo })} />
+
       <div className="encabezado-seccion">
         <h3>Viajes</h3>
         <div className="pestanias">
@@ -151,5 +165,30 @@ export default function Panel({
         ))}
       </ul>
     </aside>
+  )
+}
+
+/** Las fichas escritas, para volver a ellas sin buscar la región en el mapa. */
+function FichasResumen({ onElegir }: { onElegir: (codigo: string) => void }) {
+  const fichas = useFichas()
+  return (
+    <section>
+      <div className="encabezado-seccion">
+        <h3>Fichas</h3>
+        {fichas.data && fichas.data.length > 0 && <span className="tenue">{fichas.data.length} escritas</span>}
+      </div>
+      {fichas.data && fichas.data.length > 0 ? (
+        <p className="fichas-lista">
+          {fichas.data.map((f, i) => (
+            <span key={f.codigo}>
+              {i > 0 && ' · '}
+              <button className="enlace" onClick={() => onElegir(f.codigo)}>{f.nombre}</button>
+            </span>
+          ))}
+        </p>
+      ) : (
+        <p className="cursiva">Hacé click en una región del mapa para abrir su ficha y escribir sobre ella.</p>
+      )}
+    </section>
   )
 }
