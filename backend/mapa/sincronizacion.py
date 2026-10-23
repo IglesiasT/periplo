@@ -9,7 +9,7 @@ from .ubicacion import Ubicacion
 
 
 class UbicadorProtocolo(Protocol):
-    def por_coordenadas(self, lat: float, lon: float) -> Ubicacion | None: ...
+    def por_coordenadas(self, lat: float, lon: float, detallar: bool = False) -> Ubicacion | None: ...
     def por_nombre(self, nombre: str) -> Ubicacion | None: ...
 
 
@@ -21,10 +21,11 @@ class VisitaPlanificada:
     origen: str                     # para el reporte: qué lugar y cómo se ubicó
 
 
-def ubicar(ubicador: UbicadorProtocolo, nombre: str, place: Place | None) -> Ubicacion | None:
-    """Coordenadas de Notion si las hay; si no, el nombre."""
+def ubicar(ubicador: UbicadorProtocolo, nombre: str, place: Place | None, detallar: bool = False) -> Ubicacion | None:
+    """Coordenadas de Notion si las hay; si no, el nombre. `detallar` baja a departamento cuando se puede:
+    se usa para Lugares (un sitio concreto), no para Destinos ("Catamarca" es toda la provincia)."""
     if place is not None:
-        ubicacion = ubicador.por_coordenadas(place.lat, place.lon)
+        ubicacion = ubicador.por_coordenadas(place.lat, place.lon, detallar)
         if ubicacion:
             return ubicacion
     return ubicador.por_nombre(nombre)
@@ -44,7 +45,7 @@ def planificar_visitas(
         de_lugares = []
         # 1. Los Lugares del destino: son lo más preciso y traen su propio Estado (Visitado / Planeado).
         for lugar in filter(None, map(lugares_por_id.get, destino.lugares_ids)):
-            ubicacion = ubicar(ubicador, lugar.nombre, lugar.place)
+            ubicacion = ubicar(ubicador, lugar.nombre, lugar.place, detallar=True)
             if ubicacion is None:
                 sin_ubicar.append(f'Lugar "{lugar.nombre}" (de {destino.nombre})')
                 continue
@@ -66,7 +67,7 @@ def planificar_visitas(
     for lugar in lugares:
         if ids_destinos & set(lugar.viajes_ids):
             continue
-        ubicacion = ubicar(ubicador, lugar.nombre, lugar.place)
+        ubicacion = ubicar(ubicador, lugar.nombre, lugar.place, detallar=True)
         if ubicacion is None:
             sin_ubicar.append(f'Lugar "{lugar.nombre}"')
             continue

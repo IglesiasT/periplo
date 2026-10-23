@@ -6,8 +6,9 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 
 ## Estado actual: Fase 1 en curso
 
-- Mapa mundial en MapLibre con países y provincias de Natural Earth.
-- Zoom semántico: de lejos se ven países y al acercarse aparecen las provincias.
+- Mapa mundial en MapLibre con países y provincias de Natural Earth, y departamentos argentinos del IGN.
+- Zoom semántico: de lejos se ven países, al acercarse aparecen las provincias y, en Argentina, desde el zoom 7 los departamentos.
+- La vista queda en la URL (`#zoom/lat/lon`): al recargar se mantiene y se puede guardar un enlace a una zona.
 - Colores por estado: gris para sin visitar, azul semitransparente con contorno para la lista de deseos, y color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
 - Regiones, viajes y visitas en SQLite (`Region`, `Viaje`, `Visita`), sincronizados desde Notion (bases Destinations y Lugares) o cargados a mano desde el admin de Django.
 
@@ -58,7 +59,8 @@ Desde `backend/`:
 ```powershell
 .venv\Scripts\python manage.py migrate
 .venv\Scripts\python manage.py descargar_natural_earth   # baja Natural Earth a data/raw/ (~20 MB)
-.venv\Scripts\python manage.py cargar_regiones           # carga 258 países y 4596 provincias con su área
+.venv\Scripts\python manage.py descargar_departamentos_ign  # baja los departamentos del IGN (~140 MB)
+.venv\Scripts\python manage.py cargar_regiones           # 258 países, 4596 provincias y 529 departamentos, con su área
 .venv\Scripts\python manage.py sincronizar_notion        # viajes y visitas desde Notion (ver abajo)
 .venv\Scripts\python manage.py createsuperuser           # para cargar viajes desde /admin/
 ```
@@ -126,10 +128,23 @@ cd backend
 
 Opciones: `--simplificar-paises 15%`, `--simplificar-provincias 15%` (el default es 10%) y `--forzar-descarga`.
 
-`cargar_regiones` lee los GeoJSON completos, calcula el área en la proyección de áreas iguales Mollweide y hace upsert por `codigo`, así que se puede correr varias veces.
+`descargar_departamentos_ign`:
+
+1. Baja la capa **Departamento** del IGN por WFS. Son 529 departamentos, partidos y comunas.
+2. Arma el código a partir del código INDEC (`AR-66028`) y deduce la provincia de sus dos primeros dígitos (`66` es Salta, `AR-A`).
+3. Simplifica al 1% con `--simplificar` como opción, lo que da unos 1,3 MB.
+
+Incluye Antártida Argentina e Islas del Atlántico Sur tal como las publica el IGN.
+
+`cargar_regiones` lee los GeoJSON completos, calcula el área en la proyección de áreas iguales Mollweide y hace upsert por `codigo`, así que se puede correr varias veces. Si existe el GeoJSON de departamentos, los carga también.
+
+El sync con Notion ubica los **Lugares** argentinos en su departamento (Tilcara, General Pueyrredón…). Los **Destinos** quedan a nivel provincia, porque "Catamarca" se refiere a toda la provincia.
 
 ## Fuentes de datos
 
-- [Natural Earth](https://www.naturalearthdata.com/): dominio público.
+- [Natural Earth](https://www.naturalearthdata.com/): países y provincias del mundo, de dominio público.
+- **FUENTE: Instituto Geográfico Nacional de la República Argentina**: capa Departamento, con la geometría modificada por última vez el 11/11/2019, de [Capas SIG](https://www.ign.gob.ar/NuestrasActividades/InformacionGeoespacial/CapasSIG).
+  - Uso y redistribución libres y gratuitos, citando la fuente y la fecha; el mapa lo hace en sus créditos.
+  - Este proyecto no está asociado ni avalado por el IGN.
 - [Nominatim](https://nominatim.org/) / OpenStreetMap: geocodificación de nombres, respetando su política de uso (1 pedido por segundo).
 - API de Notion: bases Destinations y Lugares del Travel Planner.

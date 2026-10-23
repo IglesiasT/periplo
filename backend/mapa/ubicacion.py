@@ -54,7 +54,7 @@ def normalizar(texto: str) -> str:
 
 
 class Localizador:
-    """Point-in-polygon sobre países y provincias. Carga los GeoJSON la primera vez que se usa."""
+    """Point-in-polygon sobre países, provincias y departamentos. Carga los GeoJSON la primera vez que se usa."""
 
     def __init__(self):
         self._capas: dict[str, gpd.GeoDataFrame] = {}
@@ -101,14 +101,21 @@ class Ubicador:
     def __init__(self, usar_nominatim: bool = True):
         self.localizador = Localizador()
         self.nominatim = Nominatim() if usar_nominatim else None
+        # Provincias que tienen departamentos cargados (por ahora, las argentinas del IGN).
+        self.provincias_con_departamentos = set(
+            Region.objects.filter(nivel=Region.Nivel.DEPARTAMENTO).values_list('padre__codigo', flat=True)
+        )
         self.indice_nombres: dict[str, list[tuple[str, str]]] = {}
         self.areas: dict[str, float] = {}
         for nivel, codigo, nombre, area in Region.objects.values_list('nivel', 'codigo', 'nombre', 'area_km2'):
             self.indice_nombres.setdefault(normalizar(nombre), []).append((nivel, codigo))
             self.areas[codigo] = area or 0
 
-    def por_coordenadas(self, lat: float, lon: float) -> Ubicacion | None:
+    def por_coordenadas(self, lat: float, lon: float, detallar: bool = False) -> Ubicacion | None:
+        """Provincia donde cae el punto. Con `detallar`, baja a departamento si esa provincia los tiene."""
         codigo = self.localizador.region_en(lat, lon)
+        if detallar and codigo in self.provincias_con_departamentos:
+            codigo = self.localizador.region_en(lat, lon, capa='departamentos') or codigo
         return Ubicacion(codigo, 'place') if codigo else None
 
     def por_nombre(self, nombre: str) -> Ubicacion | None:

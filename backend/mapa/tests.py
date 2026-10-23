@@ -78,12 +78,15 @@ class ParseoNotionTests(SimpleTestCase):
 
 
 class UbicadorFalso:
-    """Coordenadas: lat < -30 es Buenos Aires, si no Jujuy. Nombres: un diccionario fijo."""
+    """Coordenadas: lat < -30 es Buenos Aires, si no Jujuy (o su departamento Tilcara si se pide detalle).
+    Nombres: un diccionario fijo."""
 
     nombres = {'Peru': 'PER', 'Tucuman': 'AR-T'}
 
-    def por_coordenadas(self, lat, lon):
-        return Ubicacion('AR-B' if lat < -30 else 'AR-Y', 'place')
+    def por_coordenadas(self, lat, lon, detallar=False):
+        if lat < -30:
+            return Ubicacion('AR-B', 'place')
+        return Ubicacion('AR-38084' if detallar else 'AR-Y', 'place')
 
     def por_nombre(self, nombre):
         codigo = self.nombres.get(nombre)
@@ -95,13 +98,20 @@ class PlanificarVisitasTests(SimpleTestCase):
         visitas, sin_ubicar = planificar_visitas(destinos, lugares, UbicadorFalso())
         return {(v.viaje_notion_id, v.codigo): v.realizada for v in visitas}, sin_ubicar
 
-    def test_lugares_del_mismo_viaje_y_provincia_se_unifican(self):
+    def test_lugares_del_mismo_viaje_y_region_se_unifican(self):
         destino = Destino('d1', 'NOA', 'hecho', None, ['l1', 'l2'])
         lugares = [
             Lugar('l1', 'Tilcara', True, Place(-23.5, -65.4, ''), ['d1']),
-            Lugar('l2', 'Humahuaca', False, Place(-23.2, -65.3, ''), ['d1']),
+            Lugar('l2', 'Tilcara pueblo', False, Place(-23.6, -65.4, ''), ['d1']),
         ]
-        self.assertEqual(self.planificar([destino], lugares), ({('d1', 'AR-Y'): True}, []))
+        self.assertEqual(self.planificar([destino], lugares), ({('d1', 'AR-38084'): True}, []))
+
+    def test_los_lugares_bajan_a_departamento_y_los_destinos_no(self):
+        con_lugar = Destino('d1', 'NOA', 'hecho', None, ['l1'])
+        sin_lugar = Destino('d2', 'Jujuy', 'deseo', Place(-24.2, -65.3, 'Jujuy'))
+        lugar = Lugar('l1', 'Tilcara', True, Place(-23.5, -65.4, ''), ['d1'])
+        visitas, _ = self.planificar([con_lugar, sin_lugar], [lugar])
+        self.assertEqual(visitas, {('d1', 'AR-38084'): True, ('d2', 'AR-Y'): False})
 
     def test_el_estado_del_lugar_manda_sobre_el_del_destino(self):
         # Destino "In progress" con su lugar "Planeado": es un deseo, no una visita.

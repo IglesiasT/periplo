@@ -32,13 +32,18 @@ const ETIQUETAS_ESTADO: Record<EstadoRegion, string> = {
   deseo: 'Lista de deseos',
 }
 
-// Zoom semántico: alrededor de este nivel los países se desvanecen y aparecen las provincias.
+// Zoom semántico, como el mapa de estados de Victoria 3:
+// países -> provincias alrededor de ZOOM_PROVINCIAS, y provincias argentinas -> departamentos alrededor de ZOOM_DEPARTAMENTOS.
 const ZOOM_PROVINCIAS = 4
+const ZOOM_DEPARTAMENTOS = 7
 const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
 
-const SOURCES = ['paises', 'provincias'] as const
+const SOURCES = ['paises', 'provincias', 'departamentos'] as const
 
 const ESTADO: ExpressionSpecification = ['coalesce', ['feature-state', 'estado'], 'ninguno']
+
+// Provincias con un nivel más detallado debajo (por ahora, solo las argentinas del IGN).
+const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['==', ['get', 'padre'], 'ARG']
 
 // El color de cada región sale de su feature-state "estado"; si no tiene, queda gris (niebla de guerra).
 const COLOR_RELLENO: ExpressionSpecification = [
@@ -50,15 +55,15 @@ const COLOR_RELLENO: ExpressionSpecification = [
   COLORES.noVisitado,
 ]
 
-// Opacidad que pasa de `desde` a `hasta` alrededor de ZOOM_PROVINCIAS. Las regiones deseadas quedan semitransparentes.
-function opacidadPorZoom(desde: number, hasta: number): ExpressionSpecification {
-  const conDeseo = (opacidad: number): ExpressionSpecification =>
-    ['case', ['==', ESTADO, 'deseo'], opacidad * 0.6, opacidad]
-  return [
-    'interpolate', ['linear'], ['zoom'],
-    ZOOM_PROVINCIAS - FUNDIDO, conDeseo(desde),
-    ZOOM_PROVINCIAS + FUNDIDO, conDeseo(hasta),
-  ]
+// Las regiones deseadas quedan semitransparentes.
+const FACTOR_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 0.6, 1]
+
+type Valor = number | ExpressionSpecification
+
+// Opacidad que interpola entre paradas [zoom, valor]: así se hace el fundido entre niveles.
+function opacidadPorZoom(...paradas: [number, Valor][]): ExpressionSpecification {
+  const valores = paradas.flatMap(([zoom, valor]) => [zoom, ['*', valor, FACTOR_DESEO]])
+  return ['interpolate', ['linear'], ['zoom'], ...valores] as unknown as ExpressionSpecification
 }
 
 // Contorno solo para las regiones de la lista de deseos.
@@ -68,27 +73,73 @@ const CONTORNO_DESEO = {
   'line-opacity': ['case', ['==', ESTADO, 'deseo'], 1, 0] as ExpressionSpecification,
 }
 
-// Style escrito a mano: sin tiles de terceros, solo fondo + países + provincias.
+const ATRIBUCION_NE = '<a href="https://www.naturalearthdata.com/">Natural Earth</a>'
+// Requerida por la licencia del IGN: fuente y fecha de los datos originales.
+const ATRIBUCION_IGN =
+  'FUENTE: <a href="https://www.ign.gob.ar/">Instituto Geográfico Nacional de la República Argentina</a> (límites al 11/11/2019)'
+
+// Style escrito a mano: sin tiles de terceros, solo fondo + países + provincias + departamentos.
 const STYLE: StyleSpecification = {
   version: 8,
   sources: {
     // promoteId: usa la propiedad "codigo" como id de cada feature, para poder darle estado.
-    paises: { type: 'geojson', data: '/geo/paises.geojson', promoteId: 'codigo' },
-    provincias: { type: 'geojson', data: '/geo/provincias.geojson', promoteId: 'codigo' },
+    paises: { type: 'geojson', data: '/geo/paises.geojson', promoteId: 'codigo', attribution: ATRIBUCION_NE },
+    provincias: { type: 'geojson', data: '/geo/provincias.geojson', promoteId: 'codigo', attribution: ATRIBUCION_NE },
+    departamentos: {
+      type: 'geojson', data: '/geo/departamentos.geojson', promoteId: 'codigo', attribution: ATRIBUCION_IGN,
+    },
   },
   layers: [
     { id: 'fondo', type: 'background', paint: { 'background-color': COLORES.mar } },
 
-    // Provincias: aparecen al acercarse.
+    // Provincias: aparecen al acercarse; las argentinas se vuelven a desvanecer cuando llegan los departamentos.
     {
       id: 'provincias-relleno', type: 'fill', source: 'provincias',
       minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(0, 1) },
+      paint: {
+        'fill-color': COLOR_RELLENO,
+        'fill-opacity': opacidadPorZoom(
+          [ZOOM_PROVINCIAS - FUNDIDO, 0],
+          [ZOOM_PROVINCIAS + FUNDIDO, 1],
+          [ZOOM_DEPARTAMENTOS - FUNDIDO, 1],
+          [ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1]],
+        ),
+      },
     },
+
+    // Departamentos (solo Argentina): aparecen al acercarse más.
+    {
+      id: 'departamentos-relleno', type: 'fill', source: 'departamentos',
+      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+      paint: {
+        'fill-color': COLOR_RELLENO,
+        'fill-opacity': opacidadPorZoom([ZOOM_DEPARTAMENTOS - FUNDIDO, 0], [ZOOM_DEPARTAMENTOS + FUNDIDO, 1]),
+      },
+    },
+    {
+      id: 'departamentos-frontera', type: 'line', source: 'departamentos',
+      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+      paint: { 'line-color': COLORES.fronteraProvincia, 'line-width': 0.75 },
+    },
+    {
+      id: 'departamentos-deseo', type: 'line', source: 'departamentos',
+      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+      paint: CONTORNO_DESEO,
+    },
+
     {
       id: 'provincias-frontera', type: 'line', source: 'provincias',
       minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-      paint: { 'line-color': COLORES.fronteraProvincia, 'line-width': 0.75 },
+      paint: {
+        'line-color': COLORES.fronteraProvincia,
+        'line-width': 0.75,
+        // Las fronteras de Natural Earth no coinciden exacto con las del IGN: con departamentos se ocultan.
+        'line-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          ZOOM_DEPARTAMENTOS - FUNDIDO, 1,
+          ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1],
+        ],
+      },
     },
     {
       id: 'provincias-deseo', type: 'line', source: 'provincias',
@@ -100,7 +151,10 @@ const STYLE: StyleSpecification = {
     {
       id: 'paises-relleno', type: 'fill', source: 'paises',
       maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, 0) },
+      paint: {
+        'fill-color': COLOR_RELLENO,
+        'fill-opacity': opacidadPorZoom([ZOOM_PROVINCIAS - FUNDIDO, 1], [ZOOM_PROVINCIAS + FUNDIDO, 0]),
+      },
     },
     // Sin maxzoom: un país deseado entero (Japón) mantiene su contorno aunque se vean las provincias.
     { id: 'paises-deseo', type: 'line', source: 'paises', paint: CONTORNO_DESEO },
@@ -114,6 +168,29 @@ const STYLE: StyleSpecification = {
   ],
 }
 
+// La vista se guarda en la URL (#zoom/lat/lon): al recargar no se pierde y se puede compartir un enlace a una zona.
+// No se usa la opción `hash` de MapLibre porque map.remove() borra el hash, y StrictMode desmonta y vuelve
+// a montar el componente en desarrollo: el segundo mapa arrancaba siempre en la vista inicial.
+const VISTA_INICIAL = { center: [-20, 10] as [number, number], zoom: 1.5 }
+
+function vistaDesdeHash(): typeof VISTA_INICIAL | null {
+  const [zoom, lat, lon] = window.location.hash.slice(1).split('/').map(Number)
+  if ([zoom, lat, lon].some((n) => n === undefined || Number.isNaN(n))) return null
+  return { center: [lon, lat], zoom }
+}
+
+function guardarVistaEnHash(map: maplibregl.Map) {
+  const { lat, lng } = map.getCenter()
+  window.history.replaceState(null, '', `#${map.getZoom().toFixed(2)}/${lat.toFixed(4)}/${lng.toFixed(4)}`)
+}
+
+// Capas donde buscar la región bajo el mouse, de la más detallada a la menos, según el zoom.
+function capasConsultables(zoom: number): string[] {
+  if (zoom < ZOOM_PROVINCIAS) return ['paises-relleno']
+  if (zoom < ZOOM_DEPARTAMENTOS) return ['provincias-relleno']
+  return ['departamentos-relleno', 'provincias-relleno']
+}
+
 export default function Mapa() {
   const contenedor = useRef<HTMLDivElement>(null)
 
@@ -122,16 +199,16 @@ export default function Mapa() {
     const map = new maplibregl.Map({
       container: contenedor.current!,
       style: STYLE,
-      center: [-20, 10],
-      zoom: 1.5,
+      ...(vistaDesdeHash() ?? VISTA_INICIAL),
       renderWorldCopies: false,
     })
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
+    map.on('moveend', () => guardarVistaEnHash(map))
 
     map.on('load', async () => {
       const estados = await obtenerEstados()
       if (desmontado) return
-      // Los códigos de país y de provincia no se pisan, así que alcanza con darle el estado a ambas sources.
+      // Los códigos de país, provincia y departamento no se pisan: alcanza con darle el estado a todas las sources.
       for (const [codigo, estado] of Object.entries(estados)) {
         for (const source of SOURCES) {
           map.setFeatureState({ source, id: codigo }, { estado })
@@ -139,11 +216,11 @@ export default function Mapa() {
       }
     })
 
-    // Nombre de la región al pasar el mouse: país o provincia según el zoom.
+    // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false })
     map.on('mousemove', (e) => {
-      const capa = map.getZoom() < ZOOM_PROVINCIAS ? 'paises-relleno' : 'provincias-relleno'
-      const [feature] = map.queryRenderedFeatures(e.point, { layers: [capa] })
+      // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
+      const [feature] = map.queryRenderedFeatures(e.point, { layers: capasConsultables(map.getZoom()) })
       if (!feature) {
         map.getCanvas().style.cursor = ''
         popup.remove()

@@ -1,5 +1,5 @@
 """
-Carga países y provincias en el modelo Region, con su jerarquía y el área precalculada.
+Carga países, provincias y departamentos en el modelo Region, con su jerarquía y el área precalculada.
 
 Lee los GeoJSON completos que deja `descargar_natural_earth` en data/raw/.
 Se puede correr varias veces: actualiza las regiones existentes por `codigo`.
@@ -26,7 +26,9 @@ def leer_con_area(path: Path) -> gpd.GeoDataFrame:
     if not path.exists():
         raise CommandError(f'No existe {path}. Corré antes `python manage.py descargar_natural_earth`.')
     gdf = gpd.read_file(path)
-    gdf['area_km2'] = gdf.geometry.to_crs(CRS_AREAS_IGUALES).area / 1_000_000
+    # El sector antártico del IGN llega exactamente al polo, donde la proyección da NaN: se recorta a -89,99°.
+    geometrias = gdf.geometry.clip_by_rect(-180, -89.99, 180, 90)
+    gdf['area_km2'] = geometrias.to_crs(CRS_AREAS_IGUALES).area / 1_000_000
     return gdf
 
 
@@ -52,8 +54,19 @@ class Command(BaseCommand):
             for f in provincias.itertuples()
         ])
 
+        # Departamentos (IGN, solo Argentina): opcionales, si ya se corrió descargar_departamentos_ign.
+        departamentos = []
+        if (RAW_DIR / 'departamentos.geojson').exists():
+            departamentos = leer_con_area(RAW_DIR / 'departamentos.geojson')
+            id_provincia = dict(Region.objects.filter(nivel=Region.Nivel.PROVINCIA).values_list('codigo', 'id'))
+            self.upsert([
+                Region(nivel=Region.Nivel.DEPARTAMENTO, codigo=f.codigo, nombre=f.nombre,
+                       padre_id=id_provincia[f.padre], area_km2=round(f.area_km2, 1))
+                for f in departamentos.itertuples()
+            ])
+
         self.stdout.write(self.style.SUCCESS(
-            f'{len(paises)} países y {len(provincias)} provincias cargados '
+            f'{len(paises)} países, {len(provincias)} provincias y {len(departamentos)} departamentos cargados '
             f'({Region.objects.count()} regiones en total).'
         ))
 
