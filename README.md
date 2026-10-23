@@ -44,6 +44,8 @@ backend/     Django + Django REST Framework + SQLite
   data/raw/  descargas y GeoJSON completos (ignorado por git, se regenera)
   media/     fotos subidas y miniaturas (ignorado por git)
 frontend/    React + TypeScript + Vite + MapLibre GL + TanStack Query + react-markdown
+  src/tema/            temas visuales: todo color y toda fuente de la app ("Atlas de gabinete" por defecto)
+  src/components/mapa/ el mapa: estilo (capas y expresiones), vista, fotos, leyenda y rosa de los vientos
   public/geo/{paises,provincias,departamentos}.geojson   geometrías simplificadas (generadas y commiteadas)
 ```
 
@@ -144,7 +146,7 @@ cd backend
 
 ```powershell
 cd frontend
-npm test   # vitest: qué regiones se resaltan al elegir un viaje, un logro o una ficha
+npm test   # vitest: el resaltado de lo elegido, las capas del mapa y que todo color salga del tema
 ```
 
 ## Datos geográficos

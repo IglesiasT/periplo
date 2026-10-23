@@ -14,6 +14,7 @@ Registro personal que acompaña mis viajes y cruza tres intereses: los juegos de
 
 - **Backend:** Django + Django REST Framework + SQLite. SQLite alcanza para un uso personal local.
 - **Frontend:** React + TypeScript + Vite, con **MapLibre GL** para el mapa.
+  - **Todo color y toda fuente salen del tema** (`frontend/src/tema/`). No escribir colores en el CSS ni en los componentes: el CSS usa las variables que escribe el tema (`var(--papel)`), y el estilo del mapa se arma con `crearEstilo(tema)`. Para sumar un tema: un archivo nuevo con un `Tema` completo y una línea en `TEMAS`. Los tests (`npm test`) fallan si aparece un color fuera del tema.
 - **Procesamiento geográfico:** scripts Python con **geopandas / shapely**, ejecutados como *management commands* de Django. Precalculan una sola vez los datos pesados (áreas, intersecciones con fronteras históricas) y guardan el resultado en la base. **No usar PostGIS ni GeoDjango.**
 - **Notion:** la sincronización la hace el backend. La API de Notion no admite llamadas desde el navegador (CORS) y el token tiene que quedar del lado del servidor, en una variable de entorno.
 

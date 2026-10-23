@@ -1,4 +1,4 @@
-import type { EstadoViaje, NivelRegion, TipoPresencia } from './types'
+import type { EstadoRegion, EstadoViaje, NivelRegion, TipoPresencia } from './types'
 
 export const ETIQUETAS_ESTADO_VIAJE: Record<EstadoViaje, string> = {
   deseo: 'Deseo',
@@ -11,6 +11,12 @@ export const ETIQUETAS_PRESENCIA: Record<TipoPresencia, string> = {
   estadia: 'Estadía',
   paso: 'De paso',
   transito: 'Tránsito',
+}
+
+/** Cómo se ve cada región en el mapa (la leyenda y el popup): la presencia, o el deseo. */
+export const ETIQUETAS_ESTADO: Record<EstadoRegion, string> = {
+  ...ETIQUETAS_PRESENCIA,
+  deseo: 'Por conocer',
 }
 
 export const ETIQUETAS_NIVEL: Record<NivelRegion, string> = {

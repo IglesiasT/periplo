@@ -1,28 +1,7 @@
-/* Dirección "Atlas de gabinete": papel, tinta de grabador y aguadas, como un atlas del siglo XIX. */
+/* Los colores y las fuentes no se definen acá: son variables que escribe el tema activo
+   (src/tema/, ver aplicarTema), junto con el color-scheme de los controles nativos. */
 :root {
-  --papel: #f3ebda;
-  --papel-hondo: #e8dcc2;
-  --borde: #c9b48e;
-  --linea: #dccbaa;
-  --tinta: #2b2117;
-  --tenue: #6b5a43;
-  --sepia: #7c6a50;
-  --carmin: #a8382c;
-  --carmin-oscuro: #7e2a21;
-  --paso: #cf7356;
-  --transito: #e7a98a;
-  --indigo: #3e5c76;
-  --aguada: #c6d4cc;
-  --tierra: #eee4ce;
-  --ok: #4f6b3a;
-
-  --texto: 'EB Garamond', Georgia, serif;
-  --titulo: 'IM Fell English SC', 'EB Garamond', Georgia, serif;
-  --cursiva: 'IM Fell English', 'EB Garamond', Georgia, serif;
-
-  /* Sin esto el navegador dibuja sus controles nativos (las barras de scroll) en blanco.
-     scrollbar-color se hereda: alcanza con ponerlo acá para todo lo que scrollea. */
-  color-scheme: light;
+  /* scrollbar-color se hereda: alcanza con ponerlo acá para todo lo que scrollea. */
   scrollbar-color: var(--borde) var(--papel);
 }
 
@@ -530,7 +509,7 @@ textarea {
 .formulario textarea {
   padding: 6px 8px;
   border: 1px solid var(--borde);
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--campo);
   font-style: italic;
 }
 
@@ -689,7 +668,7 @@ textarea {
   box-sizing: border-box;
   padding: 4px;
   border: 1px solid var(--borde);
-  background: #fbf7ee;
+  background: var(--papel-claro);
   box-shadow: 2px 2px 0 var(--linea);
 }
 
@@ -868,7 +847,7 @@ textarea {
   border: 1px solid var(--tinta);
   border-radius: 0;
   background: var(--papel);
-  box-shadow: 3px 3px 0 rgba(43, 33, 23, 0.18);
+  box-shadow: 3px 3px 0 var(--sombra);
   color: var(--tinta);
   font-family: var(--texto);
   font-size: 15px;
@@ -903,7 +882,7 @@ textarea {
 
 .maplibregl-ctrl-scale {
   border-color: var(--tinta);
-  background: rgba(243, 235, 218, 0.85);
+  background: var(--velo);
   color: var(--tinta);
   font-family: var(--texto);
   font-style: italic;
@@ -911,7 +890,7 @@ textarea {
 }
 
 .maplibregl-ctrl.maplibregl-ctrl-attrib {
-  background: rgba(243, 235, 218, 0.85);
+  background: var(--velo);
   font-family: var(--texto);
   font-style: italic;
 }

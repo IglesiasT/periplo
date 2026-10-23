@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react'
 import { siguientePaso } from './ciclo'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
-import Mapa, { type Encuadre } from './components/Mapa'
+import Mapa, { type Encuadre } from './components/mapa/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
   useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEncuadre, useEpoca, useEstados,
   useFotos, useLogros, useViajes,
 } from './hooks/consultas'
 import { regionesAEncuadrar, resaltarRegiones, resaltarViaje } from './resaltado'
+import { useTema } from './tema/contexto'
 
 export default function App() {
+  const { tema } = useTema()
   const estados = useEstados()
   const viajes = useViajes()
   const fotos = useFotos()
@@ -112,7 +114,10 @@ export default function App() {
         aviso={aviso}
         onAviso={setAviso}
       />
+      {/* Otro tema, otro mapa: el estilo de MapLibre se arma una vez, con los colores del tema. */}
       <Mapa
+        key={tema.id}
+        tema={tema}
         estados={estados.data}
         resaltadas={resaltadas}
         encuadre={encuadre}

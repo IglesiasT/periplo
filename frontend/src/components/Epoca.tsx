@@ -1,4 +1,5 @@
 import { colorEntidad, formatearAnio, nombreEntidad } from '../historia'
+import { useTema } from '../tema/contexto'
 import type { Epoca } from '../types'
 
 interface SelectorProps {
@@ -40,6 +41,7 @@ const REGIONES_A_LA_VISTA = 3
 /** "En 1800 pisaste territorio de X entidades": ocupa el lugar de la leyenda mientras se mira un año. */
 export function EntidadesPisadas({ epoca }: { epoca: Epoca }) {
   const { pisadas } = epoca
+  const { tema } = useTema()
   return (
     <div className="epoca-panel">
       <p className="leyenda-titulo">En {formatearAnio(epoca.anio)}</p>
@@ -54,7 +56,7 @@ export function EntidadesPisadas({ epoca }: { epoca: Epoca }) {
           const resto = nombres.length - REGIONES_A_LA_VISTA
           return (
             <li key={entidad}>
-              <span className="leyenda-color" style={{ background: colorEntidad(entidad, epoca, true) }} />
+              <span className="leyenda-color" style={{ background: colorEntidad(entidad, epoca, true, tema.aguadas) }} />
               <span>
                 {nombreEntidad(entidad, epoca)}
                 <span className="tenue">
