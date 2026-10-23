@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Region, Ruta, Viaje, Visita
+from .models import EntidadPoliticaHistorica, Region, RegionEpoca, Ruta, RutaHistorica, Viaje, Visita
 
 
 @admin.register(Region)
@@ -41,3 +41,24 @@ class RutaAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'viaje', 'longitud_km', 'origen']
     list_filter = ['origen']
     exclude = ['coordenadas']
+
+
+@admin.register(EntidadPoliticaHistorica)
+class EntidadPoliticaHistoricaAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'color']
+    search_fields = ['nombre']
+
+
+@admin.register(RegionEpoca)
+class RegionEpocaAdmin(admin.ModelAdmin):
+    list_display = ['region', 'anio', 'entidad', 'porcentaje_superficie']
+    list_filter = ['anio']
+    search_fields = ['region__nombre', 'region__codigo', 'entidad__nombre']
+    autocomplete_fields = ['region', 'entidad']
+
+
+@admin.register(RutaHistorica)
+class RutaHistoricaAdmin(admin.ModelAdmin):
+    list_display = ['nombre']
+    search_fields = ['nombre']
+    filter_horizontal = ['regiones']

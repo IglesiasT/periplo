@@ -127,3 +127,57 @@ class Foto(models.Model):
 
     def __str__(self):
         return self.archivo.name
+
+
+class EntidadPoliticaHistorica(models.Model):
+    """Imperio, reino, estado o cultura de los snapshots de historical-basemaps.
+    El mismo nombre en distintos años es la misma entidad."""
+
+    nombre = models.CharField(max_length=200, unique=True, help_text='Tal cual viene en historical-basemaps.')
+    color = models.CharField(max_length=7, blank=True, help_text='Hex (#rrggbb) para pintarla en el mapa.')
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = 'entidad política histórica'
+        verbose_name_plural = 'entidades políticas históricas'
+
+    def __str__(self):
+        return self.nombre
+
+
+class RegionEpoca(models.Model):
+    """A qué entidad pertenecía una región en un año con snapshot. Una región que cae entre
+    varias entidades tiene una fila por cada una, con su porcentaje de superficie."""
+
+    region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='epocas')
+    anio = models.IntegerField(help_text='Año del snapshot; los a. C. van en negativo.')
+    entidad = models.ForeignKey(EntidadPoliticaHistorica, on_delete=models.CASCADE, related_name='regiones')
+    porcentaje_superficie = models.FloatField(null=True, blank=True,
+                                              help_text='Vacío si se asignó por centroide.')
+
+    class Meta:
+        ordering = ['anio', 'region', '-porcentaje_superficie']
+        verbose_name = 'región en una época'
+        verbose_name_plural = 'regiones en cada época'
+        constraints = [models.UniqueConstraint(fields=['region', 'anio', 'entidad'], name='region_epoca_unica')]
+        indexes = [models.Index(fields=['anio', 'entidad'])]
+
+    def __str__(self):
+        pct = f' ({self.porcentaje_superficie:.0f}%)' if self.porcentaje_superficie is not None else ''
+        return f'{self.region} en {self.anio}: {self.entidad}{pct}'
+
+
+class RutaHistorica(models.Model):
+    """Ruta de la Seda, Camino del Inca, etc. El progreso se calcula contra las Visita."""
+
+    nombre = models.CharField(max_length=200, unique=True)
+    descripcion = models.TextField(blank=True)
+    regiones = models.ManyToManyField(Region, related_name='rutas_historicas')
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = 'ruta histórica'
+        verbose_name_plural = 'rutas históricas'
+
+    def __str__(self):
+        return self.nombre

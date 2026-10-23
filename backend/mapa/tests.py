@@ -163,6 +163,36 @@ class AnexarTests(SimpleTestCase):
         self.assertTrue(argentina.contains(box(-37, -54.5, -36, -54.2)))  # Georgias del Sur
 
 
+class DescargarHistoriaTests(SimpleTestCase):
+    def test_anio_de_cada_snapshot(self):
+        from .management.commands.descargar_historia import anio_de
+
+        self.assertEqual(anio_de('world_1800.geojson'), 1800)
+        self.assertEqual(anio_de('world_bc500.geojson'), -500)
+        self.assertIsNone(anio_de('places.geojson'))
+
+    def test_normalizar_disuelve_por_nombre_y_descarta_lo_que_no_tiene(self):
+        import geopandas as gpd
+        from shapely.geometry import box
+
+        from .management.commands.descargar_historia import normalizar
+
+        crudo = gpd.GeoDataFrame(
+            {
+                'NAME': ['Spain', 'Spain', 'Viceroyalty of New Spain', None],
+                'SUBJECTO': ['Spain', 'Spain', 'Spain', None],
+            },
+            geometry=[box(-9, 36, 3, 43), box(1, 38, 4, 40), box(-117, 15, -87, 32), box(0, 0, 1, 1)],
+            crs='EPSG:4326',
+        )
+        resultado = normalizar(crudo).set_index('nombre')
+
+        self.assertEqual(sorted(resultado.index), ['Spain', 'Viceroyalty of New Spain'])
+        self.assertTrue(resultado.geometry['Spain'].contains(box(3.5, 38.5, 3.9, 39.5)))  # Baleares
+        self.assertEqual(resultado.at['Spain', 'sujeta_a'], '')
+        self.assertEqual(resultado.at['Viceroyalty of New Spain', 'sujeta_a'], 'Spain')
+
+
 class UtilidadesTests(SimpleTestCase):
     def test_normalizar(self):
         self.assertEqual(normalizar('  Perú '), 'peru')
