@@ -72,6 +72,8 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 ### Fase 1: el mapa que se pinta
 
 1. Descargar **Natural Earth** en sus niveles admin-0 (países) y admin-1 (provincias). Simplificar las geometrías con **mapshaper** para que el navegador las maneje sin problemas.
+   - **Las Islas del Atlántico Sur (Malvinas, Georgias del Sur y Sandwich del Sur) son territorio argentino en todos los niveles del mapa.** Natural Earth las trae como territorios británicos aparte (`FLK`, `SGS`). Al descargar, se integran al país `ARG` y a la provincia de Tierra del Fuego, Antártida e Islas del Atlántico Sur (`AR-V`), igual que en la capa del IGN.
+   - No usar el archivo "punto de vista argentino" de Natural Earth (`ne_10m_admin_0_countries_arg`): tiene errores (le agrega Barbados a Uruguay) y cambia otras disputas ajenas al proyecto.
 2. Escribir un management command que parsee esos GeoJSON y cargue las `Region`, con su jerarquía y el área precalculada.
 3. Armar el mapa en MapLibre con colores por estado:
    - Gris: no visitado ("niebla de guerra").

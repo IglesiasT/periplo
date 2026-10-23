@@ -128,6 +128,30 @@ class PlanificarVisitasTests(SimpleTestCase):
         self.assertEqual(self.planificar([], [lugar]), ({(None, 'AR-B'): True}, []))
 
 
+class AnexarTests(SimpleTestCase):
+    def test_las_islas_pasan_a_ser_parte_de_argentina(self):
+        import geopandas as gpd
+        from shapely.geometry import box
+
+        from .management.commands.descargar_natural_earth import normalizar_paises
+
+        paises = gpd.GeoDataFrame(
+            {
+                'ADM0_A3': ['ARG', 'FLK', 'SGS', 'CHL'],
+                'NAME_ES': ['Argentina', 'Islas Malvinas', 'Georgias', 'Chile'],
+                'CONTINENT': ['South America'] * 4,
+            },
+            geometry=[box(-70, -55, -55, -22), box(-61, -53, -57, -51), box(-38, -55, -26, -54), box(-75, -56, -70, -17)],
+            crs='EPSG:4326',
+        )
+        resultado = normalizar_paises(paises)
+
+        self.assertEqual(sorted(resultado['codigo']), ['ARG', 'CHL'])
+        argentina = resultado.set_index('codigo').geometry['ARG']
+        self.assertTrue(argentina.contains(box(-60, -52, -59, -51.5)))   # Malvinas
+        self.assertTrue(argentina.contains(box(-37, -54.5, -36, -54.2)))  # Georgias del Sur
+
+
 class UtilidadesTests(SimpleTestCase):
     def test_normalizar(self):
         self.assertEqual(normalizar('  Perú '), 'peru')

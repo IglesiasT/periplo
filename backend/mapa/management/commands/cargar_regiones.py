@@ -13,6 +13,7 @@ import geopandas as gpd
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import ProtectedError
 
 from mapa.models import Region
 
@@ -33,7 +34,7 @@ def leer_con_area(path: Path) -> gpd.GeoDataFrame:
 
 
 class Command(BaseCommand):
-    help = 'Carga las regiones (países y provincias) desde los GeoJSON de Natural Earth.'
+    help = 'Carga las regiones (países, provincias y departamentos) desde los GeoJSON de data/raw/.'
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -65,10 +66,25 @@ class Command(BaseCommand):
                 for f in departamentos.itertuples()
             ])
 
+        # Regiones que ya no están en los archivos (por ejemplo FLK y SGS, ahora parte de ARG): se borran.
+        self.borrar_obsoletas(Region.Nivel.PAIS, set(paises['codigo']))
+        self.borrar_obsoletas(Region.Nivel.PROVINCIA, set(provincias['codigo']))
+        if len(departamentos):
+            self.borrar_obsoletas(Region.Nivel.DEPARTAMENTO, set(departamentos['codigo']))
+
         self.stdout.write(self.style.SUCCESS(
             f'{len(paises)} países, {len(provincias)} provincias y {len(departamentos)} departamentos cargados '
             f'({Region.objects.count()} regiones en total).'
         ))
+
+    def borrar_obsoletas(self, nivel: str, vigentes: set[str]):
+        for region in Region.objects.filter(nivel=nivel).exclude(codigo__in=vigentes):
+            try:
+                region.delete()  # en cascada con sus subregiones
+                self.stdout.write(f'Borrada {region}: ya no está en los datos.')
+            except ProtectedError:
+                self.stdout.write(self.style.WARNING(
+                    f'{region} ya no está en los datos pero tiene visitas: no se borró. Reasignalas desde el admin.'))
 
     def upsert(self, regiones: list[Region]):
         # Un solo INSERT ... ON CONFLICT(codigo) DO UPDATE en lugar de miles de consultas.

@@ -60,7 +60,7 @@ Desde `backend/`:
 .venv\Scripts\python manage.py migrate
 .venv\Scripts\python manage.py descargar_natural_earth   # baja Natural Earth a data/raw/ (~20 MB)
 .venv\Scripts\python manage.py descargar_departamentos_ign  # baja los departamentos del IGN (~140 MB)
-.venv\Scripts\python manage.py cargar_regiones           # 258 países, 4596 provincias y 529 departamentos, con su área
+.venv\Scripts\python manage.py cargar_regiones           # 256 países, 4594 provincias y 529 departamentos, con su área
 .venv\Scripts\python manage.py sincronizar_notion        # viajes y visitas desde Notion (ver abajo)
 .venv\Scripts\python manage.py createsuperuser           # para cargar viajes desde /admin/
 ```
@@ -135,6 +135,8 @@ Opciones: `--simplificar-paises 15%`, `--simplificar-provincias 15%` (el default
 3. Simplifica al 1% con `--simplificar` como opción, lo que da unos 1,3 MB.
 
 Incluye Antártida Argentina e Islas del Atlántico Sur tal como las publica el IGN.
+
+**Islas del Atlántico Sur:** Malvinas, Georgias del Sur y Sandwich del Sur son territorio argentino en todos los niveles del mapa. Natural Earth las trae como territorios británicos aparte (`FLK` y `SGS`). `descargar_natural_earth` las integra al país `ARG` y a la provincia de Tierra del Fuego (`AR-V`). Si `FLK` o `SGS` quedaran en la base, `cargar_regiones` los borra.
 
 `cargar_regiones` lee los GeoJSON completos, calcula el área en la proyección de áreas iguales Mollweide y hace upsert por `codigo`, así que se puede correr varias veces. Si existe el GeoJSON de departamentos, los carga también.
 

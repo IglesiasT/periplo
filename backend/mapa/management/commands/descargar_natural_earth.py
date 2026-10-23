@@ -11,6 +11,8 @@ Uso:
     python manage.py descargar_natural_earth --simplificar-provincias 15% --forzar-descarga
 """
 import geopandas as gpd
+import pandas as pd
+import shapely
 from django.core.management.base import BaseCommand, CommandError
 
 from mapa.geodatos import GEO_DIR, RAW_DIR, ErrorGeodatos, descargar, simplificar
@@ -21,13 +23,36 @@ ZIP_PROVINCIAS = 'ne_10m_admin_1_states_provinces.zip'
 
 PATRON_ISO_3166_2 = r'^[A-Z]{2}-[A-Z0-9]+$'
 
+# Islas del Atlántico Sur: Natural Earth las trae como territorios británicos aparte (FLK y SGS).
+# En este mapa son argentinas: se integran al país ARG y a la provincia de Tierra del Fuego,
+# Antártida e Islas del Atlántico Sur (AR-V), igual que en la capa de departamentos del IGN.
+# No se usa la versión "punto de vista argentino" de Natural Earth porque trae errores
+# (le agrega Barbados a Uruguay) y cambia otras disputas ajenas a este proyecto.
+ISLAS_ATLANTICO_SUR = ['FLK', 'SGS']
+ARGENTINA = 'ARG'
+TIERRA_DEL_FUEGO = 'AR-V'
+
+
+def anexar(gdf: gpd.GeoDataFrame, destino: str, origen: pd.Series) -> gpd.GeoDataFrame:
+    """Une las geometrías marcadas en `origen` a la región `destino` y las saca como regiones propias."""
+    if not origen.any():
+        return gdf
+    gdf = gdf.copy()
+    fila = gdf.index[gdf['codigo'] == destino]
+    if len(fila) != 1:
+        raise CommandError(f'No se encontró la región {destino} para anexarle territorio.')
+    union = shapely.union_all([gdf.at[fila[0], 'geometry'], *gdf.loc[origen, 'geometry']])
+    gdf.loc[fila, 'geometry'] = gpd.GeoSeries([union], index=fila, crs=gdf.crs)
+    return gdf[~origen]
+
 
 def normalizar_paises(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     # ADM0_A3 es único y es el que usan las provincias para referir a su país.
     # (ISO_A3 no sirve: Francia y Noruega figuran como -99.)
-    return gdf.rename(columns={'ADM0_A3': 'codigo', 'NAME_ES': 'nombre', 'CONTINENT': 'continente'})[
+    gdf = gdf.rename(columns={'ADM0_A3': 'codigo', 'NAME_ES': 'nombre', 'CONTINENT': 'continente'})[
         ['codigo', 'nombre', 'continente', 'geometry']
     ]
+    return anexar(gdf, ARGENTINA, gdf['codigo'].isin(ISLAS_ATLANTICO_SUR))
 
 
 def normalizar_provincias(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -35,7 +60,8 @@ def normalizar_provincias(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     iso = gdf['iso_3166_2']
     iso_usable = iso.str.match(PATRON_ISO_3166_2, na=False) & ~iso.duplicated(keep=False)
     gdf = gdf.assign(codigo=iso.where(iso_usable, gdf['adm1_code']))
-    return gdf.rename(columns={'name': 'nombre', 'adm0_a3': 'padre'})[['codigo', 'nombre', 'padre', 'geometry']]
+    gdf = gdf.rename(columns={'name': 'nombre', 'adm0_a3': 'padre'})[['codigo', 'nombre', 'padre', 'geometry']]
+    return anexar(gdf, TIERRA_DEL_FUEGO, gdf['padre'].isin(ISLAS_ATLANTICO_SUR))
 
 
 class Command(BaseCommand):
