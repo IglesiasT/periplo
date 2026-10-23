@@ -3,7 +3,7 @@ import * as maplibregl from 'maplibre-gl'
 import type { ExpressionSpecification, StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import { obtenerVisitas } from '../api'
+import { obtenerEstados } from '../api'
 import type { TipoPresencia } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
@@ -87,13 +87,10 @@ export default function Mapa() {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
 
     map.on('load', async () => {
-      const visitas = await obtenerVisitas()
+      const estados = await obtenerEstados()
       if (desmontado) return
-      for (const visita of visitas) {
-        map.setFeatureState(
-          { source: 'provincias', id: visita.codigo },
-          { presencia: visita.tipo_presencia },
-        )
+      for (const [codigo, estado] of Object.entries(estados)) {
+        map.setFeatureState({ source: 'provincias', id: codigo }, { presencia: estado })
       }
     })
 
