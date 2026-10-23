@@ -1,5 +1,6 @@
 """
-Carga países, provincias y departamentos en el modelo Region, con su jerarquía y el área precalculada.
+Carga países, provincias y departamentos en el modelo Region, con su jerarquía, el área precalculada
+y el recuadro al que se acerca el mapa al elegirlas.
 
 Lee los GeoJSON completos que deja `descargar_natural_earth` en data/raw/.
 Se puede correr varias veces: actualiza las regiones existentes por `codigo`.
@@ -15,19 +16,21 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import ProtectedError
 
-from mapa.geodatos import CRS_AREAS_IGUALES
+from mapa.geodatos import CRS_AREAS_IGUALES, encuadre
 from mapa.models import Region
 
 RAW_DIR = Path(settings.BASE_DIR) / 'data' / 'raw'
 
 
-def leer_con_area(path: Path) -> gpd.GeoDataFrame:
+def leer_capa(path: Path) -> gpd.GeoDataFrame:
+    """El GeoJSON con dos columnas calculadas: `area_km2` y `encuadre`."""
     if not path.exists():
         raise CommandError(f'No existe {path}. Corré antes `python manage.py descargar_natural_earth`.')
     gdf = gpd.read_file(path)
     # El sector antártico del IGN llega exactamente al polo, donde la proyección da NaN: se recorta a -89,99°.
     geometrias = gdf.geometry.clip_by_rect(-180, -89.99, 180, 90)
     gdf['area_km2'] = geometrias.to_crs(CRS_AREAS_IGUALES).area / 1_000_000
+    gdf['encuadre'] = [[round(x, 3) for x in encuadre(g)] for g in gdf.geometry]
     return gdf
 
 
@@ -36,12 +39,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **opts):
-        paises = leer_con_area(RAW_DIR / 'paises.geojson')
-        provincias = leer_con_area(RAW_DIR / 'provincias.geojson')
+        paises = leer_capa(RAW_DIR / 'paises.geojson')
+        provincias = leer_capa(RAW_DIR / 'provincias.geojson')
 
         self.upsert([
             Region(nivel=Region.Nivel.PAIS, codigo=f.codigo, nombre=f.nombre,
-                   continente=f.continente, area_km2=round(f.area_km2, 1))
+                   continente=f.continente, area_km2=round(f.area_km2, 1), encuadre=f.encuadre)
             for f in paises.itertuples()
         ])
 
@@ -49,18 +52,19 @@ class Command(BaseCommand):
         id_pais = dict(Region.objects.filter(nivel=Region.Nivel.PAIS).values_list('codigo', 'id'))
         self.upsert([
             Region(nivel=Region.Nivel.PROVINCIA, codigo=f.codigo, nombre=f.nombre,
-                   padre_id=id_pais[f.padre], area_km2=round(f.area_km2, 1))
+                   padre_id=id_pais[f.padre], area_km2=round(f.area_km2, 1), encuadre=f.encuadre)
             for f in provincias.itertuples()
         ])
 
         # Departamentos (IGN, solo Argentina): opcionales, si ya se corrió descargar_departamentos_ign.
         departamentos = []
         if (RAW_DIR / 'departamentos.geojson').exists():
-            departamentos = leer_con_area(RAW_DIR / 'departamentos.geojson')
+            departamentos = leer_capa(RAW_DIR / 'departamentos.geojson')
             id_provincia = dict(Region.objects.filter(nivel=Region.Nivel.PROVINCIA).values_list('codigo', 'id'))
             self.upsert([
                 Region(nivel=Region.Nivel.DEPARTAMENTO, codigo=f.codigo, nombre=f.nombre,
-                       padre_id=id_provincia[f.padre], area_km2=round(f.area_km2, 1))
+                       padre_id=id_provincia[f.padre], area_km2=round(f.area_km2, 1),
+                       encuadre=f.encuadre)
                 for f in departamentos.itertuples()
             ])
 
@@ -92,5 +96,5 @@ class Command(BaseCommand):
             batch_size=500,
             update_conflicts=True,
             unique_fields=['codigo'],
-            update_fields=['nivel', 'nombre', 'padre', 'area_km2', 'continente'],
+            update_fields=['nivel', 'nombre', 'padre', 'area_km2', 'continente', 'encuadre'],
         )

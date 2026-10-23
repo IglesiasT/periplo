@@ -47,6 +47,12 @@ export const guardarFicha = (codigo: string, texto: string) =>
   pedir<Ficha | undefined>('PUT', `${urlRegion(codigo)}ficha/`, { texto })
 export const listarFichas = () => pedir<FichaResumen[]>('GET', '/api/fichas/')
 
+/** Recuadro [oeste, sur, este, norte] que contiene a esas regiones; null si ninguna existe. */
+export function obtenerEncuadre(codigos: string[]) {
+  const parametros = new URLSearchParams(codigos.map((codigo) => ['codigo', codigo]))
+  return pedir<{ limites: [number, number, number, number] | null }>('GET', `/api/encuadre/?${parametros}`)
+}
+
 export const listarViajes = () => pedir<Viaje[]>('GET', '/api/viajes/')
 export const crearViaje = (datos: DatosViaje) => pedir<Viaje>('POST', '/api/viajes/', datos)
 export const actualizarViaje = (id: number, datos: Partial<DatosViaje>) =>

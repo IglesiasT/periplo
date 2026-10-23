@@ -18,6 +18,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 
 **El diario (Fase 2)**, todo desde el panel lateral:
 - **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas.
+- **Elegir un viaje, un logro o una ficha** desde el panel resalta sus regiones en el mapa y lo acerca a ellas. Las regiones elegidas se ven en cualquier zoom; de lejos también se marca el país o la provincia que las contiene. Abrir una ficha haciendo click en el mapa no lo mueve.
 - **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: estadía → de paso → tránsito → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
 - **Fotos:**
   - subir JPG, PNG o WebP;
@@ -139,6 +140,11 @@ Vite reenvía las llamadas a `/api` hacia Django (ver `frontend/vite.config.ts`)
 ```powershell
 cd backend
 .venv\Scripts\python manage.py test mapa
+```
+
+```powershell
+cd frontend
+npm test   # vitest: qué regiones se resaltan al elegir un viaje, un logro o una ficha
 ```
 
 ## Datos geográficos

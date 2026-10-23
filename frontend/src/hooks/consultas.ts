@@ -42,6 +42,15 @@ export const useRegion = (codigo: string | null) =>
     enabled: codigo !== null,
   })
 
+/** Fuera de CLAVES a propósito: el recuadro de una región no cambia con las visitas, no hace falta invalidarlo. */
+export const useEncuadre = (codigos: string[] | null) =>
+  useQuery({
+    queryKey: ['encuadre', ...(codigos ?? [])],
+    queryFn: () => api.obtenerEncuadre(codigos!),
+    enabled: Boolean(codigos?.length),
+    staleTime: Infinity,
+  })
+
 export const useFichas = () => useQuery({ queryKey: CLAVES.fichas, queryFn: api.listarFichas })
 
 export function useGuardarFicha() {

@@ -165,6 +165,57 @@ class AnexarTests(SimpleTestCase):
         self.assertTrue(argentina.contains(box(-37, -54.5, -36, -54.2)))  # Georgias del Sur
 
 
+class EncuadreTests(SimpleTestCase):
+    def test_una_sola_parte_es_su_recuadro(self):
+        from shapely.geometry import box
+
+        from .geodatos import encuadre
+
+        self.assertEqual(encuadre(box(-70, -55, -55, -22)), [-70, -55, -55, -22])
+
+    def test_suma_las_partes_cercanas_encadenadas_y_deja_afuera_las_lejanas(self):
+        from shapely.geometry import MultiPolygon, box
+
+        from .geodatos import encuadre
+
+        continente = box(-70, -52, -55, -22)
+        tierra_del_fuego = box(-68, -55, -64, -52.5)  # a medio grado del continente
+        encadenada = box(-66, -61, -65, -59)  # a 7° del continente pero a 4° de Tierra del Fuego
+        isla_lejana = box(-110, -28, -109, -27)  # como la Isla de Pascua para Chile
+        recuadro = encuadre(MultiPolygon([continente, tierra_del_fuego, encadenada, isla_lejana]))
+        self.assertEqual(recuadro, [-70, -61, -55, -22])
+
+    def test_si_cruza_el_antimeridiano_queda_la_parte_mas_grande(self):
+        from shapely.geometry import MultiPolygon, box
+
+        from .geodatos import encuadre
+
+        # Como Rusia: el continente hasta 180° y Chukotka del otro lado, a -179°.
+        rusia = MultiPolygon([box(30, 45, 180, 75), box(-180, 64, -170, 70)])
+        self.assertEqual(encuadre(rusia, distancia=500), [30, 45, 180, 75])
+
+    def test_unir_recuadros(self):
+        from .geodatos import unir_recuadros
+
+        self.assertEqual(unir_recuadros([[-70, -40, -66, -32], [-72, -34, -70, -32]]), [-72, -40, -66, -32])
+        self.assertIsNone(unir_recuadros([]))
+
+
+class EncuadreApiTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        Region.objects.create(nivel='provincia', codigo='AR-M', nombre='Mendoza', encuadre=[-70.6, -37.6, -66.5, -32])
+        Region.objects.create(nivel='provincia', codigo='CL-RM', nombre='Santiago', encuadre=[-71.7, -34.3, -69.8, -32.9])
+        Region.objects.create(nivel='provincia', codigo='AR-X', nombre='Sin calcular')
+
+    def test_une_las_regiones_pedidas_e_ignora_las_desconocidas(self):
+        respuesta = self.client.get('/api/encuadre/', {'codigo': ['AR-M', 'CL-RM', 'XX-NADA', 'AR-X']})
+        self.assertEqual(respuesta.data, {'limites': [-71.7, -37.6, -66.5, -32]})
+
+    def test_sin_regiones_conocidas(self):
+        self.assertEqual(self.client.get('/api/encuadre/', {'codigo': 'XX-NADA'}).data, {'limites': None})
+
+
 class NormalizarProvinciasTests(SimpleTestCase):
     def test_un_fragmento_sin_nombre_no_queda_como_nan(self):
         import geopandas as gpd

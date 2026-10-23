@@ -8,6 +8,7 @@ import fuenteVersalitas from '@fontsource/im-fell-english-sc/files/im-fell-engli
 import fuenteCursiva from '@fontsource/im-fell-english/files/im-fell-english-latin-400-italic.woff2?url'
 import { formatearFecha } from '../etiquetas'
 import { colorEntidad, nombreEntidad } from '../historia'
+import type { Resaltadas } from '../resaltado'
 import type { Epoca, EstadoRegion, EstadosRegiones, Foto } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
@@ -52,7 +53,15 @@ const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
 const SOURCES = ['paises', 'provincias', 'departamentos'] as const
 
 const ESTADO: ExpressionSpecification = ['coalesce', ['feature-state', 'estado'], 'ninguno']
-const RESALTADA: ExpressionSpecification = ['boolean', ['feature-state', 'resaltada'], false]
+
+// Feature-state "resaltada": 'directa' (la región elegida) o 'contiene' (su país o provincia); ver resaltado.ts.
+const RESALTADA: ExpressionSpecification = ['coalesce', ['feature-state', 'resaltada'], 'ninguna']
+const DIRECTA: ExpressionSpecification = ['==', RESALTADA, 'directa']
+const ALGUNA: ExpressionSpecification = ['!=', RESALTADA, 'ninguna']
+
+// Al elegir un viaje, un logro o una ficha, el mapa se acerca a sus regiones, hasta este zoom como mucho
+// (un departamento chico no queda pegado a los bordes).
+const ZOOM_MAXIMO_ENCUADRE = 8
 
 // Provincias con un nivel más detallado debajo (por ahora, solo las argentinas del IGN).
 const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['==', ['get', 'padre'], 'ARG']
@@ -295,31 +304,39 @@ const STYLE: StyleSpecification = {
       },
     },
 
-    // Contorno claro de las regiones del viaje elegido en el panel (feature-state "resaltada").
-    {
-      id: 'departamentos-resaltada', type: 'line', source: 'departamentos',
-      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
-      paint: { 'line-color': COLORES.resaltado, 'line-width': 2, 'line-opacity': ['case', RESALTADA, 1, 0] },
-    },
-    {
-      id: 'provincias-resaltada', type: 'line', source: 'provincias',
-      minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-      paint: {
-        'line-color': COLORES.resaltado,
-        'line-width': 2,
-        'line-opacity': [
-          'interpolate', ['linear'], ['zoom'],
-          ZOOM_DEPARTAMENTOS - FUNDIDO, ['case', RESALTADA, 1, 0],
-          ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', RESALTADA, ['case', TIENE_DEPARTAMENTOS, 0, 1], 0],
-        ],
-      },
-    },
-    {
-      id: 'paises-resaltada', type: 'line', source: 'paises',
-      maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-      paint: { 'line-color': COLORES.resaltado, 'line-width': 2, 'line-opacity': ['case', RESALTADA, 1, 0] },
-    },
+    // Contorno de lo elegido en el panel (feature-state "resaltada"): las directas en cualquier zoom,
+    // las que contienen a una elegida solo mientras se ven a ese nivel. Sin minzoom ni maxzoom a propósito.
+    ...capasResaltado('departamentos', (f) => ['case', DIRECTA, f, 0]),
+    ...capasResaltado('provincias', (f) => [
+      'interpolate', ['linear'], ['zoom'],
+      ZOOM_PROVINCIAS - FUNDIDO, ['case', DIRECTA, f, 0],
+      ZOOM_PROVINCIAS + FUNDIDO, ['case', ALGUNA, f, 0],
+      ZOOM_DEPARTAMENTOS - FUNDIDO, ['case', ALGUNA, f, 0],
+      // Con departamentos, la provincia que los contiene deja el contorno a ellos.
+      ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', DIRECTA, f, ALGUNA, ['case', TIENE_DEPARTAMENTOS, 0, f], 0],
+    ]),
+    ...capasResaltado('paises', (f) => [
+      'interpolate', ['linear'], ['zoom'],
+      ZOOM_PROVINCIAS - FUNDIDO, ['case', ALGUNA, f, 0],
+      ZOOM_PROVINCIAS + FUNDIDO, ['case', DIRECTA, f, 0],
+    ]),
   ],
+}
+
+// Resaltado de una source: un halo de papel debajo y el trazo de tinta encima, para que se lea sobre
+// cualquier relleno. `opacidad(f)` arma la expresión con f como opacidad máxima: el zoom solo puede ir
+// en el interpolate de más afuera, así que el halo no puede ser la opacidad del trazo multiplicada.
+function capasResaltado(source: (typeof SOURCES)[number], opacidad: (f: number) => Valor): LayerSpecification[] {
+  return [
+    {
+      id: `${source}-resaltada-halo`, type: 'line', source, layout: { 'line-join': 'round' },
+      paint: { 'line-color': COLORES.papel, 'line-width': 6, 'line-blur': 1.5, 'line-opacity': opacidad(0.85) },
+    },
+    {
+      id: `${source}-resaltada`, type: 'line', source, layout: { 'line-join': 'round' },
+      paint: { 'line-color': COLORES.resaltado, 'line-width': 2, 'line-opacity': opacidad(1) },
+    },
+  ] as LayerSpecification[]
 }
 
 // La vista se guarda en la URL (#zoom/lat/lon): al recargar no se pierde y se puede compartir un enlace a una zona.
@@ -353,8 +370,10 @@ function aplicarFeatureState(map: maplibregl.Map, codigo: string, estado: Record
 interface Props {
   /** Estado de cada región visitada o deseada (de /api/estados/). */
   estados: EstadosRegiones | undefined
-  /** Códigos de las regiones a destacar con un contorno claro (las del viaje elegido). */
-  resaltadas: Set<string>
+  /** Regiones a destacar con un contorno (las del viaje, el logro o la ficha elegidos) y cómo (ver resaltado.ts). */
+  resaltadas: Resaltadas
+  /** Adónde acercar el mapa. Cada valor nuevo lo mueve una vez, aunque los límites sean los mismos. */
+  encuadre?: Encuadre
   /** Si está, el mapa está en modo edición: cada click en una región la manda acá. */
   alClickearRegion?: (codigo: string) => void
   fotos: Foto[] | undefined
@@ -364,6 +383,23 @@ interface Props {
   epoca?: Epoca
   /** Controles superpuestos al mapa (el selector de época y su panel). */
   children?: ReactNode
+}
+
+export interface Encuadre {
+  /** [oeste, sur, este, norte], en grados. */
+  limites: [number, number, number, number]
+  /** Distingue dos pedidos del mismo lugar: volver a elegir el mismo viaje vuelve a acercar. */
+  vez: number
+}
+
+// Margen alrededor de lo encuadrado: deja lugar al selector de época arriba y a los controles.
+// Acotado al tamaño del mapa, porque con un margen más grande que el lienzo MapLibre no se mueve.
+function margenEncuadre(map: maplibregl.Map) {
+  const { clientWidth: ancho, clientHeight: alto } = map.getContainer()
+  return {
+    top: Math.min(90, alto * 0.2), bottom: Math.min(40, alto * 0.1),
+    left: Math.min(40, ancho * 0.1), right: Math.min(60, ancho * 0.1),
+  }
 }
 
 const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
@@ -391,7 +427,7 @@ function escapar(texto: string): string {
 }
 
 export default function Mapa({
-  estados, resaltadas, alClickearRegion, alElegirRegion, fotos, epoca, children,
+  estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fotos, epoca, children,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -409,12 +445,12 @@ export default function Mapa({
   const [listo, setListo] = useState(false)
   // Lo que ya está aplicado en el mapa actual, para calcular la diferencia en cada cambio.
   const estadosAplicados = useRef<EstadosRegiones>({})
-  const resaltadasAplicadas = useRef<Set<string>>(new Set())
+  const resaltadasAplicadas = useRef<Resaltadas>(new Map())
 
   useEffect(() => {
     // Mapa nuevo (StrictMode monta dos veces en desarrollo): todavía no tiene nada pintado.
     estadosAplicados.current = {}
-    resaltadasAplicadas.current = new Set()
+    resaltadasAplicadas.current = new Map()
     const map = new maplibregl.Map({
       container: contenedor.current!,
       style: STYLE,
@@ -512,12 +548,23 @@ export default function Mapa({
   useEffect(() => {
     const map = mapRef.current
     if (!listo || !map) return
-    for (const codigo of resaltadasAplicadas.current) {
-      if (!resaltadas.has(codigo)) aplicarFeatureState(map, codigo, { resaltada: false })
+    for (const codigo of resaltadasAplicadas.current.keys()) {
+      if (!resaltadas.has(codigo)) aplicarFeatureState(map, codigo, { resaltada: null })
     }
-    for (const codigo of resaltadas) aplicarFeatureState(map, codigo, { resaltada: true })
+    for (const [codigo, resaltado] of resaltadas) {
+      if (resaltadasAplicadas.current.get(codigo) !== resaltado) aplicarFeatureState(map, codigo, { resaltada: resaltado })
+    }
     resaltadasAplicadas.current = resaltadas
   }, [resaltadas, listo])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map || !encuadre) return
+    const [oeste, sur, este, norte] = encuadre.limites
+    map.fitBounds([[oeste, sur], [este, norte]], {
+      padding: margenEncuadre(map), maxZoom: ZOOM_MAXIMO_ENCUADRE, duration: 1200,
+    })
+  }, [encuadre, listo])
 
   useEffect(() => {
     const map = mapRef.current

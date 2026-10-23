@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from .epocas import anios_disponibles, calcular_epoca, linea_historica
 from .estadisticas import calcular_estadisticas
+from .geodatos import unir_recuadros
 from .logros import calcular_logros
 from .models import FichaRegion, Region, Visita
 
@@ -111,6 +112,15 @@ def ficha(request, codigo):
         return Response(status=204)
     ficha, _ = FichaRegion.objects.update_or_create(region=region, defaults={'texto': texto})
     return Response(datos_ficha(ficha))
+
+
+@api_view(['GET'])
+def encuadre(request):
+    """{limites: [oeste, sur, este, norte]} que contiene a todas las regiones ?codigo=...&codigo=...
+    Las que no existen se ignoran; si no queda ninguna, `limites` es null."""
+    recuadros = (Region.objects.filter(codigo__in=request.query_params.getlist('codigo'), encuadre__isnull=False)
+                 .values_list('encuadre', flat=True))
+    return Response({'limites': unir_recuadros(recuadros)})
 
 
 @api_view(['GET'])

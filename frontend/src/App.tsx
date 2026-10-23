@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { siguientePaso } from './ciclo'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
-import Mapa from './components/Mapa'
+import Mapa, { type Encuadre } from './components/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
-  useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEpoca, useEstados, useFotos,
-  useLogros, useViajes,
+  useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEncuadre, useEpoca, useEstados,
+  useFotos, useLogros, useViajes,
 } from './hooks/consultas'
+import { regionesAEncuadrar, resaltarRegiones, resaltarViaje } from './resaltado'
 
 export default function App() {
   const estados = useEstados()
@@ -31,19 +32,44 @@ export default function App() {
   const logro = seleccion === 'logros' ? logros.data?.find((l) => l.id === logroElegido) : undefined
   const regionElegida = typeof seleccion === 'object' && seleccion !== null ? seleccion.region : null
 
-  // Regiones del viaje elegido y las que las contienen: así se ve resaltado en cualquier nivel de zoom.
-  // Con un logro desplegado, las regiones de todos sus objetivos (cumplidos o no). Con una ficha abierta, su región.
+  // Las regiones del viaje elegido (y las que las contienen, para verlo de lejos); con un logro desplegado,
+  // las de todos sus objetivos, cumplidos o no; con una ficha abierta, su región.
   const resaltadas = useMemo(() => {
-    if (logro) return new Set(logro.objetivos.flatMap((o) => o.regiones))
-    if (regionElegida) return new Set([regionElegida])
-    return new Set(viaje?.visitas.flatMap((v) => [v.region, ...v.region_ancestros]) ?? [])
+    if (logro) return resaltarRegiones(logro.objetivos.flatMap((o) => o.regiones))
+    if (regionElegida) return resaltarRegiones([regionElegida])
+    return resaltarViaje(viaje?.visitas ?? [])
   }, [viaje, logro, regionElegida])
 
-  const seleccionar = (nueva: Seleccion) => {
+  // Adónde acercar el mapa. Se fija al elegir algo, no se recalcula con cada cambio: marcar regiones en
+  // modo edición cambia las visitas del viaje y no tiene que mover el mapa.
+  const [destino, setDestino] = useState<{ codigos: string[]; vez: number } | null>(null)
+  const irA = (codigos: string[]) => {
+    if (codigos.length) setDestino({ codigos, vez: Date.now() })
+  }
+  const limites = useEncuadre(destino?.codigos ?? null).data?.limites
+  const encuadre = useMemo<Encuadre | undefined>(
+    () => (limites && destino ? { limites, vez: destino.vez } : undefined),
+    [limites, destino],
+  )
+
+  /** `acercar: false` para lo que se elige haciendo click en el mapa: ya se está mirando ahí. */
+  const seleccionar = (nueva: Seleccion, { acercar = true } = {}) => {
     setSeleccion(nueva)
     setLogroElegido(null)
     setModo('ninguno')
     setAviso(null)
+    if (!acercar) return
+    if (typeof nueva === 'number') {
+      irA(regionesAEncuadrar(resaltarViaje(viajes.data?.find((v) => v.id === nueva)?.visitas ?? [])))
+    } else if (typeof nueva === 'object' && nueva !== null) {
+      irA([nueva.region])
+    }
+  }
+
+  const elegirLogro = (id: string | null) => {
+    setLogroElegido(id)
+    const elegido = logros.data?.find((l) => l.id === id)
+    if (elegido) irA(elegido.objetivos.flatMap((o) => o.regiones))
   }
 
   const cambiarModo = (nuevo: Modo) => {
@@ -80,7 +106,7 @@ export default function App() {
         seleccion={seleccion}
         onSeleccionar={seleccionar}
         logroElegido={logroElegido}
-        onElegirLogro={setLogroElegido}
+        onElegirLogro={elegirLogro}
         modo={modo}
         onCambiarModo={cambiarModo}
         aviso={aviso}
@@ -89,8 +115,9 @@ export default function App() {
       <Mapa
         estados={estados.data}
         resaltadas={resaltadas}
+        encuadre={encuadre}
         alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
-        alElegirRegion={(codigo) => seleccionar({ region: codigo })}
+        alElegirRegion={(codigo) => seleccionar({ region: codigo }, { acercar: false })}
         fotos={fotos.data}
         epoca={epoca}
       >

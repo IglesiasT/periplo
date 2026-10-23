@@ -20,6 +20,8 @@ class Region(models.Model):
     padre = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='hijos')
     area_km2 = models.FloatField(null=True, blank=True, help_text='Calculada en una proyección de áreas iguales.')
     continente = models.CharField(max_length=40, blank=True, help_text='Solo en países (Natural Earth).')
+    # Adónde acercar el mapa al elegirla; lo calcula cargar_regiones (ver geodatos.encuadre).
+    encuadre = models.JSONField(null=True, blank=True, help_text='[oeste, sur, este, norte] en grados.')
 
     objects = RegionManager()
 

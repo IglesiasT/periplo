@@ -33,6 +33,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `padre`: FK a `Region`, nullable
   - `area_km2`: precalculada en una proyección de áreas iguales
   - `continente`: solo en países, viene de Natural Earth
+  - `encuadre`: recuadro `[oeste, sur, este, norte]` al que se acerca el mapa al elegirla. Toma la parte más grande y las que están a menos de 5° encadenadas, para dejar afuera territorios lejanos (la Guayana de Francia, la Isla de Pascua de Chile)
 - **`Viaje`**
   - `nombre`, `fecha_inicio`, `fecha_fin`
   - `estado`: deseo, investigando, en curso o hecho; refleja el `Status` de Notion. Es descriptivo: lo que se pinta lo decide `Visita.realizada`
