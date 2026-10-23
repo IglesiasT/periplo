@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
-import type { Foto, Viaje } from '../types'
+import type { Foto, Logro, Viaje } from '../types'
 import Estadisticas from './Estadisticas'
 import FotosLista from './FotosLista'
+import { LogrosLista, LogrosResumen } from './Logros'
 import RutasLista from './RutasLista'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
 
-export type Seleccion = number | 'nuevo' | null
+export type Seleccion = number | 'nuevo' | 'logros' | null
 
 type Filtro = 'todos' | 'hechos' | 'planes'
 
@@ -20,10 +21,14 @@ const FILTROS: Record<Filtro, (viaje: Viaje) => boolean> = {
 interface Props {
   viajes: Viaje[] | undefined
   fotos: Foto[] | undefined
+  logros: Logro[] | undefined
   cargando: boolean
   error: Error | null
   seleccion: Seleccion
   onSeleccionar: (seleccion: Seleccion) => void
+  /** Logro desplegado en la vista de logros: sus regiones se resaltan en el mapa. */
+  logroElegido: string | null
+  onElegirLogro: (id: string | null) => void
   /** Qué hacen los clicks en el mapa: nada especial, marcar regiones o dibujar una ruta del viaje elegido. */
   modo: Modo
   onCambiarModo: (modo: Modo) => void
@@ -35,7 +40,8 @@ interface Props {
 export type Modo = 'ninguno' | 'marcar' | 'dibujar'
 
 export default function Panel({
-  viajes, fotos, cargando, error, seleccion, onSeleccionar, modo, onCambiarModo, aviso, onAviso,
+  viajes, fotos, logros, cargando, error, seleccion, onSeleccionar, logroElegido, onElegirLogro,
+  modo, onCambiarModo, aviso, onAviso,
 }: Props) {
   const alternar = (m: Modo) => onCambiarModo(modo === m ? 'ninguno' : m)
   const [filtro, setFiltro] = useState<Filtro>('todos')
@@ -47,6 +53,21 @@ export default function Panel({
         <button className="volver" onClick={() => onSeleccionar(null)}>← Viajes</button>
         <h2>Nuevo viaje</h2>
         <ViajeForm onGuardado={(nuevo) => onSeleccionar(nuevo.id)} />
+      </aside>
+    )
+  }
+
+  if (seleccion === 'logros') {
+    const completos = logros?.filter((l) => l.completo).length ?? 0
+    return (
+      <aside className="panel">
+        <button className="volver" onClick={() => onSeleccionar(null)}>← Viajes</button>
+        <h2>Logros</h2>
+        <p className="cursiva">
+          {completos} de {logros?.length ?? 0} sellados. Elegí uno para ver sus regiones en el mapa.
+        </p>
+        {logros ? <LogrosLista logros={logros} elegido={logroElegido} onElegir={onElegirLogro} />
+          : <p className="vacio">Cargando…</p>}
       </aside>
     )
   }
@@ -86,18 +107,26 @@ export default function Panel({
   return (
     <aside className="panel">
       <header className="encabezado">
-        <h1>Periplo</h1>
+        <div>
+          <h1>Periplo</h1>
+          <p className="lema">Atlas y diario de viajes</p>
+        </div>
         <button onClick={() => onSeleccionar('nuevo')}>+ Viaje</button>
       </header>
 
       <Estadisticas />
 
-      <div className="pestanias">
-        {(Object.keys(FILTROS) as Filtro[]).map((f) => (
-          <button key={f} className={f === filtro ? 'activa' : ''} onClick={() => setFiltro(f)}>
-            {{ todos: 'Todos', hechos: 'Hechos', planes: 'Planes' }[f]}
-          </button>
-        ))}
+      {logros && <LogrosResumen logros={logros} onVerTodos={() => onSeleccionar('logros')} />}
+
+      <div className="encabezado-seccion">
+        <h3>Viajes</h3>
+        <div className="pestanias">
+          {(Object.keys(FILTROS) as Filtro[]).map((f) => (
+            <button key={f} className={f === filtro ? 'activa' : ''} onClick={() => setFiltro(f)}>
+              {{ todos: 'Todos', hechos: 'Hechos', planes: 'Planes' }[f]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {cargando && <p className="vacio">Cargando…</p>}
@@ -107,13 +136,16 @@ export default function Panel({
         {visibles.map((v) => (
           <li key={v.id}>
             <button onClick={() => onSeleccionar(v.id)}>
-              <strong>{v.nombre}</strong>
-              <span className="tenue">
-                {[ETIQUETAS_ESTADO_VIAJE[v.estado], rangoFechas(v.fecha_inicio, v.fecha_fin),
-                  `${v.visitas.length} ${v.visitas.length === 1 ? 'región' : 'regiones'}`]
-                  .filter(Boolean).join(' · ')}
+              <span className={v.estado === 'hecho' ? 'marca marca-hecho' : 'marca marca-plan'} aria-hidden="true" />
+              <span className="viaje-texto">
+                <strong>{v.nombre}</strong>
+                <span className="tenue">
+                  {[ETIQUETAS_ESTADO_VIAJE[v.estado], rangoFechas(v.fecha_inicio, v.fecha_fin),
+                    v.visitas.length ? `${v.visitas.length} ${v.visitas.length === 1 ? 'región' : 'regiones'}`
+                      : 'sin regiones aún']
+                    .filter(Boolean).join(' · ')}
+                </span>
               </span>
-              {v.notion_id && <span className="etiqueta">Notion</span>}
             </button>
           </li>
         ))}

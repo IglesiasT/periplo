@@ -7,6 +7,7 @@ const CLAVES = {
   estados: ['estados'],
   viajes: ['viajes'],
   estadisticas: ['estadisticas'],
+  logros: ['logros'],
   rutas: ['rutas'],
   fotos: ['fotos'],
 } as const
@@ -14,6 +15,8 @@ const CLAVES = {
 export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: api.obtenerEstados })
 
 export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
+
+export const useLogros = () => useQuery({ queryKey: CLAVES.logros, queryFn: api.obtenerLogros })
 
 export const useRutas = () => useQuery({ queryKey: CLAVES.rutas, queryFn: api.listarRutas })
 

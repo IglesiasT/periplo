@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from .estadisticas import calcular_estadisticas
 from .fotos import ErrorFoto, leer_foto
+from .logros import Logro, calcular_logros, continentes, grupos, provincias_de, regiones
 from .models import Foto, Region, Ruta, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
 from .rutas import ErrorRuta, leer_archivo, longitud_km
@@ -250,6 +251,56 @@ class EstadisticasTests(TestCase):
             'codigo': 'ARG', 'nombre': 'Argentina', 'km2_visitados': 105, 'porcentaje': 10.5,
             'provincias_visitadas': 2, 'provincias_total': 2,
         }])
+
+
+class LogrosTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina', continente='South America')
+        cls.ury = Region.objects.create(nivel='pais', codigo='URY', nombre='Uruguay', continente='South America')
+        Region.objects.create(nivel='pais', codigo='ESP', nombre='España', continente='Europe')
+        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=cls.arg)
+        cls.salta = Region.objects.create(nivel='provincia', codigo='AR-A', nombre='Salta', padre=cls.arg)
+        cls.tilcara = Region.objects.create(nivel='departamento', codigo='AR-38094', nombre='Tilcara', padre=cls.jujuy)
+        cls.caba = Region.objects.create(nivel='provincia', codigo='AR-C', nombre='Ciudad de Buenos Aires',
+                                         padre=cls.arg)
+
+    def avance(self, *logros):
+        return {l['id']: (l['cumplidos'], l['total'], l['completo']) for l in calcular_logros(list(logros))}
+
+    def test_un_departamento_cumple_su_provincia_y_un_deseo_no_cuenta(self):
+        Visita.objects.create(region=self.tilcara)
+        Visita.objects.create(region=self.salta, realizada=False)
+        logro = Logro('arg', 'Argentina', '', provincias_de('ARG'))
+
+        [resultado] = calcular_logros([logro])
+        self.assertEqual((resultado['cumplidos'], resultado['total']), (1, 3))
+        self.assertEqual({o['nombre']: o['cumplido'] for o in resultado['objetivos']},
+                         {'Jujuy': True, 'Salta': False, 'Ciudad de Buenos Aires': False})
+
+    def test_un_grupo_se_cumple_con_cualquiera_de_sus_regiones(self):
+        Visita.objects.create(region=self.caba)
+        Visita.objects.create(region=self.ury)
+        plata = Logro('plata', 'Plata', '', grupos({'Argentina': ['AR-C', 'AR-B'], 'Uruguay': ['URY']}))
+        self.assertEqual(self.avance(plata), {'plata': (2, 2, True)})
+
+    def test_codigos_que_no_estan_en_la_base_se_ignoran(self):
+        Visita.objects.create(region=self.arg)
+        logro = Logro('x', 'X', '', regiones('ARG', 'ZZZ'))
+        self.assertEqual(self.avance(logro), {'x': (1, 1, True)})
+
+    def test_continentes(self):
+        Visita.objects.create(region=self.jujuy)
+        logro = Logro('c', 'C', '', continentes('South America', 'Europe', 'Antarctica'))
+        [resultado] = calcular_logros([logro])
+        self.assertEqual([(o['nombre'], o['cumplido']) for o in resultado['objetivos']],
+                         [('Sudamérica', True), ('Europa', False)])
+
+    def test_api(self):
+        respuesta = self.client.get('/api/logros/')
+        self.assertEqual(respuesta.status_code, 200)
+        jurisdicciones = next(l for l in respuesta.json() if l['id'] == 'jurisdicciones')
+        self.assertEqual(jurisdicciones['total'], 3)
 
 
 GPX_DOS_SEGMENTOS = b'''<?xml version="1.0"?>

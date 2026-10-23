@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
-import type { ExpressionSpecification, GeoJSONSource, StyleSpecification } from 'maplibre-gl'
+import type { ExpressionSpecification, GeoJSONSource, LayerSpecification, StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
+import fuenteVersalitas from '@fontsource/im-fell-english-sc/files/im-fell-english-sc-latin-400-normal.woff2?url'
+import fuenteCursiva from '@fontsource/im-fell-english/files/im-fell-english-latin-400-italic.woff2?url'
 import { TerraDraw, TerraDrawLineStringMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { formatearFecha } from '../etiquetas'
@@ -12,30 +14,35 @@ import type { EstadoRegion, EstadosRegiones, Foto, Ruta } from '../types'
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
 maplibregl.setWorkerUrl(workerUrl)
 
+// Los mismos tonos que los tokens de index.css: papel, tinta de grabador y aguada para el mar.
 const COLORES = {
-  mar: '#1b2838',
-  noVisitado: '#4a4f55',
-  fronteraPais: '#1b2838',
-  fronteraProvincia: '#2f353c',
-  resaltado: '#f4efe6',
-  ruta: '#c9a13b',
-  rutaResaltada: '#f2c14e',
-  foto: '#e8e6e3',
+  mar: '#c6d4cc',
+  noVisitado: '#eee4ce',
+  fronteraPais: '#7c6a50',
+  fronteraProvincia: '#bfae8c',
+  resaltado: '#2b2117',
+  ruta: '#5e4e3a',
+  rutaResaltada: '#2b2117',
+  foto: '#2b2117',
+  papel: '#f3ebda',
+  rotuloPais: '#4f4232',
+  rotuloProvincia: '#3b2f22',
+  rotuloAgua: '#4d6b63',
 } as const
 
-// De más a menos intenso; el deseo es un tono frío para que no se confunda con lo visitado.
+// De más a menos tinta, como un atlas coloreado a mano. El deseo no se rellena: se raya en índigo.
 const COLORES_ESTADO: Record<EstadoRegion, string> = {
-  estadia: '#d1603d',
-  paso: '#e39b62',
-  transito: '#efc9a0',
-  deseo: '#5d7a99',
+  estadia: '#a8382c',
+  paso: '#cf7356',
+  transito: '#e7a98a',
+  deseo: '#3e5c76',
 }
 
 const ETIQUETAS_ESTADO: Record<EstadoRegion, string> = {
   estadia: 'Estadía',
   paso: 'De paso',
   transito: 'Tránsito',
-  deseo: 'Lista de deseos',
+  deseo: 'Por conocer',
 }
 
 // Zoom semántico, como el mapa de estados de Victoria 3:
@@ -52,33 +59,134 @@ const RESALTADA: ExpressionSpecification = ['boolean', ['feature-state', 'resalt
 // Provincias con un nivel más detallado debajo (por ahora, solo las argentinas del IGN).
 const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['==', ['get', 'padre'], 'ARG']
 
-// El color de cada región sale de su feature-state "estado"; si no tiene, queda gris (niebla de guerra).
+// El color de cada región sale de su feature-state "estado"; si no tiene (o es un deseo), queda el papel.
 const COLOR_RELLENO: ExpressionSpecification = [
   'match', ESTADO,
   'estadia', COLORES_ESTADO.estadia,
   'paso', COLORES_ESTADO.paso,
   'transito', COLORES_ESTADO.transito,
-  'deseo', COLORES_ESTADO.deseo,
   COLORES.noVisitado,
 ]
 
-// Las regiones deseadas quedan semitransparentes.
-const FACTOR_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 0.6, 1]
+const ES_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 1, 0]
 
 type Valor = number | ExpressionSpecification
 
 // Opacidad que interpola entre paradas [zoom, valor]: así se hace el fundido entre niveles.
-function opacidadPorZoom(...paradas: [number, Valor][]): ExpressionSpecification {
-  const valores = paradas.flatMap(([zoom, valor]) => [zoom, ['*', valor, FACTOR_DESEO]])
+// `factor` la multiplica por feature (el rayado solo se ve en los deseos).
+function opacidadPorZoom(factor: Valor, ...paradas: [number, Valor][]): ExpressionSpecification {
+  const valores = paradas.flatMap(([zoom, valor]) => [zoom, ['*', valor, factor]])
   return ['interpolate', ['linear'], ['zoom'], ...valores] as unknown as ExpressionSpecification
 }
 
 // Contorno solo para las regiones de la lista de deseos.
 const CONTORNO_DESEO = {
   'line-color': COLORES_ESTADO.deseo,
-  'line-width': 1.5,
-  'line-opacity': ['case', ['==', ESTADO, 'deseo'], 1, 0] as ExpressionSpecification,
+  'line-width': 1.2,
+  'line-opacity': ES_DESEO,
 }
+
+// Rayado diagonal en índigo sobre fondo transparente (debajo queda el papel). Con pixelRatio 2,
+// una línea de 1,5 px cada 6 px de pantalla, igual que el --rayado de index.css.
+const RAYADO = 'rayado'
+function imagenRayado() {
+  const lado = 12
+  const data = new Uint8Array(lado * lado * 4)
+  for (let y = 0; y < lado; y++) {
+    for (let x = 0; x < lado; x++) {
+      if ((x + y) % lado < 3) data.set([0x3e, 0x5c, 0x76, 255], (y * lado + x) * 4)
+    }
+  }
+  return { width: lado, height: lado, data }
+}
+
+// Paradas [zoom, opacidad] de cada nivel: el relleno y el rayado de un mismo nivel se funden juntos.
+const PARADAS_PAISES: [number, Valor][] = [[ZOOM_PROVINCIAS - FUNDIDO, 1], [ZOOM_PROVINCIAS + FUNDIDO, 0]]
+const PARADAS_PROVINCIAS: [number, Valor][] = [
+  [ZOOM_PROVINCIAS - FUNDIDO, 0],
+  [ZOOM_PROVINCIAS + FUNDIDO, 1],
+  [ZOOM_DEPARTAMENTOS - FUNDIDO, 1],
+  [ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1]],
+]
+const PARADAS_DEPARTAMENTOS: [number, Valor][] = [[ZOOM_DEPARTAMENTOS - FUNDIDO, 0], [ZOOM_DEPARTAMENTOS + FUNDIDO, 1]]
+
+// --- Rótulos ---
+// MapLibre dibuja el texto con las mismas fuentes del panel: `font-faces` le pasa los archivos y
+// las rasteriza en el navegador, sin un servidor de glyphs. Los nombres de acá son los de `text-font`.
+const VERSALITAS = 'Fell Versalitas'
+const CURSIVA = 'Fell Cursiva'
+const absoluta = (url: string) => new URL(url, window.location.href).href
+
+const NIVEL_ROTULO = ['get', 'nivel'] as ExpressionSpecification
+const AREA = ['get', 'area_km2'] as ExpressionSpecification
+
+// Tamaño según la superficie: Rusia grande, Uruguay chico. Raíz cuadrada para que no se dispare.
+const porArea = (chico: number, grande: number): ExpressionSpecification =>
+  ['interpolate', ['linear'], ['sqrt', AREA], 100, chico, 2000, grande]
+
+// Con poco zoom solo se rotulan las regiones grandes; al acercarse entran las chicas.
+// (El zoom en un filtro solo se puede usar como entrada de un step de primer nivel.)
+const visiblesPorArea = (...umbrales: [number, number][]): ExpressionSpecification =>
+  ['step', ['zoom'], false, ...umbrales.flatMap(([zoom, area]) => [zoom, ['>=', AREA, area]])] as
+    unknown as ExpressionSpecification
+
+// Contorno de papel alrededor de las letras: se leen igual sobre la tinta carmín.
+const HALO = { 'text-halo-color': 'rgba(243, 235, 218, 0.85)', 'text-halo-width': 1.6, 'text-halo-blur': 0.5 }
+
+const ROTULOS: LayerSpecification[] = [
+  {
+    id: 'rotulos-oceanos', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'oceano'],
+    layout: {
+      'text-field': ['get', 'nombre'], 'text-font': [CURSIVA], 'text-max-width': 6, 'text-letter-spacing': 0.25,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 1, 13, 5, 22],
+    },
+    paint: { 'text-color': COLORES.rotuloAgua },
+  },
+  {
+    id: 'rotulos-mares', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'mar'], minzoom: 2.5,
+    layout: {
+      'text-field': ['get', 'nombre'], 'text-font': [CURSIVA], 'text-max-width': 7, 'text-letter-spacing': 0.12,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 2.5, 12, 6, 17],
+    },
+    paint: { 'text-color': COLORES.rotuloAgua },
+  },
+  {
+    id: 'rotulos-mares-menores', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'mar-menor'],
+    minzoom: 5,
+    layout: {
+      'text-field': ['get', 'nombre'], 'text-font': [CURSIVA], 'text-max-width': 6, 'text-letter-spacing': 0.1,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 5, 12, 8, 15],
+    },
+    paint: { 'text-color': COLORES.rotuloAgua },
+  },
+  {
+    id: 'rotulos-provincias', type: 'symbol', source: 'rotulos', minzoom: ZOOM_PROVINCIAS,
+    filter: ['all', ['==', NIVEL_ROTULO, 'provincia'], visiblesPorArea([4, 30000], [5, 5000], [6, 0])],
+    layout: {
+      'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 7,
+      'text-letter-spacing': 0.08, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 4, porArea(11, 14), 8, porArea(14, 19)],
+    },
+    paint: {
+      'text-color': COLORES.rotuloProvincia, ...HALO,
+      'text-opacity': ['interpolate', ['linear'], ['zoom'], ZOOM_PROVINCIAS, 0, ZOOM_PROVINCIAS + FUNDIDO, 1],
+    },
+  },
+  // Países al final: se ubican primero y, si chocan con una provincia, gana el país.
+  {
+    id: 'rotulos-paises', type: 'symbol', source: 'rotulos', maxzoom: ZOOM_PROVINCIAS + 1.5,
+    filter: ['all', ['==', NIVEL_ROTULO, 'pais'], visiblesPorArea([0, 250000], [2, 60000], [3, 10000], [4, 0])],
+    layout: {
+      'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 7,
+      'text-letter-spacing': 0.14, 'text-padding': 4, 'symbol-sort-key': ['-', AREA],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 1, porArea(9, 16), 5, porArea(13, 26)],
+    },
+    paint: {
+      'text-color': COLORES.rotuloPais, ...HALO,
+      'text-opacity': ['interpolate', ['linear'], ['zoom'], ZOOM_PROVINCIAS + 0.8, 1, ZOOM_PROVINCIAS + 1.5, 0],
+    },
+  },
+]
 
 const ATRIBUCION_NE = '<a href="https://www.naturalearthdata.com/">Natural Earth</a>'
 // Requerida por la licencia del IGN: fuente y fecha de los datos originales.
@@ -88,7 +196,13 @@ const ATRIBUCION_IGN =
 // Style escrito a mano: sin tiles de terceros, solo fondo + países + provincias + departamentos.
 const STYLE: StyleSpecification = {
   version: 8,
+  'font-faces': {
+    [VERSALITAS]: absoluta(fuenteVersalitas),
+    [CURSIVA]: absoluta(fuenteCursiva),
+  },
   sources: {
+    // Un punto por región (y por océano o mar) donde va su nombre: lo genera `manage.py generar_rotulos`.
+    rotulos: { type: 'geojson', data: '/geo/rotulos.geojson' },
     // promoteId: usa la propiedad "codigo" como id de cada feature, para poder darle estado.
     paises: { type: 'geojson', data: '/geo/paises.geojson', promoteId: 'codigo', attribution: ATRIBUCION_NE },
     provincias: { type: 'geojson', data: '/geo/provincias.geojson', promoteId: 'codigo', attribution: ATRIBUCION_NE },
@@ -107,25 +221,24 @@ const STYLE: StyleSpecification = {
     {
       id: 'provincias-relleno', type: 'fill', source: 'provincias',
       minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-      paint: {
-        'fill-color': COLOR_RELLENO,
-        'fill-opacity': opacidadPorZoom(
-          [ZOOM_PROVINCIAS - FUNDIDO, 0],
-          [ZOOM_PROVINCIAS + FUNDIDO, 1],
-          [ZOOM_DEPARTAMENTOS - FUNDIDO, 1],
-          [ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1]],
-        ),
-      },
+      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, ...PARADAS_PROVINCIAS) },
+    },
+    {
+      id: 'provincias-rayado', type: 'fill', source: 'provincias',
+      minzoom: ZOOM_PROVINCIAS - FUNDIDO,
+      paint: { 'fill-pattern': RAYADO, 'fill-opacity': opacidadPorZoom(ES_DESEO, ...PARADAS_PROVINCIAS) },
     },
 
     // Departamentos (solo Argentina): aparecen al acercarse más.
     {
       id: 'departamentos-relleno', type: 'fill', source: 'departamentos',
       minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
-      paint: {
-        'fill-color': COLOR_RELLENO,
-        'fill-opacity': opacidadPorZoom([ZOOM_DEPARTAMENTOS - FUNDIDO, 0], [ZOOM_DEPARTAMENTOS + FUNDIDO, 1]),
-      },
+      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, ...PARADAS_DEPARTAMENTOS) },
+    },
+    {
+      id: 'departamentos-rayado', type: 'fill', source: 'departamentos',
+      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+      paint: { 'fill-pattern': RAYADO, 'fill-opacity': opacidadPorZoom(ES_DESEO, ...PARADAS_DEPARTAMENTOS) },
     },
     {
       id: 'departamentos-frontera', type: 'line', source: 'departamentos',
@@ -162,10 +275,12 @@ const STYLE: StyleSpecification = {
     {
       id: 'paises-relleno', type: 'fill', source: 'paises',
       maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-      paint: {
-        'fill-color': COLOR_RELLENO,
-        'fill-opacity': opacidadPorZoom([ZOOM_PROVINCIAS - FUNDIDO, 1], [ZOOM_PROVINCIAS + FUNDIDO, 0]),
-      },
+      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, ...PARADAS_PAISES) },
+    },
+    {
+      id: 'paises-rayado', type: 'fill', source: 'paises',
+      maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
+      paint: { 'fill-pattern': RAYADO, 'fill-opacity': opacidadPorZoom(ES_DESEO, ...PARADAS_PAISES) },
     },
     // Sin maxzoom: un país deseado entero (Japón) mantiene su contorno aunque se vean las provincias.
     { id: 'paises-deseo', type: 'line', source: 'paises', paint: CONTORNO_DESEO },
@@ -177,11 +292,16 @@ const STYLE: StyleSpecification = {
       },
     },
 
-    // Rutas: las del viaje elegido (propiedad "resaltada" del feature) más gruesas y claras.
+    // Nombres arriba de los rellenos y las fronteras; las rutas, las fotos y los resaltados van encima.
+    ...ROTULOS,
+
+    // Rutas: trazo de tinta discontinuo, como un itinerario dibujado a mano.
+    // Las del viaje elegido (propiedad "resaltada" del feature), más gruesas y oscuras.
     {
       id: 'rutas', type: 'line', source: 'rutas',
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      layout: { 'line-join': 'round' },
       paint: {
+        'line-dasharray': [3, 2],
         'line-color': ['case', ['get', 'resaltada'], COLORES.rutaResaltada, COLORES.ruta],
         'line-width': [
           'interpolate', ['linear'], ['zoom'],
@@ -197,13 +317,15 @@ const STYLE: StyleSpecification = {
       paint: {
         'circle-color': COLORES.foto,
         'circle-radius': ['step', ['get', 'point_count'], 8, 5, 11, 20, 15],
-        'circle-stroke-color': COLORES.mar,
+        'circle-stroke-color': COLORES.papel,
         'circle-stroke-width': 2,
       },
     },
     {
       id: 'fotos-punto', type: 'circle', source: 'fotos', filter: ['!', ['has', 'point_count']],
-      paint: { 'circle-color': COLORES.foto, 'circle-radius': 5, 'circle-stroke-color': COLORES.mar, 'circle-stroke-width': 1.5 },
+      paint: {
+        'circle-color': COLORES.foto, 'circle-radius': 5, 'circle-stroke-color': COLORES.papel, 'circle-stroke-width': 1.5,
+      },
     },
 
     // Contorno claro de las regiones del viaje elegido en el panel (feature-state "resaltada").
@@ -342,15 +464,19 @@ export default function Mapa({
     })
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right')
+    // El style pide la imagen del rayado antes de que exista: se genera la primera vez que falta.
+    map.on('styleimagemissing', (e) => {
+      if (e.id === RAYADO && !map.hasImage(RAYADO)) map.addImage(RAYADO, imagenRayado(), { pixelRatio: 2 })
+    })
     map.on('moveend', () => guardarVistaEnHash(map))
     map.on('load', () => setListo(true))
-
     // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
     const regionEn = (punto: maplibregl.PointLike) =>
       map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom()) })[0]
 
     // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
-    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false })
+    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
     map.on('mousemove', (e) => {
       const feature = regionEn(e.point)
       const editando = Boolean(alClickearRef.current)
@@ -465,26 +591,45 @@ export default function Mapa({
   return (
     <div className="mapa">
       <div ref={contenedor} style={{ width: '100%', height: '100%' }} />
+      {/* Los GeoJSON pesan varios MB: mientras bajan, el mapa no queda vacío y mudo. */}
+      {!listo && <div className="cargando">Grabando las planchas del mapa…</div>}
       <Leyenda />
+      <RosaDeLosVientos />
     </div>
   )
 }
 
 function Leyenda() {
-  const items: [string, string][] = [
-    ...(Object.keys(COLORES_ESTADO) as EstadoRegion[]).map(
-      (estado): [string, string] => [ETIQUETAS_ESTADO[estado], COLORES_ESTADO[estado]],
-    ),
-    ['Sin visitar', COLORES.noVisitado],
+  const items = [
+    ...(Object.keys(COLORES_ESTADO) as EstadoRegion[]).map((estado) => ({
+      etiqueta: ETIQUETAS_ESTADO[estado], color: COLORES_ESTADO[estado], clase: estado === 'deseo' ? 'deseo' : '',
+    })),
+    { etiqueta: 'Sin visitar', color: COLORES.noVisitado, clase: '' },
   ]
   return (
     <div className="leyenda">
-      {items.map(([etiqueta, color]) => (
+      <p className="leyenda-titulo">Leyenda</p>
+      {items.map(({ etiqueta, color, clase }) => (
         <div key={etiqueta}>
-          <span className="leyenda-color" style={{ background: color }} />
+          <span className={`leyenda-color ${clase}`} style={{ background: color }} />
           {etiqueta}
         </div>
       ))}
     </div>
+  )
+}
+
+/** Adorno de atlas: siempre apunta al norte porque el mapa no rota. */
+function RosaDeLosVientos() {
+  return (
+    <svg className="rosa" width="70" height="78" viewBox="-35 -43 70 78" aria-hidden="true">
+      <circle r="28" fill="none" stroke={COLORES.resaltado} strokeWidth="0.8" />
+      <circle r="24" fill="none" stroke={COLORES.resaltado} strokeWidth="0.5" />
+      <path d="M0 -32L4.5 0L0 32L-4.5 0Z" fill={COLORES.resaltado} />
+      <path d="M-32 0L0 -4.5L32 0L0 4.5Z" fill={COLORES.papel} stroke={COLORES.resaltado} strokeWidth="0.8" />
+      <path d="M0 -32L4.5 0L0 0Z" fill={COLORES_ESTADO.estadia} />
+      <text y="-35" textAnchor="middle" fontFamily="'IM Fell English SC', serif" fontSize="11"
+            fill={COLORES.resaltado}>N</text>
+    </svg>
   )
 }

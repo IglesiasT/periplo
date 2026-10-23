@@ -1,13 +1,26 @@
+/* Dirección "Atlas de gabinete": papel, tinta de grabador y aguadas, como un atlas del siglo XIX. */
 :root {
-  --fondo: #1b2838;
-  --panel: #121b26;
-  --panel-claro: #1c2733;
-  --borde: #2a3644;
-  --texto: #e8e6e3;
-  --tenue: #8d96a0;
-  --acento: #d1603d;
-  --error: #e5806b;
-  --ok: #8fbf8a;
+  --papel: #f3ebda;
+  --papel-hondo: #e8dcc2;
+  --borde: #c9b48e;
+  --linea: #dccbaa;
+  --tinta: #2b2117;
+  --tenue: #6b5a43;
+  --sepia: #7c6a50;
+  --carmin: #a8382c;
+  --carmin-oscuro: #7e2a21;
+  --paso: #cf7356;
+  --transito: #e7a98a;
+  --indigo: #3e5c76;
+  --aguada: #c6d4cc;
+  --tierra: #eee4ce;
+  --ok: #4f6b3a;
+  /* El deseo nunca se rellena: se raya en índigo (igual que en el mapa). */
+  --rayado: repeating-linear-gradient(45deg, var(--indigo) 0 1.5px, transparent 1.5px 5px);
+
+  --texto: 'EB Garamond', Georgia, serif;
+  --titulo: 'IM Fell English SC', 'EB Garamond', Georgia, serif;
+  --cursiva: 'IM Fell English', 'EB Garamond', Georgia, serif;
 }
 
 html,
@@ -18,9 +31,10 @@ body,
 }
 
 body {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  background: var(--fondo);
-  color: var(--texto);
+  font-family: var(--texto);
+  font-size: 16px;
+  background: var(--papel);
+  color: var(--tinta);
 }
 
 button,
@@ -45,44 +59,69 @@ textarea {
 }
 
 .panel {
-  width: 340px;
+  width: 360px;
   flex-shrink: 0;
   overflow-y: auto;
-  padding: 16px;
+  padding: 28px 24px;
   box-sizing: border-box;
-  background: var(--panel);
+  background: var(--papel);
   border-right: 1px solid var(--borde);
-  font-size: 14px;
 }
 
 .panel h1 {
   margin: 0;
-  font-size: 20px;
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 38px;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .panel h2 {
-  margin: 8px 0 12px;
-  font-size: 18px;
+  margin: 10px 0 14px;
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.1;
 }
 
 .panel h3 {
-  margin: 20px 0 8px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin: 26px 0 8px;
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+}
+
+.lema,
+.cursiva {
+  margin: 2px 0 0;
+  font-family: var(--cursiva);
+  font-style: italic;
   color: var(--tenue);
 }
 
+/* Botones: tinta sobre papel, en versalitas. Los activos se entintan. */
 .panel button {
   cursor: pointer;
-  border: 1px solid var(--borde);
-  border-radius: 6px;
-  background: var(--panel-claro);
+  min-height: 36px;
   padding: 6px 12px;
+  border: 1px solid var(--tinta);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--titulo);
+  font-size: 15px;
+  letter-spacing: 0.05em;
 }
 
 .panel button:hover:not(:disabled) {
-  border-color: var(--tenue);
+  background: var(--papel-hondo);
+}
+
+.panel button.activa,
+.panel button[type='submit'] {
+  background: var(--tinta);
+  color: var(--papel);
 }
 
 .panel button:disabled {
@@ -90,70 +129,108 @@ textarea {
   cursor: default;
 }
 
-.encabezado {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+/* Botones que se leen como texto: volver, desplegar, filas de listas. */
+.panel .volver,
+.panel .desplegar,
+.panel .enlace {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--tenue);
+  font-family: var(--cursiva);
+  font-style: italic;
+  font-size: 16px;
+  letter-spacing: 0;
 }
 
-.volver {
-  border: none !important;
+.panel .enlace {
+  color: var(--carmin-oscuro);
+}
+
+.panel .volver:hover,
+.panel .desplegar:hover,
+.panel .enlace:hover {
   background: none !important;
-  padding: 0 !important;
-  color: var(--tenue);
+  color: var(--tinta);
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
 }
 
 .tenue {
   color: var(--tenue);
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .vacio {
   color: var(--tenue);
+  font-style: italic;
 }
 
+/* Origen de un dato (por ahora, solo "Notion"): una acotación al margen, no una etiqueta. */
 .etiqueta {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: #2b3a4d;
-  color: #a9bdd4;
-  font-size: 11px;
+  margin-left: 4px;
+  color: var(--sepia);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.etiqueta::before {
+  content: '· ';
 }
 
 /* --- Estadísticas --- */
 
 .estadisticas {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  padding: 14px 0 12px;
+  border-top: 3px double var(--sepia);
   border-bottom: 1px solid var(--borde);
+}
+
+.cifra-principal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cifra-grande {
+  font-size: 54px;
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: oldstyle-nums;
+}
+
+.cifra-principal .cursiva {
+  font-size: 16px;
+  line-height: 1.2;
 }
 
 .cifras {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+  margin: 12px 0 8px;
 }
 
 .cifra {
   display: flex;
   flex-direction: column;
-  padding: 8px;
-  border-radius: 6px;
-  background: var(--panel-claro);
 }
 
-.cifra strong {
-  font-size: 16px;
+.cifra-valor {
+  font-size: 19px;
+  font-variant-numeric: oldstyle-nums;
 }
 
-.desplegar {
-  margin-top: 8px;
-  border: none !important;
-  background: none !important;
-  padding: 0 !important;
+.cifra-etiqueta {
+  font-family: var(--titulo);
+  font-size: 13px;
+  letter-spacing: 0.04em;
   color: var(--tenue);
 }
 
@@ -174,36 +251,166 @@ textarea {
 }
 
 .barra {
-  height: 4px;
+  height: 3px;
   margin-top: 3px;
-  border-radius: 2px;
-  background: var(--borde);
+  background: var(--linea);
 }
 
 .barra div {
   height: 100%;
-  border-radius: 2px;
-  background: var(--acento);
+  background: var(--carmin);
+}
+
+/* --- Logros --- */
+
+.logros-resumen {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.logros {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.logros > li {
+  border-bottom: 1px solid var(--linea);
+}
+
+.panel .logro-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 0;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  font-family: var(--texto);
+  font-size: 16px;
+  letter-spacing: 0;
+  text-align: left;
+}
+
+.logro-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.logro-texto strong {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.logro.abierto .logro-cabecera strong {
+  font-weight: 600;
+}
+
+.logro-detalle {
+  padding: 0 0 12px 46px;
+}
+
+.logro-detalle .cursiva {
+  margin: 0 0 8px;
+}
+
+.objetivos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  color: var(--tenue);
+}
+
+.objetivos li::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border: 1px solid var(--sepia);
+  vertical-align: 1px;
+}
+
+.objetivos li.cumplido {
+  color: var(--tinta);
+}
+
+.objetivos li.cumplido::before {
+  border-color: var(--tinta);
+  background: var(--carmin);
+}
+
+.sello {
+  flex-shrink: 0;
+}
+
+.sello-lacre {
+  fill: var(--carmin);
+}
+
+.sello-anillo {
+  fill: none;
+  stroke: var(--papel);
+  stroke-width: 0.8;
+  opacity: 0.7;
+}
+
+.sello-estrella {
+  fill: var(--papel);
+}
+
+.sello-pista {
+  fill: none;
+  stroke: var(--linea);
+  stroke-width: 2;
+}
+
+.sello-avance {
+  fill: none;
+  stroke: var(--carmin);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.sello-estrella-vacia {
+  fill: var(--borde);
 }
 
 /* --- Lista de viajes --- */
 
 .pestanias {
   display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: 18px;
+  margin-bottom: 6px;
 }
 
-.pestanias button.activa,
-.encabezado-seccion button.activa {
-  border-color: var(--acento);
+.panel .pestanias button {
+  min-height: 0;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--tenue);
+  font-size: 16px;
+}
+
+.panel .pestanias button.activa {
+  background: none;
+  color: var(--tinta);
+  text-decoration: underline;
+  text-underline-offset: 5px;
 }
 
 .encabezado-seccion {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 20px 0 8px;
+  margin: 26px 0 8px;
 }
 
 .encabezado-seccion h3 {
@@ -215,13 +422,19 @@ textarea {
   gap: 6px;
 }
 
+.aviso,
 .aviso-accion {
-  margin: 12px 0 0;
-  padding: 8px;
-  border-left: 3px solid var(--acento);
-  border-radius: 4px;
-  background: var(--panel-claro);
-  font-size: 12px;
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--papel-hondo);
+  font-style: italic;
+  font-size: 15px;
+}
+
+.aviso-accion {
+  margin-top: 12px;
+  border-top: 1px solid var(--sepia);
+  border-bottom: 1px solid var(--sepia);
 }
 
 .viajes,
@@ -231,18 +444,56 @@ textarea {
   padding: 0;
 }
 
-.viajes li button {
+.viajes li {
+  border-bottom: 1px solid var(--linea);
+}
+
+.panel .viajes button {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  margin-bottom: 6px;
+  min-height: 0;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  box-sizing: content-box;
+  border: none;
+  background: none;
+  font-family: var(--texto);
+  font-size: 16px;
+  letter-spacing: 0;
   text-align: left;
 }
 
-.viajes li button .etiqueta {
-  margin-left: 0;
+.viaje-texto {
+  display: flex;
+  flex-direction: column;
+}
+
+.viaje-texto strong {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.viaje-texto .tenue {
+  font-style: italic;
+}
+
+/* Marca del viaje en la lista: carmín si ya fui, rayado índigo si es un plan. */
+.marca {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--tinta);
+}
+
+.marca-hecho {
+  background: var(--carmin);
+}
+
+.marca-plan {
+  border-color: var(--indigo);
+  background: var(--rayado);
 }
 
 /* --- Formulario --- */
@@ -250,36 +501,52 @@ textarea {
 .formulario {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .formulario label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   color: var(--tenue);
-  font-size: 12px;
+  font-family: var(--titulo);
+  font-size: 14px;
+  letter-spacing: 0.04em;
 }
 
 .formulario input,
 .formulario select,
 .formulario textarea,
 .visitas select {
-  padding: 6px 8px;
-  border: 1px solid var(--borde);
-  border-radius: 6px;
-  background: var(--fondo);
-  font-size: 14px;
+  padding: 4px 2px;
+  border: none;
+  border-bottom: 1px solid var(--tinta);
+  border-radius: 0;
+  background: transparent;
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 16px;
+  letter-spacing: 0;
 }
 
+.formulario textarea {
+  padding: 6px 8px;
+  border: 1px solid var(--borde);
+  background: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+}
+
+/* Campos que manda Notion: se leen como texto impreso, no como un control roto. */
 .formulario input:disabled,
 .formulario select:disabled {
-  opacity: 0.6;
+  border-bottom-color: transparent;
+  appearance: none;
+  opacity: 1;
 }
 
 .fila {
   display: flex;
-  gap: 8px;
+  gap: 12px;
 }
 
 .fila label {
@@ -294,25 +561,19 @@ textarea {
 
 .acciones .peligro {
   margin-left: auto;
-  color: var(--error);
-}
-
-.aviso {
-  margin: 0;
-  padding: 8px;
-  border-radius: 6px;
-  background: #2b3a4d;
-  font-size: 12px;
+  border-color: var(--carmin);
+  color: var(--carmin);
 }
 
 .error {
-  color: var(--error);
-  font-size: 12px;
+  color: var(--carmin-oscuro);
+  font-size: 14px;
 }
 
 .ok {
   color: var(--ok);
-  font-size: 12px;
+  font-size: 14px;
+  font-style: italic;
 }
 
 /* --- Lista de visitas --- */
@@ -322,7 +583,7 @@ textarea {
   flex-direction: column;
   gap: 4px;
   padding: 8px 0;
-  border-bottom: 1px solid var(--borde);
+  border-bottom: 1px solid var(--linea);
 }
 
 .controles {
@@ -336,20 +597,26 @@ textarea {
   align-items: center;
   gap: 4px;
   color: var(--tenue);
-  font-size: 12px;
+  font-style: italic;
+  font-size: 15px;
 }
 
-.icono {
+.panel .icono {
   margin-left: auto;
-  padding: 0 8px !important;
+  min-height: 0;
+  padding: 0 8px;
+  border: none;
+  font-family: var(--texto);
+  font-size: 20px;
+  line-height: 1;
 }
 
-/* --- Fotos --- */
+/* --- Fotos: copias montadas sobre el papel --- */
 
 .fotos {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -360,53 +627,137 @@ textarea {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 6px;
+  box-sizing: border-box;
+  padding: 4px;
+  border: 1px solid var(--borde);
+  background: #fbf7ee;
+  box-shadow: 2px 2px 0 var(--linea);
 }
 
 .foto-pie {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-.sugerencia {
+.panel .sugerencia {
   width: 100%;
   margin-top: 4px;
-  padding: 2px 6px !important;
-  font-size: 11px;
+  min-height: 0;
+  padding: 2px 6px;
+  font-size: 13px;
 }
 
 .popup-foto img {
   display: block;
   width: 200px;
-  border-radius: 4px;
+  margin-bottom: 4px;
+  border: 1px solid var(--borde);
 }
 
 /* --- Mapa --- */
 
 .leyenda {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: rgba(15, 23, 33, 0.85);
-  color: var(--texto);
-  font-size: 13px;
-  line-height: 1.7;
+  left: 16px;
+  bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--tinta);
+  background: var(--papel);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.leyenda-titulo {
+  margin: 0 0 2px;
+  font-family: var(--titulo);
+  font-size: 16px;
+  letter-spacing: 0.08em;
 }
 
 .leyenda-color {
   display: inline-block;
-  width: 12px;
+  width: 22px;
   height: 12px;
-  margin-right: 8px;
-  border-radius: 2px;
+  margin-right: 10px;
+  border: 1px solid var(--sepia);
   vertical-align: -1px;
 }
 
+.leyenda-color.deseo {
+  border-color: var(--indigo);
+  background: var(--rayado), var(--tierra) !important;
+}
+
+.rosa {
+  position: absolute;
+  right: 18px;
+  bottom: 70px;
+  pointer-events: none;
+}
+
+.cargando {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--aguada);
+  color: var(--tenue);
+  font-family: var(--cursiva);
+  font-style: italic;
+  font-size: 20px;
+}
+
 .maplibregl-popup-content {
-  color: #1b2838;
-  font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid var(--tinta);
+  border-radius: 0;
+  background: var(--papel);
+  box-shadow: 3px 3px 0 rgba(43, 33, 23, 0.18);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 15px;
+}
+
+.maplibregl-popup-content strong {
+  font-family: var(--titulo);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.maplibregl-popup-tip {
+  display: none;
+}
+
+.maplibregl-ctrl-group:not(:empty) {
+  border: 1px solid var(--tinta);
+  border-radius: 0;
+  background: var(--papel);
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-group button {
+  width: 36px;
+  height: 36px;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--tinta);
+}
+
+.maplibregl-ctrl-scale {
+  border-color: var(--tinta);
+  background: rgba(243, 235, 218, 0.85);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: rgba(243, 235, 218, 0.85);
+  font-family: var(--texto);
+  font-style: italic;
 }

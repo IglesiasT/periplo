@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .estadisticas import calcular_estadisticas
+from .logros import calcular_logros
 from .models import Visita
 
 # De más a menos intenso: si una región tiene varios estados, gana el de mayor prioridad.
@@ -39,3 +40,9 @@ def estados(request):
 def estadisticas(request):
     """Superficie recorrida, países por continente y avance por país (ver mapa/estadisticas.py)."""
     return Response(calcular_estadisticas())
+
+
+@api_view(['GET'])
+def logros(request):
+    """Cada logro con su avance y sus objetivos (ver mapa/logros.py)."""
+    return Response(calcular_logros())

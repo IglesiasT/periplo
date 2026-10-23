@@ -3,7 +3,8 @@ import { siguientePaso } from './ciclo'
 import Mapa from './components/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
-  useActualizarVisita, useBorrarVisita, useCrearRuta, useCrearVisita, useEstados, useFotos, useRutas, useViajes,
+  useActualizarVisita, useBorrarVisita, useCrearRuta, useCrearVisita, useEstados, useFotos, useLogros, useRutas,
+  useViajes,
 } from './hooks/consultas'
 
 export default function App() {
@@ -11,7 +12,9 @@ export default function App() {
   const viajes = useViajes()
   const rutas = useRutas()
   const fotos = useFotos()
+  const logros = useLogros()
   const [seleccion, setSeleccion] = useState<Seleccion>(null)
+  const [logroElegido, setLogroElegido] = useState<string | null>(null)
   const [modo, setModo] = useState<Modo>('ninguno')
   const [aviso, setAviso] = useState<string | null>(null)
   const crear = useCrearVisita()
@@ -20,15 +23,18 @@ export default function App() {
   const crearRuta = useCrearRuta()
 
   const viaje = viajes.data?.find((v) => v.id === seleccion)
+  const logro = seleccion === 'logros' ? logros.data?.find((l) => l.id === logroElegido) : undefined
 
   // Regiones del viaje elegido y las que las contienen: así se ve resaltado en cualquier nivel de zoom.
-  const resaltadas = useMemo(
-    () => new Set(viaje?.visitas.flatMap((v) => [v.region, ...v.region_ancestros]) ?? []),
-    [viaje],
-  )
+  // Con un logro desplegado, las regiones de todos sus objetivos (cumplidos o no).
+  const resaltadas = useMemo(() => {
+    if (logro) return new Set(logro.objetivos.flatMap((o) => o.regiones))
+    return new Set(viaje?.visitas.flatMap((v) => [v.region, ...v.region_ancestros]) ?? [])
+  }, [viaje, logro])
 
   const seleccionar = (nueva: Seleccion) => {
     setSeleccion(nueva)
+    setLogroElegido(null)
     setModo('ninguno')
     setAviso(null)
   }
@@ -67,10 +73,13 @@ export default function App() {
       <Panel
         viajes={viajes.data}
         fotos={fotos.data}
+        logros={logros.data}
         cargando={viajes.isPending}
         error={viajes.error}
         seleccion={seleccion}
         onSeleccionar={seleccionar}
+        logroElegido={logroElegido}
+        onElegirLogro={setLogroElegido}
         modo={modo}
         onCambiarModo={cambiarModo}
         aviso={aviso}

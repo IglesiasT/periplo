@@ -79,6 +79,22 @@ export interface Estadisticas {
   }[]
 }
 
+/** Un logro de /api/logros/: se completa cumpliendo todos sus objetivos. */
+export interface Logro {
+  id: string
+  nombre: string
+  descripcion: string
+  cumplidos: number
+  total: number
+  completo: boolean
+  objetivos: {
+    nombre: string
+    /** Se cumple con una visita realizada a cualquiera de estas regiones (o a algo que esté adentro). */
+    regiones: string[]
+    cumplido: boolean
+  }[]
+}
+
 export interface Foto {
   id: number
   viaje: number | null

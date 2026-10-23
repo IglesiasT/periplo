@@ -13,10 +13,14 @@ export default function Estadisticas() {
 
   return (
     <section className="estadisticas">
+      {/* El porcentaje del mundo es la cifra del proyecto: va grande, el resto acompaña. */}
+      <div className="cifra-principal">
+        <span className="cifra-grande">{numero(data.porcentaje_mundo, 2)} %</span>
+        <span className="cursiva">del mundo<br />recorrido</span>
+      </div>
       <div className="cifras">
-        <Cifra valor={`${numero(data.porcentaje_mundo, 2)} %`} etiqueta="del mundo" />
-        <Cifra valor={numero(data.km2_visitados)} etiqueta="km² recorridos" />
-        <Cifra valor={`${data.paises_visitados}/${data.paises_total}`} etiqueta="países" />
+        <Cifra valor={numero(data.km2_visitados)} etiqueta="km² pisados" />
+        <Cifra valor={`${data.paises_visitados} de ${data.paises_total}`} etiqueta="países" />
         <Cifra valor={numero(data.km_rutas)} etiqueta="km de rutas" />
       </div>
 
@@ -62,8 +66,8 @@ export default function Estadisticas() {
 function Cifra({ valor, etiqueta }: { valor: string; etiqueta: string }) {
   return (
     <div className="cifra">
-      <strong>{valor}</strong>
-      <span className="tenue">{etiqueta}</span>
+      <span className="cifra-valor">{valor}</span>
+      <span className="cifra-etiqueta">{etiqueta}</span>
     </div>
   )
 }

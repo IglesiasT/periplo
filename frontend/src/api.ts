@@ -1,4 +1,6 @@
-import type { DatosViaje, DatosVisita, Estadisticas, EstadosRegiones, Foto, Ruta, Viaje, Visita } from './types'
+import type {
+  DatosViaje, DatosVisita, Estadisticas, EstadosRegiones, Foto, Logro, Ruta, Viaje, Visita,
+} from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
 export class ErrorApi extends Error {
@@ -32,6 +34,7 @@ async function pedir<T>(metodo: string, url: string, cuerpo?: unknown): Promise<
 
 export const obtenerEstados = () => pedir<EstadosRegiones>('GET', '/api/estados/')
 export const obtenerEstadisticas = () => pedir<Estadisticas>('GET', '/api/estadisticas/')
+export const obtenerLogros = () => pedir<Logro[]>('GET', '/api/logros/')
 
 export const listarViajes = () => pedir<Viaje[]>('GET', '/api/viajes/')
 export const crearViaje = (datos: DatosViaje) => pedir<Viaje>('POST', '/api/viajes/', datos)

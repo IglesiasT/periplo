@@ -14,5 +14,6 @@ router.register('fotos', api.FotoViewSet, basename='foto')
 urlpatterns = [
     path('estados/', views.estados, name='estados'),
     path('estadisticas/', views.estadisticas, name='estadisticas'),
+    path('logros/', views.logros, name='logros'),
     *router.urls,
 ]
