@@ -33,6 +33,14 @@ class Region(models.Model):
     def natural_key(self):
         return (self.codigo,)
 
+    def codigos_hacia_arriba(self) -> list[str]:
+        """Su código y los de las regiones que la contienen: ['AR-38094', 'AR-Y', 'ARG']."""
+        codigos, region = [], self
+        while region is not None:
+            codigos.append(region.codigo)
+            region = region.padre
+        return codigos
+
 
 class Viaje(models.Model):
     class Estado(models.TextChoices):
@@ -97,3 +105,25 @@ class Ruta(models.Model):
 
     def __str__(self):
         return f'{self.nombre or "Ruta"} ({self.longitud_km:.0f} km)'
+
+
+class Foto(models.Model):
+    """Foto subida desde la app. Si trae GPS en el EXIF, se ubica sola en el mapa."""
+
+    viaje = models.ForeignKey(Viaje, null=True, blank=True, on_delete=models.CASCADE, related_name='fotos')
+    visita = models.ForeignKey(Visita, null=True, blank=True, on_delete=models.SET_NULL, related_name='fotos')
+    archivo = models.ImageField(upload_to='fotos/%Y/%m/')
+    miniatura = models.ImageField(upload_to='fotos/miniaturas/', blank=True)
+    # Del EXIF, si están.
+    lat = models.FloatField(null=True, blank=True)
+    lon = models.FloatField(null=True, blank=True)
+    tomada_en = models.DateTimeField(null=True, blank=True)
+    # Región donde cae (lat, lon), calculada al subirla.
+    region = models.ForeignKey(Region, null=True, blank=True, on_delete=models.SET_NULL, related_name='fotos')
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['tomada_en', 'id']
+
+    def __str__(self):
+        return self.archivo.name

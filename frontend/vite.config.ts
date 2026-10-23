@@ -5,9 +5,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // El navegador le pide /api a Vite y Vite se lo reenvía a Django: mismo origen, sin CORS.
+    // El navegador le pide /api (y las fotos en /media) a Vite y Vite se lo reenvía a Django: mismo origen, sin CORS.
     proxy: {
       '/api': 'http://127.0.0.1:8000',
+      '/media': 'http://127.0.0.1:8000',
     },
   },
 })

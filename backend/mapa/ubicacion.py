@@ -4,6 +4,7 @@ Traduce lugares (coordenadas o nombres) a regiones del mapa.
 - Coordenadas -> región: point-in-polygon contra los GeoJSON completos de data/raw/.
 - Nombre -> región: primero contra los nombres de Region; si no aparece, Nominatim.
 """
+import functools
 import json
 import math
 import time
@@ -160,3 +161,10 @@ class Ubicador:
         else:
             return None
         return Ubicacion(codigo, 'nominatim') if codigo else None
+
+
+@functools.cache
+def ubicador_compartido() -> Ubicador:
+    """Un solo Ubicador por proceso del servidor: cargar los polígonos tarda varios segundos.
+    Sin Nominatim: la API solo ubica coordenadas. Si se recargan las regiones, reiniciar el servidor."""
+    return Ubicador(usar_nominatim=False)

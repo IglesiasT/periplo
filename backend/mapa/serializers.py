@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Region, Ruta, Viaje, Visita
+from .models import Foto, Region, Ruta, Viaje, Visita
 from .rutas import longitud_km
 
 AVISO_NOTION = 'Viene de Notion: se edita allá y se trae con sincronizar_notion.'
@@ -21,11 +21,7 @@ class VisitaSerializer(serializers.ModelSerializer):
         read_only_fields = ['desde_notion']
 
     def get_region_ancestros(self, visita) -> list[str]:
-        codigos, region = [], visita.region.padre
-        while region is not None:
-            codigos.append(region.codigo)
-            region = region.padre
-        return codigos
+        return visita.region.codigos_hacia_arriba()[1:]
 
 
 class RutaSerializer(serializers.ModelSerializer):
@@ -82,3 +78,32 @@ class ViajeSerializer(serializers.ModelSerializer):
                 if campo in datos and datos[campo] != getattr(self.instance, campo):
                     raise serializers.ValidationError({campo: AVISO_NOTION})
         return datos
+
+
+class FotoSerializer(serializers.ModelSerializer):
+    """Para leer y editar la descripción. Las fotos se suben con multipart (ver FotoViewSet.create)."""
+
+    archivo = serializers.SerializerMethodField()
+    miniatura = serializers.SerializerMethodField()
+    region = serializers.SlugRelatedField(slug_field='codigo', read_only=True)
+    region_nombre = serializers.CharField(source='region.nombre', read_only=True, default=None)
+    region_en_viaje = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Foto
+        fields = ['id', 'viaje', 'visita', 'archivo', 'miniatura', 'lat', 'lon', 'tomada_en',
+                  'region', 'region_nombre', 'region_en_viaje', 'descripcion']
+        read_only_fields = ['viaje', 'visita', 'lat', 'lon', 'tomada_en']
+
+    # URLs relativas (/media/...): el navegador las pide a Vite, que las reenvía a Django.
+    def get_archivo(self, foto) -> str:
+        return foto.archivo.url
+
+    def get_miniatura(self, foto) -> str | None:
+        return foto.miniatura.url if foto.miniatura else None
+
+    def get_region_en_viaje(self, foto) -> bool | None:
+        """¿El viaje ya tiene una visita en la región de la foto (o en una que la contiene)? Si no, la app la sugiere."""
+        if foto.region is None or foto.viaje is None:
+            return None
+        return foto.viaje.visitas.filter(region__codigo__in=foto.region.codigos_hacia_arriba()).exists()

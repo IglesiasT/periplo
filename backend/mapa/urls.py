@@ -9,6 +9,7 @@ router = DefaultRouter()
 router.register('viajes', api.ViajeViewSet, basename='viaje')
 router.register('visitas', api.VisitaViewSet, basename='visita')
 router.register('rutas', api.RutaViewSet, basename='ruta')
+router.register('fotos', api.FotoViewSet, basename='foto')
 
 urlpatterns = [
     path('estados/', views.estados, name='estados'),
