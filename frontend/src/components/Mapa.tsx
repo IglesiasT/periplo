@@ -102,11 +102,8 @@ const STYLE: StyleSpecification = {
       maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
       paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, 0) },
     },
-    {
-      id: 'paises-deseo', type: 'line', source: 'paises',
-      maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-      paint: CONTORNO_DESEO,
-    },
+    // Sin maxzoom: un país deseado entero (Japón) mantiene su contorno aunque se vean las provincias.
+    { id: 'paises-deseo', type: 'line', source: 'paises', paint: CONTORNO_DESEO },
     {
       id: 'paises-frontera', type: 'line', source: 'paises',
       paint: {

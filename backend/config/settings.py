@@ -133,3 +133,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Notion (ver backend/.env.example)
+NOTION_TOKEN = os.environ.get('NOTION_TOKEN', '')
+NOTION_DATABASE_ID = os.environ.get('NOTION_DATABASE_ID', '')

@@ -9,7 +9,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - Mapa mundial en MapLibre con países y provincias de Natural Earth.
 - Zoom semántico: de lejos se ven países y al acercarse aparecen las provincias.
 - Colores por estado: gris para sin visitar, azul semitransparente con contorno para la lista de deseos, y color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
-- Regiones, viajes y visitas en SQLite (`Region`, `Viaje`, `Visita`). Por ahora se cargan desde el admin de Django o con fixtures; la sincronización con Notion viene después.
+- Regiones, viajes y visitas en SQLite (`Region`, `Viaje`, `Visita`), sincronizados desde Notion (bases Destinations y Lugares) o cargados a mano desde el admin de Django.
 
 ## Estructura
 
@@ -59,9 +59,33 @@ Desde `backend/`:
 .venv\Scripts\python manage.py migrate
 .venv\Scripts\python manage.py descargar_natural_earth   # baja Natural Earth a data/raw/ (~20 MB)
 .venv\Scripts\python manage.py cargar_regiones           # carga 258 países y 4596 provincias con su área
-.venv\Scripts\python manage.py loaddata viaje_ejemplo    # opcional: Salta, Jujuy y Tucumán de ejemplo
+.venv\Scripts\python manage.py sincronizar_notion        # viajes y visitas desde Notion (ver abajo)
 .venv\Scripts\python manage.py createsuperuser           # para cargar viajes desde /admin/
 ```
+
+Sin Notion, `loaddata viaje_ejemplo` carga un viaje de ejemplo (Salta, Jujuy y Tucumán).
+
+## Sincronizar con Notion
+
+Configuración, una sola vez:
+
+1. Creá una integración interna en https://www.notion.so/profile/integrations y poné su token en `backend/.env` como `NOTION_TOKEN`.
+2. Compartí la página **Travel Planner** con la integración: menú `•••` → **Connections**. Así ve Destinations y Lugares.
+3. Poné el ID de la base Destinations (los 32 caracteres de su URL) como `NOTION_DATABASE_ID`.
+
+Después, cada vez que actualices Notion:
+
+```powershell
+cd backend
+.venv\Scripts\python manage.py sincronizar_notion --dry-run   # muestra qué haría, sin guardar
+.venv\Scripts\python manage.py sincronizar_notion
+```
+
+- Cada destino es un `Viaje`, y sus Lugares se vuelven `Visita` en la región donde caen sus coordenadas. Si un Lugar está "Planeado", se pinta como deseo.
+- Los Lugares que no cuelgan de ningún destino se vuelven visitas sin viaje.
+- Los destinos sin Place ni Lugares se ubican por nombre: primero contra las regiones y después con Nominatim. Nominatim solo acepta países, provincias y ciudades, y sus respuestas se guardan en caché en `data/raw/nominatim_cache.json`. Con `--sin-nominatim` no se hacen consultas externas.
+- El comando lista lo que no pudo ubicar ("Europa central", "Balcanes"…). Para esos casos, agregales `Place` en Notion o cargá la visita a mano en el admin.
+- Las visitas que crea el sync se regeneran en cada corrida y las que cargues a mano no se tocan. Nunca borra viajes.
 
 ## Levantarlo
 
@@ -107,3 +131,5 @@ Opciones: `--simplificar-paises 15%`, `--simplificar-provincias 15%` (el default
 ## Fuentes de datos
 
 - [Natural Earth](https://www.naturalearthdata.com/): dominio público.
+- [Nominatim](https://nominatim.org/) / OpenStreetMap: geocodificación de nombres, respetando su política de uso (1 pedido por segundo).
+- API de Notion: bases Destinations y Lugares del Travel Planner.

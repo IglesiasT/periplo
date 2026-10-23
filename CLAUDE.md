@@ -29,14 +29,18 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `codigo`: ISO o código GADM; es el que lo vincula con la geometría del GeoJSON
   - `padre`: FK a `Region`, nullable
   - `area_km2`: precalculada en una proyección de áreas iguales
+  - `continente`: solo en países, viene de Natural Earth
 - **`Viaje`**
   - `nombre`, `fecha_inicio`, `fecha_fin`
+  - `estado`: deseo, investigando, en curso o hecho; refleja el `Status` de Notion. Es descriptivo: lo que se pinta lo decide `Visita.realizada`
   - `notion_id`: nullable; vincula el viaje con su página de Notion
   - `notas`
 - **`Visita`**
-  - `viaje`: FK
+  - `viaje`: FK, nullable; un lugar puede estar visitado sin estar asociado a un viaje
   - `region`: FK
   - `tipo_presencia`: estadía, paso o tránsito; define la intensidad del color en el mapa
+  - `realizada`: si es falso, todavía no fui y se pinta como deseo
+  - `desde_notion`: la creó el sync, que la regenera en cada corrida
 - **`Ruta`**
   - `viaje`: FK
   - `coordenadas`: LineString guardado como JSON
@@ -73,7 +77,8 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 4. Agregar zoom semántico: con zoom lejano se ven países y al acercarse aparecen las provincias, como el mapa de estados de Victoria 3.
 5. Sincronizar con Notion: un management command lee la base **Destinations** y crea viajes y deseos.
    - Propiedades de la base: `Name` (title), `Status` (status: Not started / Investigando / In progress / Done!), `Place` (place, con lat/lon), `Tags` (multi-select por continente, Argentina o Concert), `Lugares` (relación con la base Lugares).
-   - Verificar si la API pública expone la propiedad `Place` con coordenadas. Si no, geocodificar el nombre con **Nominatim**.
+   - La API pública sí expone `Place` con `lat`/`lon`. La base **Lugares** también tiene `Place` y un `Estado` (Visitado / Planeado), que es el que decide si una visita está realizada. "In progress" significa "planificando", no "viajando".
+   - Orden para ubicar: `Place` de los Lugares → `Place` del destino → nombre contra las `Region` → **Nominatim**, aceptando solo resultados de tipo país, provincia o ciudad. Las coordenadas se traducen a región con point-in-polygon.
 6. Al final de la fase, cargar el nivel departamento con **GADM nivel 2**, empezando solo por Argentina porque es pesado.
 
 ### Fase 2: el diario

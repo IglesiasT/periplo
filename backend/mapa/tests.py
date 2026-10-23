@@ -1,6 +1,9 @@
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from .models import Region, Viaje, Visita
+from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
+from .sincronizacion import planificar_visitas
+from .ubicacion import Ubicacion, area_bbox_km2, normalizar
 from .views import calcular_estados
 
 
@@ -14,22 +17,112 @@ class CalcularEstadosTests(TestCase):
         cls.cusco = Region.objects.create(nivel='provincia', codigo='PE-CUS', nombre='Cusco', padre=cls.per)
 
     def test_el_estado_sube_al_pais_con_la_mayor_intensidad(self):
-        viaje = Viaje.objects.create(nombre='NOA', estado=Viaje.Estado.HECHO)
+        viaje = Viaje.objects.create(nombre='NOA')
         Visita.objects.create(viaje=viaje, region=self.tucuman, tipo_presencia='paso')
         Visita.objects.create(viaje=viaje, region=self.salta, tipo_presencia='estadia')
 
         self.assertEqual(calcular_estados(), {'AR-T': 'paso', 'AR-A': 'estadia', 'ARG': 'estadia'})
 
-    def test_viaje_no_realizado_es_deseo(self):
+    def test_visita_no_realizada_es_deseo(self):
         viaje = Viaje.objects.create(nombre='Perú', estado=Viaje.Estado.INVESTIGANDO)
-        Visita.objects.create(viaje=viaje, region=self.cusco)
+        Visita.objects.create(viaje=viaje, region=self.cusco, realizada=False)
 
         self.assertEqual(calcular_estados(), {'PE-CUS': 'deseo', 'PER': 'deseo'})
 
     def test_lo_visitado_le_gana_al_deseo(self):
-        deseo = Viaje.objects.create(nombre='Volver a Salta', estado=Viaje.Estado.DESEO)
-        hecho = Viaje.objects.create(nombre='NOA', estado=Viaje.Estado.HECHO)
-        Visita.objects.create(viaje=deseo, region=self.salta)
-        Visita.objects.create(viaje=hecho, region=self.salta, tipo_presencia='transito')
+        Visita.objects.create(viaje=Viaje.objects.create(nombre='Volver'), region=self.salta, realizada=False)
+        Visita.objects.create(viaje=None, region=self.salta, tipo_presencia='transito')
 
         self.assertEqual(calcular_estados()['AR-A'], 'transito')
+
+
+def pagina(notion_id, **props):
+    return {'id': notion_id, 'properties': props}
+
+
+def titulo(texto):
+    return {'type': 'title', 'title': [{'plain_text': texto}]}
+
+
+def opcion(tipo, nombre):
+    return {'type': tipo, tipo: {'name': nombre} if nombre else None}
+
+
+def relacion(*ids):
+    return {'type': 'relation', 'relation': [{'id': i} for i in ids]}
+
+
+def place_prop(lat, lon, nombre=''):
+    return {'type': 'place', 'place': {'lat': lat, 'lon': lon, 'name': nombre}}
+
+
+class ParseoNotionTests(SimpleTestCase):
+    def test_destino(self):
+        destino = parsear_destino(pagina(
+            'd1', Name=titulo('Salta - Jujuy'), Status=opcion('status', 'Done!'),
+            Place={'type': 'place', 'place': None}, Lugares=relacion('l1', 'l2'),
+        ))
+        self.assertEqual(destino, Destino('d1', 'Salta - Jujuy', 'hecho', None, ['l1', 'l2']))
+
+    def test_lugar_con_place_y_estado_vacio(self):
+        lugar = parsear_lugar(pagina(
+            'l1', Lugar=titulo('Tilcara'), Estado=opcion('select', None),
+            Place=place_prop(-23.57, -65.39, 'Tilcara, Argentina'), Viaje=relacion(),
+        ))
+        self.assertIsNone(lugar.visitado)
+        self.assertEqual(lugar.place, Place(-23.57, -65.39, 'Tilcara, Argentina'))
+
+    def test_status_desconocido_cuenta_como_deseo(self):
+        destino = parsear_destino(pagina('d1', Name=titulo('X'), Status=opcion('status', 'Nuevo'), Lugares=relacion()))
+        self.assertEqual(destino.estado, 'deseo')
+
+
+class UbicadorFalso:
+    """Coordenadas: lat < -30 es Buenos Aires, si no Jujuy. Nombres: un diccionario fijo."""
+
+    nombres = {'Peru': 'PER', 'Tucuman': 'AR-T'}
+
+    def por_coordenadas(self, lat, lon):
+        return Ubicacion('AR-B' if lat < -30 else 'AR-Y', 'place')
+
+    def por_nombre(self, nombre):
+        codigo = self.nombres.get(nombre)
+        return Ubicacion(codigo, 'nombre') if codigo else None
+
+
+class PlanificarVisitasTests(SimpleTestCase):
+    def planificar(self, destinos, lugares):
+        visitas, sin_ubicar = planificar_visitas(destinos, lugares, UbicadorFalso())
+        return {(v.viaje_notion_id, v.codigo): v.realizada for v in visitas}, sin_ubicar
+
+    def test_lugares_del_mismo_viaje_y_provincia_se_unifican(self):
+        destino = Destino('d1', 'NOA', 'hecho', None, ['l1', 'l2'])
+        lugares = [
+            Lugar('l1', 'Tilcara', True, Place(-23.5, -65.4, ''), ['d1']),
+            Lugar('l2', 'Humahuaca', False, Place(-23.2, -65.3, ''), ['d1']),
+        ]
+        self.assertEqual(self.planificar([destino], lugares), ({('d1', 'AR-Y'): True}, []))
+
+    def test_el_estado_del_lugar_manda_sobre_el_del_destino(self):
+        # Destino "In progress" con su lugar "Planeado": es un deseo, no una visita.
+        destino = Destino('d1', 'Tucuman', 'en_curso', None, ['l1'])
+        lugar = Lugar('l1', 'Tucuman', False, None, ['d1'])
+        self.assertEqual(self.planificar([destino], [lugar]), ({('d1', 'AR-T'): False}, []))
+
+    def test_sin_lugares_usa_el_nombre_y_solo_done_es_visitado(self):
+        destinos = [Destino('d1', 'Peru', 'deseo', None), Destino('d2', 'Migrate', 'en_curso', None)]
+        self.assertEqual(self.planificar(destinos, []), ({('d1', 'PER'): False}, ['Migrate']))
+
+    def test_lugar_sin_viaje_es_visita_sin_viaje(self):
+        lugar = Lugar('l1', 'Mar del Plata', True, Place(-38.0, -57.5, ''), [])
+        self.assertEqual(self.planificar([], [lugar]), ({(None, 'AR-B'): True}, []))
+
+
+class UtilidadesTests(SimpleTestCase):
+    def test_normalizar(self):
+        self.assertEqual(normalizar('  Perú '), 'peru')
+        self.assertEqual(normalizar('Túnez'), normalizar('Tunez'))
+
+    def test_area_bbox(self):
+        # 1° x 1° en el ecuador: ~111 km x 111 km
+        self.assertAlmostEqual(area_bbox_km2(['0', '1', '0', '1']), 12321, delta=5)

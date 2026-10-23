@@ -16,9 +16,9 @@ PRIORIDAD = {
 def calcular_estados() -> dict[str, str]:
     """Estado de cada región tocada por alguna visita, propagado hacia sus regiones padre."""
     estados: dict[str, str] = {}
-    visitas = Visita.objects.select_related('viaje', 'region__padre__padre')
+    visitas = Visita.objects.select_related('region__padre__padre')
     for visita in visitas:
-        estado = visita.tipo_presencia if visita.viaje.realizado else DESEO
+        estado = visita.tipo_presencia if visita.realizada else DESEO
         region = visita.region
         while region is not None:
             actual = estados.get(region.codigo)

@@ -36,10 +36,11 @@ class Region(models.Model):
 
 class Viaje(models.Model):
     class Estado(models.TextChoices):
-        # Mapean el Status de la base Destinations de Notion.
+        # Mapean el Status de la base Destinations de Notion. Es descriptivo:
+        # lo que se pinta en el mapa lo decide Visita.realizada.
         DESEO = 'deseo', 'Deseo'                    # Not started
         INVESTIGANDO = 'investigando', 'Investigando'
-        EN_CURSO = 'en_curso', 'En curso'           # In progress
+        EN_CURSO = 'en_curso', 'En curso'           # In progress (planificando)
         HECHO = 'hecho', 'Hecho'                    # Done!
 
     nombre = models.CharField(max_length=200)
@@ -55,10 +56,6 @@ class Viaje(models.Model):
     def __str__(self):
         return self.nombre
 
-    @property
-    def realizado(self):
-        return self.estado in (self.Estado.EN_CURSO, self.Estado.HECHO)
-
 
 class Visita(models.Model):
     class TipoPresencia(models.TextChoices):
@@ -67,12 +64,17 @@ class Visita(models.Model):
         PASO = 'paso', 'De paso'
         TRANSITO = 'transito', 'Tránsito'
 
-    viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name='visitas')
+    # Opcional: un lugar puede estar visitado sin saber en qué viaje.
+    viaje = models.ForeignKey(Viaje, null=True, blank=True, on_delete=models.CASCADE, related_name='visitas')
     region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name='visitas')
     tipo_presencia = models.CharField(max_length=10, choices=TipoPresencia.choices, default=TipoPresencia.ESTADIA)
+    realizada = models.BooleanField(default=True, help_text='Falso = todavía no fui: se pinta como deseo.')
+    desde_notion = models.BooleanField(default=False, editable=False,
+                                       help_text='La creó sincronizar_notion, que la regenera en cada corrida.')
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['viaje', 'region'], name='visita_unica_por_viaje')]
 
     def __str__(self):
-        return f'{self.viaje} → {self.region} ({self.get_tipo_presencia_display()})'
+        estado = self.get_tipo_presencia_display() if self.realizada else 'deseo'
+        return f'{self.viaje or "Sin viaje"} → {self.region} ({estado})'
