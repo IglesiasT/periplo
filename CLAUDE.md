@@ -26,7 +26,10 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 - **`Region`**
   - `nivel`: país, provincia o departamento
   - `nombre`
-  - `codigo`: ISO o código GADM; es el que lo vincula con la geometría del GeoJSON
+  - `codigo`: es el que lo vincula con la geometría del GeoJSON
+    - Países: `ADM0_A3` de Natural Earth (`ARG`).
+    - Provincias: ISO 3166-2 (`AR-A`). Si el ISO falta o está repetido, `adm1_code` de Natural Earth.
+    - Departamentos argentinos: `AR-` + código INDEC de 5 dígitos (`AR-66028`). ISO 3166-2 no llega a ese nivel en Argentina.
   - `padre`: FK a `Region`, nullable
   - `area_km2`: precalculada en una proyección de áreas iguales
   - `continente`: solo en países, viene de Natural Earth
@@ -79,7 +82,10 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
    - Propiedades de la base: `Name` (title), `Status` (status: Not started / Investigando / In progress / Done!), `Place` (place, con lat/lon), `Tags` (multi-select por continente, Argentina o Concert), `Lugares` (relación con la base Lugares).
    - La API pública sí expone `Place` con `lat`/`lon`. La base **Lugares** también tiene `Place` y un `Estado` (Visitado / Planeado), que es el que decide si una visita está realizada. "In progress" significa "planificando", no "viajando".
    - Orden para ubicar: `Place` de los Lugares → `Place` del destino → nombre contra las `Region` → **Nominatim**, aceptando solo resultados de tipo país, provincia o ciudad. Las coordenadas se traducen a región con point-in-polygon.
-6. Al final de la fase, cargar el nivel departamento con **GADM nivel 2**, empezando solo por Argentina porque es pesado.
+6. Al final de la fase, cargar el nivel departamento de Argentina con la capa **Departamento del IGN**, que trae el código INDEC (campo `in1`).
+   - Los dos primeros dígitos del código INDEC identifican la provincia, y con eso se arma la jerarquía.
+   - Se usa IGN y no GADM porque es la fuente oficial y su licencia permite redistribuir, así que se puede commitear el GeoJSON derivado. GADM prohíbe la redistribución.
+   - Para otros países, evaluar la fuente caso por caso, revisando siempre la licencia antes de commitear datos derivados.
 
 ### Fase 2: el diario
 
@@ -113,7 +119,13 @@ Cuando eso se vea en pantalla, se suman las capas en el orden de las fases.
 ## Fuentes de datos
 
 - **Natural Earth:** países y provincias. Dominio público.
-- **GADM:** departamentos. Licencia de uso no comercial, sin problema para un proyecto personal.
+- **IGN (Instituto Geográfico Nacional de Argentina):** departamentos, partidos y comunas, con código INDEC.
+  - Se descarga por WFS desde la página Capas SIG.
+  - Su licencia permite el uso y la redistribución gratuita con estas condiciones:
+    - citar *"FUENTE: Instituto Geográfico Nacional de la República Argentina"*;
+    - mencionar la fecha de los datos originales (geometría modificada por última vez el 11/11/2019);
+    - no sugerir que el IGN avala el proyecto.
+- **GADM:** descartado para los datos que se commitean. Su licencia es solo para uso no comercial y prohíbe redistribuir.
 - **historical-basemaps:** fronteras históricas.
 - **Nominatim:** geocodificación, si hace falta.
 - **API de Notion:** base Destinations del Travel Planner.
