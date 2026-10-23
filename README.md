@@ -4,19 +4,22 @@ Mapa y diario de viajes personal: un mapa que se pinta a medida que viajo, al es
 
 La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 
-## Estado actual: MVP
+## Estado actual: Fase 1 en curso
 
-- Provincias argentinas de Natural Earth en un mapa MapLibre.
-- Salta, Jujuy y Tucumán pintadas como visitadas desde un JSON hardcodeado (`backend/mapa/data/visitas_mvp.json`), servido por Django en `GET /api/visitas/`.
+- Mapa mundial en MapLibre con países y provincias de Natural Earth.
+- Zoom semántico: de lejos se ven países y al acercarse aparecen las provincias.
+- Colores por estado: gris para sin visitar, azul semitransparente con contorno para la lista de deseos, y color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
+- Regiones, viajes y visitas en SQLite (`Region`, `Viaje`, `Visita`). Por ahora se cargan desde el admin de Django o con fixtures; la sincronización con Notion viene después.
 
 ## Estructura
 
 ```
 backend/    Django + Django REST Framework + SQLite
   config/   proyecto Django (settings, urls)
-  mapa/     app: endpoint /api/visitas/ y management commands geográficos
+  mapa/     app: modelos, GET /api/estados/ y management commands geográficos
+  data/raw/ descargas y GeoJSON completos (ignorado por git, se regenera)
 frontend/   React + TypeScript + Vite + MapLibre GL
-  public/geo/argentina-provincias.geojson   geometrías simplificadas (generadas)
+  public/geo/{paises,provincias}.geojson   geometrías simplificadas (generadas y commiteadas)
 ```
 
 ## Requisitos
@@ -24,53 +27,82 @@ frontend/   React + TypeScript + Vite + MapLibre GL
 - Python 3.12+
 - Node.js 22+
 
-## Cómo levantarlo (Windows, PowerShell)
+## Primera vez (Windows, PowerShell)
 
-Se necesitan dos terminales: una para el backend y otra para el frontend.
-
-### Backend (http://127.0.0.1:8000)
+### 1. Dependencias
 
 ```powershell
 cd backend
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
+cd ..\frontend
+npm install
+cd ..
+```
+
+### 2. Secretos
+
+```powershell
+cd backend
 Copy-Item .env.example .env
 # Generá una SECRET_KEY y pegala en .env como DJANGO_SECRET_KEY:
 .venv\Scripts\python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
-.venv\Scripts\python manage.py migrate
-.venv\Scripts\python manage.py runserver
 ```
 
 > Los secretos (la `SECRET_KEY` de Django y, más adelante, el token de Notion) van en `backend/.env`, que git ignora. Nunca los escribas en `settings.py` ni en otro archivo versionado.
 
-> Si preferís activar el entorno con `.venv\Scripts\Activate.ps1` y PowerShell lo bloquea, corré una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Los comandos de arriba no lo necesitan.
+### 3. Base de datos y regiones
 
-### Frontend (http://localhost:5173)
+Desde `backend/`:
 
 ```powershell
+.venv\Scripts\python manage.py migrate
+.venv\Scripts\python manage.py descargar_natural_earth   # baja Natural Earth a data/raw/ (~20 MB)
+.venv\Scripts\python manage.py cargar_regiones           # carga 258 países y 4596 provincias con su área
+.venv\Scripts\python manage.py loaddata viaje_ejemplo    # opcional: Salta, Jujuy y Tucumán de ejemplo
+.venv\Scripts\python manage.py createsuperuser           # para cargar viajes desde /admin/
+```
+
+## Levantarlo
+
+Se necesitan dos terminales.
+
+```powershell
+# Backend: http://127.0.0.1:8000 (admin en /admin/)
+cd backend
+.venv\Scripts\python manage.py runserver
+```
+
+```powershell
+# Frontend: http://localhost:5173
 cd frontend
-npm install
 npm run dev
 ```
 
-Abrí http://localhost:5173. Vite reenvía las llamadas a `/api` hacia Django (ver `frontend/vite.config.ts`), así que el backend tiene que estar corriendo para que se pinten las provincias visitadas.
+Vite reenvía las llamadas a `/api` hacia Django (ver `frontend/vite.config.ts`), así que el backend tiene que estar corriendo para que se pinten las regiones.
 
-## Regenerar el GeoJSON de provincias
+> Si preferís activar el entorno con `.venv\Scripts\Activate.ps1` y PowerShell lo bloquea, corré una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Los comandos de arriba no lo necesitan.
 
-El archivo `frontend/public/geo/argentina-provincias.geojson` ya está commiteado. Para regenerarlo, con las dependencias de backend y frontend instaladas:
+## Tests
 
 ```powershell
 cd backend
-.venv\Scripts\python manage.py descargar_natural_earth
+.venv\Scripts\python manage.py test mapa
 ```
 
-El comando:
+## Datos geográficos
 
-1. Descarga `ne_10m_admin_1_states_provinces.zip` de Natural Earth a `backend/data/raw/`, que está ignorado por git y funciona como caché.
-2. Filtra Argentina (`adm0_a3 == "ARG"`) con geopandas y deja solo `codigo` (ISO 3166-2) y `nombre`.
-3. Simplifica con mapshaper, preservando las fronteras compartidas.
+`descargar_natural_earth`:
 
-Opciones: `--simplificar 30%` conserva más vértices; el default es 20%. `--forzar-descarga` vuelve a bajar el zip.
+1. Descarga admin-0 (países) y admin-1 (provincias) a escala 10m en `backend/data/raw/`, que funciona como caché.
+2. Normaliza los campos con geopandas: `codigo`, `nombre`, `padre` y `continente`.
+   - Los países usan `ADM0_A3` (por ejemplo `ARG`).
+   - Las provincias usan ISO 3166-2 (por ejemplo `AR-A`) cuando es válido y único; si no, `adm1_code` de Natural Earth.
+3. Guarda los GeoJSON completos en `data/raw/` y los simplifica con mapshaper hacia `frontend/public/geo/`, preservando las fronteras compartidas.
+
+Opciones: `--simplificar-paises 15%`, `--simplificar-provincias 15%` (el default es 10%) y `--forzar-descarga`.
+
+`cargar_regiones` lee los GeoJSON completos, calcula el área en la proyección de áreas iguales Mollweide y hace upsert por `codigo`, así que se puede correr varias veces.
 
 ## Fuentes de datos
 
