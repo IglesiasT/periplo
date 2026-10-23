@@ -131,8 +131,20 @@ textarea {
   margin-bottom: 12px;
 }
 
-.pestanias button.activa {
+.pestanias button.activa,
+.encabezado-seccion button.activa {
   border-color: var(--acento);
+}
+
+.encabezado-seccion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 8px;
+}
+
+.encabezado-seccion h3 {
+  margin: 0;
 }
 
 .viajes,

@@ -20,9 +20,15 @@ interface Props {
   error: Error | null
   seleccion: Seleccion
   onSeleccionar: (seleccion: Seleccion) => void
+  /** Modo edición: los clicks en el mapa marcan regiones del viaje elegido. */
+  editando: boolean
+  onEditar: (editando: boolean) => void
+  aviso: string | null
 }
 
-export default function Panel({ viajes, cargando, error, seleccion, onSeleccionar }: Props) {
+export default function Panel({
+  viajes, cargando, error, seleccion, onSeleccionar, editando, onEditar, aviso,
+}: Props) {
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const viaje = typeof seleccion === 'number' ? viajes?.find((v) => v.id === seleccion) : undefined
 
@@ -43,7 +49,19 @@ export default function Panel({ viajes, cargando, error, seleccion, onSelecciona
         <h2>{viaje.nombre}</h2>
         {/* key: si cambia el viaje elegido, el formulario se vuelve a montar con sus datos. */}
         <ViajeForm key={viaje.id} viaje={viaje} onBorrado={() => onSeleccionar(null)} />
-        <h3>Regiones</h3>
+        <div className="encabezado-seccion">
+          <h3>Regiones</h3>
+          <button className={editando ? 'activa' : ''} onClick={() => onEditar(!editando)}>
+            {editando ? 'Listo' : 'Marcar en el mapa'}
+          </button>
+        </div>
+        {editando && (
+          <p className="aviso">
+            Hacé click en una región. Cada click avanza: estadía → de paso → tránsito → deseo → sin marcar.
+            Marca el nivel que estás viendo: país, provincia o departamento.
+          </p>
+        )}
+        {aviso && <p className="error">{aviso}</p>}
         <VisitasLista visitas={viaje.visitas} />
       </aside>
     )

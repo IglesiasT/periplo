@@ -227,11 +227,19 @@ interface Props {
   estados: EstadosRegiones | undefined
   /** Códigos de las regiones a destacar con un contorno claro (las del viaje elegido). */
   resaltadas: Set<string>
+  /** Si está, el mapa está en modo edición: cada click en una región la manda acá. */
+  alClickearRegion?: (codigo: string) => void
 }
 
-export default function Mapa({ estados, resaltadas }: Props) {
+export default function Mapa({ estados, resaltadas, alClickearRegion }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  // Los handlers de MapLibre se registran una sola vez al crear el mapa: si usaran la prop directamente,
+  // verían siempre la versión de ese momento (un closure viejo). Leen la última desde este ref.
+  const alClickearRef = useRef(alClickearRegion)
+  useEffect(() => {
+    alClickearRef.current = alClickearRegion
+  })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
   // Lo que ya está aplicado en el mapa actual, para calcular la diferencia en cada cambio.
@@ -253,11 +261,15 @@ export default function Mapa({ estados, resaltadas }: Props) {
     map.on('moveend', () => guardarVistaEnHash(map))
     map.on('load', () => setListo(true))
 
+    // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
+    const regionEn = (punto: maplibregl.PointLike) =>
+      map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom()) })[0]
+
     // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false })
     map.on('mousemove', (e) => {
-      // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
-      const [feature] = map.queryRenderedFeatures(e.point, { layers: capasConsultables(map.getZoom()) })
+      const feature = regionEn(e.point)
+      const editando = Boolean(alClickearRef.current)
       if (!feature) {
         map.getCanvas().style.cursor = ''
         popup.remove()
@@ -265,13 +277,18 @@ export default function Mapa({ estados, resaltadas }: Props) {
       }
       const estado = feature.state.estado as EstadoRegion | undefined
       const detalle = estado ? ETIQUETAS_ESTADO[estado] : 'Sin visitar'
-      map.getCanvas().style.cursor = 'pointer'
+      map.getCanvas().style.cursor = editando ? 'crosshair' : 'pointer'
       popup
         .setLngLat(e.lngLat)
-        .setHTML(`<strong>${feature.properties.nombre}</strong><br>${detalle}`)
+        .setHTML(`<strong>${feature.properties.nombre}</strong><br>${detalle}${editando ? '<br><em>Click para marcar</em>' : ''}`)
         .addTo(map)
     })
     map.getCanvas().addEventListener('mouseleave', () => popup.remove())
+
+    map.on('click', (e) => {
+      const feature = regionEn(e.point)
+      if (feature && alClickearRef.current) alClickearRef.current(String(feature.properties.codigo))
+    })
 
     return () => {
       map.remove()
