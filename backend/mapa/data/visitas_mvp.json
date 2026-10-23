@@ -1,0 +1,5 @@
+[
+  { "codigo": "AR-A", "nombre": "Salta", "tipo_presencia": "estadia" },
+  { "codigo": "AR-Y", "nombre": "Jujuy", "tipo_presencia": "estadia" },
+  { "codigo": "AR-T", "nombre": "Tucumán", "tipo_presencia": "paso" }
+]
