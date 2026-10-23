@@ -15,7 +15,7 @@ import pandas as pd
 import shapely
 from django.core.management.base import BaseCommand, CommandError
 
-from mapa.geodatos import GEO_DIR, RAW_DIR, ErrorGeodatos, descargar, simplificar
+from mapa.geodatos import GEO_DIR, RAW_DIR, SIN_NOMBRE, ErrorGeodatos, descargar, simplificar
 
 URL_BASE = 'https://naciscdn.org/naturalearth/10m/cultural'
 ZIP_PAISES = 'ne_10m_admin_0_countries.zip'
@@ -59,7 +59,7 @@ def normalizar_provincias(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     # ISO 3166-2 cuando es válido y no está repetido; si no, adm1_code (propio de Natural Earth, siempre único).
     iso = gdf['iso_3166_2']
     iso_usable = iso.str.match(PATRON_ISO_3166_2, na=False) & ~iso.duplicated(keep=False)
-    gdf = gdf.assign(codigo=iso.where(iso_usable, gdf['adm1_code']))
+    gdf = gdf.assign(codigo=iso.where(iso_usable, gdf['adm1_code']), name=gdf['name'].fillna(SIN_NOMBRE))
     gdf = gdf.rename(columns={'name': 'nombre', 'adm0_a3': 'padre'})[['codigo', 'nombre', 'padre', 'geometry']]
     return anexar(gdf, TIERRA_DEL_FUEGO, gdf['padre'].isin(ISLAS_ATLANTICO_SUR))
 

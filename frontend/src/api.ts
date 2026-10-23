@@ -1,6 +1,6 @@
 import type {
   DatosViaje, DatosVisita, Epoca, Estadisticas, EstadosRegiones, Ficha, FichaResumen, Foto, Logro, RegionDetalle,
-  Ruta, Viaje, Visita,
+  Viaje, Visita,
 } from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
@@ -57,19 +57,6 @@ export const crearVisita = (datos: DatosVisita) => pedir<Visita>('POST', '/api/v
 export const actualizarVisita = (id: number, datos: Partial<DatosVisita>) =>
   pedir<Visita>('PATCH', `/api/visitas/${id}/`, datos)
 export const borrarVisita = (id: number) => pedir<void>('DELETE', `/api/visitas/${id}/`)
-
-export const listarRutas = () => pedir<Ruta[]>('GET', '/api/rutas/')
-export const crearRuta = (datos: Pick<Ruta, 'viaje' | 'coordenadas'> & { nombre?: string }) =>
-  pedir<Ruta>('POST', '/api/rutas/', datos)
-export const borrarRuta = (id: number) => pedir<void>('DELETE', `/api/rutas/${id}/`)
-export function importarRutas(viaje: number, archivo: File) {
-  const formulario = new FormData()
-  formulario.append('viaje', String(viaje))
-  formulario.append('archivo', archivo)
-  return pedir<Ruta[]>('POST', '/api/rutas/importar/', formulario)
-}
-export const marcarTransito = (id: number) =>
-  pedir<{ agregadas: string[]; ya_estaban: number }>('POST', `/api/rutas/${id}/marcar_transito/`)
 
 export const listarFotos = () => pedir<Foto[]>('GET', '/api/fotos/')
 export function subirFoto(viaje: number, archivo: File) {

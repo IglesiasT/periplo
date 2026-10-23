@@ -1,5 +1,6 @@
 """El mapa en un año histórico: a qué entidad pertenecía cada región y qué entidades pisé."""
 import json
+from collections import defaultdict
 from pathlib import Path
 
 from django.conf import settings
@@ -13,6 +14,24 @@ NOMBRES_ES = Path(settings.BASE_DIR) / 'data' / 'entidades_es.json'
 # Las fronteras de historical-basemaps son aproximadas: una provincia que roza otra entidad en un
 # 2% no cuenta como haberla pisado. Sí cuenta la entidad principal de la región, cubra lo que cubra.
 UMBRAL_PISADA = 10
+
+# Entidades que ocupaban una región en un año, con su peso (porcentaje de superficie).
+Ocupacion = list[tuple[str, float]]
+
+
+def peso(porcentaje: float | None) -> float:
+    # Porcentaje vacío = asignada por cercanía: es la única entidad de esa región.
+    return 100 if porcentaje is None else porcentaje
+
+
+def principal(ocupacion: Ocupacion) -> str:
+    return max(ocupacion, key=lambda e: e[1])[0]
+
+
+def pisables(ocupacion: Ocupacion) -> list[str]:
+    """Las entidades que cuenta como pisadas visitar la región: la principal y las que cubren al menos UMBRAL_PISADA."""
+    mayor = principal(ocupacion)
+    return [entidad for entidad, p in ocupacion if p >= UMBRAL_PISADA or entidad == mayor]
 
 
 def aplicar_nombres_es(ruta: Path = NOMBRES_ES) -> int:
@@ -30,28 +49,39 @@ def aplicar_nombres_es(ruta: Path = NOMBRES_ES) -> int:
 def linea_historica(region) -> list[dict]:
     """A qué entidad perteneció la región en cada snapshot, juntando los consecutivos de la misma:
     [{desde, hasta, entidad, nombre}]. `desde` y `hasta` son años de snapshot: entre uno y otro no hay datos."""
-    filas = (RegionEpoca.objects.filter(region=region).order_by('anio')
+    filas = (RegionEpoca.objects.filter(region=region)
              .values_list('anio', 'entidad__nombre', 'entidad__nombre_es', 'porcentaje_superficie'))
-    principal: dict[int, tuple[str, str, float]] = {}
+    ocupacion: dict[int, Ocupacion] = defaultdict(list)
+    nombres: dict[str, str] = {}
     for anio, entidad, nombre_es, porcentaje in filas:
-        peso = 100 if porcentaje is None else porcentaje
-        if anio not in principal or peso > principal[anio][2]:
-            principal[anio] = (entidad, nombre_es or entidad, peso)
+        ocupacion[anio].append((entidad, peso(porcentaje)))
+        nombres[entidad] = nombre_es or entidad
 
     # Un snapshot en el que la región no tiene entidad corta el tramo.
     tramos: list[dict] = []
     continua = False
     for anio in anios_disponibles():
-        if anio not in principal:
+        if anio not in ocupacion:
             continua = False
             continue
-        entidad, nombre, _ = principal[anio]
+        entidad = principal(ocupacion[anio])
         if continua and tramos[-1]['entidad'] == entidad:
             tramos[-1]['hasta'] = anio
         else:
-            tramos.append({'desde': anio, 'hasta': anio, 'entidad': entidad, 'nombre': nombre})
+            tramos.append({'desde': anio, 'hasta': anio, 'entidad': entidad, 'nombre': nombres[entidad]})
         continua = True
     return tramos
+
+
+def contar_entidades_pisadas() -> int:
+    """Entidades distintas que pisé en algún año, con la misma regla que el panel de la época."""
+    visitadas = Visita.objects.filter(realizada=True).values('region_id')
+    filas = (RegionEpoca.objects.filter(region_id__in=visitadas)
+             .values_list('anio', 'region_id', 'entidad__nombre', 'porcentaje_superficie'))
+    ocupacion: dict[tuple[int, int], Ocupacion] = defaultdict(list)
+    for anio, region, entidad, porcentaje in filas:
+        ocupacion[(anio, region)].append((entidad, peso(porcentaje)))
+    return len({entidad for o in ocupacion.values() for entidad in pisables(o)})
 
 
 def anios_disponibles() -> list[int]:
@@ -73,18 +103,13 @@ def calcular_epoca(anio: int) -> dict:
              .values_list('region__codigo', 'entidad__nombre', 'entidad__nombre_es', 'entidad__color',
                           'porcentaje_superficie'))
 
-    principal: dict[str, tuple[str, float]] = {}
-    entidades_de: dict[str, list[tuple[str, float | None]]] = {}
+    ocupacion: dict[str, Ocupacion] = defaultdict(list)
     colores: dict[str, str] = {}
     nombres: dict[str, str] = {}
     for codigo, entidad, nombre_es, color, porcentaje in filas:
+        ocupacion[codigo].append((entidad, peso(porcentaje)))
         if nombre_es:
             nombres[entidad] = nombre_es
-        # Porcentaje vacío = asignada por cercanía: es la única entidad de esa región.
-        peso = 100 if porcentaje is None else porcentaje
-        if codigo not in principal or peso > principal[codigo][1]:
-            principal[codigo] = (entidad, peso)
-        entidades_de.setdefault(codigo, []).append((entidad, peso))
         if color:
             colores[entidad] = color
 
@@ -92,13 +117,13 @@ def calcular_epoca(anio: int) -> dict:
     visitadas = (Visita.objects.filter(realizada=True)
                  .values_list('region__codigo', 'region__nombre').distinct())
     for codigo, nombre in visitadas:
-        for entidad, peso in entidades_de.get(codigo, []):
-            if peso >= UMBRAL_PISADA or entidad == principal[codigo][0]:
+        if codigo in ocupacion:
+            for entidad in pisables(ocupacion[codigo]):
                 pisadas.setdefault(entidad, {})[codigo] = nombre
 
     return {
         'anio': anio,
-        'regiones': {codigo: entidad for codigo, (entidad, _) in principal.items()},
+        'regiones': {codigo: principal(o) for codigo, o in ocupacion.items()},
         'colores': colores,
         'nombres': nombres,
         'pisadas': [

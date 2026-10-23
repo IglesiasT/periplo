@@ -13,6 +13,10 @@ GEO_DIR = FRONTEND_DIR / 'public' / 'geo'
 # Mollweide: proyección de áreas iguales válida para todo el planeta (incluida la Antártida).
 CRS_AREAS_IGUALES = 'ESRI:54009'
 
+# Natural Earth trae algunos fragmentos sin nombre en ningún idioma (códigos "+99?"): se llaman así
+# en vez de quedar vacíos, que terminaban como "nan" en la base. No se rotulan.
+SIN_NOMBRE = 'Sin nombre'
+
 
 class ErrorGeodatos(Exception):
     pass

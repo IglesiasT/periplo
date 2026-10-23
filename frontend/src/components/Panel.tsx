@@ -6,7 +6,6 @@ import Estadisticas from './Estadisticas'
 import FotosLista from './FotosLista'
 import { LogrosLista, LogrosResumen } from './Logros'
 import RegionFicha from './RegionFicha'
-import RutasLista from './RutasLista'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
 
@@ -32,7 +31,7 @@ interface Props {
   /** Logro desplegado en la vista de logros: sus regiones se resaltan en el mapa. */
   logroElegido: string | null
   onElegirLogro: (id: string | null) => void
-  /** Qué hacen los clicks en el mapa: nada especial, marcar regiones o dibujar una ruta del viaje elegido. */
+  /** Qué hacen los clicks en el mapa: abrir la ficha de la región o marcarla en el viaje elegido. */
   modo: Modo
   onCambiarModo: (modo: Modo) => void
   /** Resultado o error de la última acción sobre el mapa. */
@@ -40,7 +39,7 @@ interface Props {
   onAviso: (aviso: string | null) => void
 }
 
-export type Modo = 'ninguno' | 'marcar' | 'dibujar'
+export type Modo = 'ninguno' | 'marcar'
 
 export default function Panel({
   viajes, fotos, logros, cargando, error, seleccion, onSeleccionar, logroElegido, onElegirLogro,
@@ -106,9 +105,6 @@ export default function Panel({
           </p>
         )}
         <VisitasLista visitas={viaje.visitas} />
-
-        <RutasLista viaje={viaje} dibujando={modo === 'dibujar'} onDibujar={() => alternar('dibujar')}
-                    onAviso={onAviso} />
 
         <FotosLista viaje={viaje} fotos={fotos?.filter((f) => f.viaje === viaje.id) ?? []} onAviso={onAviso} />
       </aside>

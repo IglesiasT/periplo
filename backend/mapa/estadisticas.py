@@ -1,16 +1,14 @@
 """
-Estadísticas del mapa: superficie recorrida, km de rutas, países por continente y avance por país.
+Estadísticas del mapa: países, provincias argentinas, continentes y entidades históricas pisadas.
 
-Solo cuentan las visitas realizadas (no los deseos). Para no contar dos veces la misma superficie,
-de las regiones visitadas se suman solo las que no están dentro de otra región visitada:
-si marcaste Jujuy entera, Tilcara ya está incluida; si marcaste solo Tilcara, cuenta solo Tilcara.
+Solo cuentan las visitas realizadas (no los deseos). Una visita a un departamento cuenta su
+provincia y su país: Tilcara suma Jujuy y Argentina.
 """
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
-from django.db.models import Sum
-
-from .models import Region, Ruta, Viaje, Visita
+from .epocas import contar_entidades_pisadas
+from .models import Region, Visita
 
 CONTINENTES = {
     'South America': 'Sudamérica',
@@ -23,6 +21,10 @@ CONTINENTES = {
     'Seven seas (open ocean)': 'Islas oceánicas',
 }
 
+# Natural Earth agrupa como "Seven seas" las islas en mar abierto: no es un continente.
+OCEANO_ABIERTO = 'Seven seas (open ocean)'
+ARGENTINA = 'ARG'
+
 
 @dataclass
 class R:
@@ -31,55 +33,42 @@ class R:
     nombre: str
     nivel: str
     padre_id: int | None
-    area: float
     continente: str
 
 
 def calcular_estadisticas() -> dict:
     regiones = {
-        fila[0]: R(*fila[:5], fila[5] or 0, fila[6])
-        for fila in Region.objects.values_list('id', 'codigo', 'nombre', 'nivel', 'padre_id', 'area_km2', 'continente')
+        fila[0]: R(*fila)
+        for fila in Region.objects.values_list('id', 'codigo', 'nombre', 'nivel', 'padre_id', 'continente')
     }
 
-    def ancestros(region: R):
-        while region.padre_id is not None:
-            region = regiones[region.padre_id]
-            yield region
-
     def subir_hasta(region: R, nivel: str) -> R | None:
-        return next((r for r in [region, *ancestros(region)] if r.nivel == nivel), None)
+        while region is not None and region.nivel != nivel:
+            region = regiones.get(region.padre_id)
+        return region
 
-    visitadas = set(Visita.objects.filter(realizada=True).values_list('region_id', flat=True))
-    # Las de más arriba en la jerarquía: ninguna de sus regiones padre está visitada.
-    cubiertas = [regiones[i] for i in visitadas if not any(a.id in visitadas for a in ancestros(regiones[i]))]
-
+    visitadas = [regiones[i] for i in set(Visita.objects.filter(realizada=True).values_list('region_id', flat=True))]
     paises = [r for r in regiones.values() if r.nivel == Region.Nivel.PAIS]
-    paises_visitados = {subir_hasta(regiones[i], Region.Nivel.PAIS).id for i in visitadas}
+    paises_visitados = {p.id for r in visitadas if (p := subir_hasta(r, Region.Nivel.PAIS))}
 
-    km2_por_pais: dict[int, float] = defaultdict(float)
-    for region in cubiertas:
-        km2_por_pais[subir_hasta(region, Region.Nivel.PAIS).id] += region.area
     provincias_visitadas_por_pais: dict[int, set[int]] = defaultdict(set)
-    for i in visitadas:
-        provincia = subir_hasta(regiones[i], Region.Nivel.PROVINCIA)
-        if provincia:
+    for region in visitadas:
+        if provincia := subir_hasta(region, Region.Nivel.PROVINCIA):
             provincias_visitadas_por_pais[provincia.padre_id].add(provincia.id)
     provincias_por_pais = Counter(r.padre_id for r in regiones.values() if r.nivel == Region.Nivel.PROVINCIA)
 
     total_por_continente = Counter(p.continente for p in paises)
     visitados_por_continente = Counter(regiones[i].continente for i in paises_visitados)
+    argentina = next((p for p in paises if p.codigo == ARGENTINA), None)
 
-    km2_visitados = sum(r.area for r in cubiertas)
-    km2_mundo = sum(p.area for p in paises)
     return {
-        'km2_visitados': round(km2_visitados),
-        'porcentaje_mundo': round(100 * km2_visitados / km2_mundo, 3) if km2_mundo else 0,
         'paises_visitados': len(paises_visitados),
         'paises_total': len(paises),
-        'viajes_hechos': Viaje.objects.filter(estado=Viaje.Estado.HECHO).count(),
-        # Solo rutas de viajes hechos: una ruta planificada todavía no se recorrió.
-        'km_rutas': round(Ruta.objects.filter(viaje__estado=Viaje.Estado.HECHO)
-                          .aggregate(total=Sum('longitud_km'))['total'] or 0),
+        'provincias_argentinas_visitadas': len(provincias_visitadas_por_pais[argentina.id]) if argentina else 0,
+        'provincias_argentinas_total': provincias_por_pais[argentina.id] if argentina else 0,
+        'continentes_visitados': sum(1 for c in visitados_por_continente if c != OCEANO_ABIERTO),
+        'continentes_total': sum(1 for c in CONTINENTES if c != OCEANO_ABIERTO),
+        'entidades_historicas_pisadas': contar_entidades_pisadas(),
         'continentes': sorted(
             (
                 {'continente': CONTINENTES.get(c, c), 'visitados': visitados_por_continente[c], 'total': total}
@@ -87,18 +76,17 @@ def calcular_estadisticas() -> dict:
             ),
             key=lambda c: (-c['visitados'], c['continente']),
         ),
+        # De los que más provincias tienen recorridas (en proporción) a los que menos.
         'paises': sorted(
             (
                 {
                     'codigo': regiones[i].codigo,
                     'nombre': regiones[i].nombre,
-                    'km2_visitados': round(km2_por_pais[i]),
-                    'porcentaje': round(100 * km2_por_pais[i] / regiones[i].area, 2) if regiones[i].area else 0,
                     'provincias_visitadas': len(provincias_visitadas_por_pais[i]),
                     'provincias_total': provincias_por_pais[i],
                 }
                 for i in paises_visitados
             ),
-            key=lambda p: -p['km2_visitados'],
+            key=lambda p: (-p['provincias_visitadas'] / (p['provincias_total'] or 1), p['nombre']),
         ),
     }

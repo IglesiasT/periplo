@@ -15,12 +15,15 @@
   --aguada: #c6d4cc;
   --tierra: #eee4ce;
   --ok: #4f6b3a;
-  /* El deseo nunca se rellena: se raya en índigo (igual que en el mapa). */
-  --rayado: repeating-linear-gradient(45deg, var(--indigo) 0 1.5px, transparent 1.5px 5px);
 
   --texto: 'EB Garamond', Georgia, serif;
   --titulo: 'IM Fell English SC', 'EB Garamond', Georgia, serif;
   --cursiva: 'IM Fell English', 'EB Garamond', Georgia, serif;
+
+  /* Sin esto el navegador dibuja sus controles nativos (las barras de scroll) en blanco.
+     scrollbar-color se hereda: alcanza con ponerlo acá para todo lo que scrollea. */
+  color-scheme: light;
+  scrollbar-color: var(--borde) var(--papel);
 }
 
 html,
@@ -62,6 +65,7 @@ textarea {
   width: 360px;
   flex-shrink: 0;
   overflow-y: auto;
+  scrollbar-width: thin;
   padding: 28px 24px;
   box-sizing: border-box;
   background: var(--papel);
@@ -417,11 +421,6 @@ textarea {
   margin: 0;
 }
 
-.botones {
-  display: flex;
-  gap: 6px;
-}
-
 .aviso,
 .aviso-accion {
   margin: 0;
@@ -479,7 +478,7 @@ textarea {
   font-style: italic;
 }
 
-/* Marca del viaje en la lista: carmín si ya fui, rayado índigo si es un plan. */
+/* Marca del viaje en la lista: carmín si ya fui, contorno índigo si es un plan (igual que en el mapa). */
 .marca {
   flex-shrink: 0;
   width: 13px;
@@ -492,8 +491,7 @@ textarea {
 }
 
 .marca-plan {
-  border-color: var(--indigo);
-  background: var(--rayado);
+  border: 1.5px solid var(--indigo);
 }
 
 /* --- Formulario --- */
@@ -746,9 +744,10 @@ textarea {
   vertical-align: -1px;
 }
 
+/* Un deseo es tierra sin pintar con contorno índigo, como en el mapa. */
 .leyenda-color.deseo {
-  border-color: var(--indigo);
-  background: var(--rayado), var(--tierra) !important;
+  border: 1.5px solid var(--indigo);
+  background: var(--tierra) !important;
 }
 
 /* --- Época: slider de años arriba y panel de entidades pisadas en el lugar de la leyenda --- */
@@ -805,6 +804,7 @@ textarea {
   width: min(320px, calc(100% - 32px));
   max-height: 45%;
   overflow-y: auto;
+  scrollbar-width: thin;
   padding: 12px 16px;
   box-sizing: border-box;
   border: 1px solid var(--tinta);

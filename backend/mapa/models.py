@@ -88,25 +88,6 @@ class Visita(models.Model):
         return f'{self.viaje or "Sin viaje"} → {self.region} ({estado})'
 
 
-class Ruta(models.Model):
-    """Recorrido de un viaje: importado de GPX/KML o dibujado en el mapa."""
-
-    class Origen(models.TextChoices):
-        GPX = 'gpx', 'GPX'
-        KML = 'kml', 'KML'
-        DIBUJADA = 'dibujada', 'Dibujada'
-
-    viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name='rutas')
-    nombre = models.CharField(max_length=200, blank=True)
-    # LineString como lista de [lon, lat], el mismo orden que GeoJSON.
-    coordenadas = models.JSONField()
-    longitud_km = models.FloatField(help_text='Geodésica, sobre el elipsoide WGS84.')
-    origen = models.CharField(max_length=10, choices=Origen.choices)
-
-    def __str__(self):
-        return f'{self.nombre or "Ruta"} ({self.longitud_km:.0f} km)'
-
-
 class Foto(models.Model):
     """Foto subida desde la app. Si trae GPS en el EXIF, se ubica sola en el mapa."""
 
@@ -185,19 +166,3 @@ class RegionEpoca(models.Model):
     def __str__(self):
         pct = f' ({self.porcentaje_superficie:.0f}%)' if self.porcentaje_superficie is not None else ''
         return f'{self.region} en {self.anio}: {self.entidad}{pct}'
-
-
-class RutaHistorica(models.Model):
-    """Ruta de la Seda, Camino del Inca, etc. El progreso se calcula contra las Visita."""
-
-    nombre = models.CharField(max_length=200, unique=True)
-    descripcion = models.TextField(blank=True)
-    regiones = models.ManyToManyField(Region, related_name='rutas_historicas')
-
-    class Meta:
-        ordering = ['nombre']
-        verbose_name = 'ruta histórica'
-        verbose_name_plural = 'rutas históricas'
-
-    def __str__(self):
-        return self.nombre

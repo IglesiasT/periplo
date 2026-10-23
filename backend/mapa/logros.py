@@ -3,7 +3,8 @@ Logros: colecciones de objetivos que se cumplen visitando regiones.
 
 Cada objetivo es un conjunto de regiones y se cumple con una visita realizada a cualquiera de ellas
 o a algo que esté adentro: Tilcara cumple "Jujuy" y Jujuy cumple "Argentina". Los deseos no cuentan.
-Se definen acá, en código; para sumar uno alcanza con agregarlo a LOGROS.
+Se definen acá, en código; para sumar uno alcanza con agregarlo a LOGROS. Las rutas históricas
+(la Campaña Libertadora, el Camino del Inca) son logros también: un objetivo por etapa.
 """
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -83,6 +84,19 @@ LOGROS = [
           regiones('ESP', 'MAR')),
     Logro('mercosur', 'Mercosur fundador', 'Los cuatro países que firmaron el Tratado de Asunción en 1991.',
           regiones('ARG', 'BRA', 'PRY', 'URY')),
+    # Rutas históricas: cada objetivo es una etapa del recorrido, en el orden en que se hizo.
+    Logro('campania_libertadora', 'La Campaña Libertadora',
+          'Los pasos de San Martín de Mendoza a Guayaquil: el cruce de los Andes y la expedición al Perú (1817–1822).',
+          grupos({
+              'Mendoza: el Ejército de los Andes': ['AR-M'],
+              'San Juan: el paso de Los Patos': ['AR-J'],
+              'Santiago: Chacabuco y Maipú': ['CL-RM'],
+              'Maule: Cancha Rayada': ['CL-ML'],
+              'Valparaíso: zarpa la expedición': ['CL-VS'],
+              'Ica: el desembarco en Paracas': ['PE-ICA'],
+              'Lima: Huaura y la independencia': ['PER-591', 'PER-587', 'PE-CAL'],
+              'Guayaquil: la entrevista con Bolívar': ['EC-G'],
+          })),
     Logro('qhapaq_nan', 'Qhapaq Ñan', 'Los seis países que atraviesa el Camino del Inca.',
           regiones('COL', 'ECU', 'PER', 'BOL', 'CHL', 'ARG')),
     Logro('sudamerica', 'Sudamérica', 'Los doce países independientes del continente.',

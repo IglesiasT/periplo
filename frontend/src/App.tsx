@@ -4,14 +4,13 @@ import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
 import Mapa from './components/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
-  useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearRuta, useCrearVisita, useEpoca, useEstados,
-  useFotos, useLogros, useRutas, useViajes,
+  useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEpoca, useEstados, useFotos,
+  useLogros, useViajes,
 } from './hooks/consultas'
 
 export default function App() {
   const estados = useEstados()
   const viajes = useViajes()
-  const rutas = useRutas()
   const fotos = useFotos()
   const logros = useLogros()
   const anios = useAniosHistoricos()
@@ -27,7 +26,6 @@ export default function App() {
   const crear = useCrearVisita()
   const actualizar = useActualizarVisita()
   const borrar = useBorrarVisita()
-  const crearRuta = useCrearRuta()
 
   const viaje = viajes.data?.find((v) => v.id === seleccion)
   const logro = seleccion === 'logros' ? logros.data?.find((l) => l.id === logroElegido) : undefined
@@ -71,12 +69,6 @@ export default function App() {
     }
   }
 
-  const alTerminarDibujo = (coordenadas: [number, number][]) => {
-    if (!viaje) return
-    const numero = viaje.rutas.length + 1
-    crearRuta.mutate({ viaje: viaje.id, coordenadas, nombre: `Ruta dibujada ${numero}` }, { onError: alFallar })
-  }
-
   return (
     <div className="app">
       <Panel
@@ -97,10 +89,7 @@ export default function App() {
       <Mapa
         estados={estados.data}
         resaltadas={resaltadas}
-        rutas={rutas.data}
-        viajeResaltado={viaje?.id ?? null}
         alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
-        alTerminarDibujo={modo === 'dibujar' && viaje ? alTerminarDibujo : undefined}
         alElegirRegion={(codigo) => seleccionar({ region: codigo })}
         fotos={fotos.data}
         epoca={epoca}

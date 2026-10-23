@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useEstadisticas } from '../hooks/consultas'
 
-const numero = (n: number, decimales = 0) =>
-  n.toLocaleString('es-AR', { minimumFractionDigits: decimales, maximumFractionDigits: decimales })
+const proporcion = (visitados: number, total: number) => (total ? (100 * visitados) / total : 0)
 
 export default function Estadisticas() {
   const { data, error } = useEstadisticas()
@@ -13,15 +12,16 @@ export default function Estadisticas() {
 
   return (
     <section className="estadisticas">
-      {/* El porcentaje del mundo es la cifra del proyecto: va grande, el resto acompaña. */}
+      {/* Los países son la cifra del proyecto: va grande, el resto acompaña. */}
       <div className="cifra-principal">
-        <span className="cifra-grande">{numero(data.porcentaje_mundo, 2)} %</span>
-        <span className="cursiva">del mundo<br />recorrido</span>
+        <span className="cifra-grande">{data.paises_visitados}</span>
+        <span className="cursiva">de {data.paises_total} países<br />visitados</span>
       </div>
       <div className="cifras">
-        <Cifra valor={numero(data.km2_visitados)} etiqueta="km² pisados" />
-        <Cifra valor={`${data.paises_visitados} de ${data.paises_total}`} etiqueta="países" />
-        <Cifra valor={numero(data.km_rutas)} etiqueta="km de rutas" />
+        <Cifra valor={`${data.provincias_argentinas_visitadas} de ${data.provincias_argentinas_total}`}
+               etiqueta="provincias argentinas" />
+        <Cifra valor={`${data.continentes_visitados} de ${data.continentes_total}`} etiqueta="continentes" />
+        <Cifra valor={String(data.entidades_historicas_pisadas)} etiqueta="entidades históricas" />
       </div>
 
       <button className="desplegar" onClick={() => setAbierto(!abierto)}>
@@ -36,11 +36,9 @@ export default function Estadisticas() {
               <li key={p.codigo}>
                 <div className="barra-titulo">
                   <span>{p.nombre}</span>
-                  <span className="tenue">
-                    {numero(p.porcentaje, 1)} % · {p.provincias_visitadas}/{p.provincias_total} provincias
-                  </span>
+                  <span className="tenue">{p.provincias_visitadas}/{p.provincias_total} provincias</span>
                 </div>
-                <Barra porcentaje={p.porcentaje} />
+                <Barra porcentaje={proporcion(p.provincias_visitadas, p.provincias_total)} />
               </li>
             ))}
           </ul>
@@ -53,7 +51,7 @@ export default function Estadisticas() {
                   <span>{c.continente}</span>
                   <span className="tenue">{c.visitados}/{c.total} países</span>
                 </div>
-                <Barra porcentaje={(100 * c.visitados) / c.total} />
+                <Barra porcentaje={proporcion(c.visitados, c.total)} />
               </li>
             ))}
           </ul>

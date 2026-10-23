@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as api from '../api'
-import type { DatosViaje, DatosVisita, Ruta } from '../types'
+import type { DatosViaje, DatosVisita } from '../types'
 
 // Cada dato de la API tiene una clave en la caché de TanStack Query.
 const CLAVES = {
@@ -8,7 +8,6 @@ const CLAVES = {
   viajes: ['viajes'],
   estadisticas: ['estadisticas'],
   logros: ['logros'],
-  rutas: ['rutas'],
   fotos: ['fotos'],
   // Prefijo de los años disponibles y de cada época: invalidarlo recalcula las entidades pisadas.
   historia: ['historia'],
@@ -53,8 +52,6 @@ export function useGuardarFicha() {
   })
 }
 
-export const useRutas = () => useQuery({ queryKey: CLAVES.rutas, queryFn: api.listarRutas })
-
 export const useFotos = () => useQuery({ queryKey: CLAVES.fotos, queryFn: api.listarFotos })
 
 export const useViajes = () => useQuery({ queryKey: CLAVES.viajes, queryFn: api.listarViajes })
@@ -96,32 +93,6 @@ export function useActualizarVisita() {
 export function useBorrarVisita() {
   const invalidar = useInvalidar()
   return useMutation({ mutationFn: api.borrarVisita, onSuccess: invalidar })
-}
-
-export function useCrearRuta() {
-  const invalidar = useInvalidar()
-  return useMutation({
-    mutationFn: (datos: Pick<Ruta, 'viaje' | 'coordenadas'> & { nombre?: string }) => api.crearRuta(datos),
-    onSuccess: invalidar,
-  })
-}
-
-export function useImportarRutas() {
-  const invalidar = useInvalidar()
-  return useMutation({
-    mutationFn: ({ viaje, archivo }: { viaje: number; archivo: File }) => api.importarRutas(viaje, archivo),
-    onSuccess: invalidar,
-  })
-}
-
-export function useBorrarRuta() {
-  const invalidar = useInvalidar()
-  return useMutation({ mutationFn: api.borrarRuta, onSuccess: invalidar })
-}
-
-export function useMarcarTransito() {
-  const invalidar = useInvalidar()
-  return useMutation({ mutationFn: api.marcarTransito, onSuccess: invalidar })
 }
 
 export function useSubirFoto() {

@@ -4,14 +4,14 @@ Mapa y diario de viajes personal: un mapa que se pinta a medida que viajo, al es
 
 La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 
-## Estado actual: Fases 1 y 2
+## Estado actual: Fases 1 y 2, Fase 3 en curso
 
 **El mapa (Fase 1)**
 - Mapa mundial en MapLibre con países y provincias de Natural Earth, y departamentos argentinos del IGN.
 - Zoom semántico: de lejos se ven países, al acercarse aparecen las provincias y, en Argentina, desde el zoom 7 los departamentos.
 - Colores por estado:
-  - gris para sin visitar;
-  - azul semitransparente con contorno para la lista de deseos;
+  - papel sin pintar para sin visitar;
+  - solo un contorno índigo para la lista de deseos;
   - color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
 - Viajes y visitas sincronizados desde Notion (bases Destinations y Lugares).
 - La vista queda en la URL (`#zoom/lat/lon`): al recargar se mantiene y se puede guardar un enlace a una zona.
@@ -19,29 +19,30 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 **El diario (Fase 2)**, todo desde el panel lateral:
 - **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas.
 - **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: estadía → de paso → tránsito → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
-- **Rutas:**
-  - importar GPX o KML, o dibujarlas en el mapa (Enter termina, Escape descarta);
-  - se guarda su longitud real en km;
-  - "Marcar regiones atravesadas" agrega como tránsito todo lo que cruza la ruta.
 - **Fotos:**
   - subir JPG, PNG o WebP;
   - si tienen GPS en el EXIF, aparecen en el mapa (agrupadas cuando están cerca) y se ubican en su región;
   - si el viaje no tiene esa región, el panel ofrece sumarla.
-- **Estadísticas:** % del mundo y km² recorridos, km de rutas, países por continente y avance por país.
+- **Estadísticas:** países visitados, provincias argentinas, continentes y entidades históricas pisadas, con el detalle de provincias por país y de países por continente.
   - Solo cuentan las visitas realizadas, no los deseos.
-  - De las regiones visitadas se suman solo las que no están dentro de otra visitada, para no contar dos veces: si marcaste Jujuy entera, Tilcara ya está incluida.
-  - Los km de rutas son solo los de viajes hechos.
+  - Una visita a un departamento cuenta su provincia y su país: Tilcara suma Jujuy y Argentina.
+- **Logros:** colecciones de regiones definidas en `mapa/logros.py` ("Las 24 jurisdicciones", "Los seis continentes"). Las rutas históricas también son logros, con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil.
+
+**La historia (Fase 3)**
+- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps. Cada región toma el color de la entidad que la ocupaba, y un panel cuenta las entidades cuyo territorio pisaste ese año.
+- **Fichas de región:** click en una región abre su ficha, con texto en markdown escrito a mano, sus visitas y a qué entidad perteneció en cada época.
 
 ## Estructura
 
 ```
 backend/     Django + Django REST Framework + SQLite
   config/    proyecto Django (settings, urls)
-  mapa/      app: modelos, API (/api/viajes, visitas, rutas, fotos, estados, estadisticas)
-             y management commands geográficos
+  mapa/      app: modelos, API (/api/viajes, visitas, fotos, estados, estadisticas, logros,
+             historia, regiones, fichas) y management commands geográficos
+  data/entidades_es.json  nombres en castellano de las entidades históricas (escritos a mano)
   data/raw/  descargas y GeoJSON completos (ignorado por git, se regenera)
   media/     fotos subidas y miniaturas (ignorado por git)
-frontend/    React + TypeScript + Vite + MapLibre GL + TanStack Query + terra-draw
+frontend/    React + TypeScript + Vite + MapLibre GL + TanStack Query + react-markdown
   public/geo/{paises,provincias,departamentos}.geojson   geometrías simplificadas (generadas y commiteadas)
 ```
 
@@ -83,6 +84,8 @@ Desde `backend/`:
 .venv\Scripts\python manage.py descargar_natural_earth   # baja Natural Earth a data/raw/ (~20 MB)
 .venv\Scripts\python manage.py descargar_departamentos_ign  # baja los departamentos del IGN (~140 MB)
 .venv\Scripts\python manage.py cargar_regiones           # 256 países, 4594 provincias y 529 departamentos, con su área
+.venv\Scripts\python manage.py descargar_historia        # snapshots de historical-basemaps a data/raw/historia/
+.venv\Scripts\python manage.py cruzar_historia           # a qué entidad pertenecía cada región en cada año (~10 min)
 .venv\Scripts\python manage.py sincronizar_notion        # viajes y visitas desde Notion (ver abajo)
 .venv\Scripts\python manage.py createsuperuser           # para cargar viajes desde /admin/
 ```
@@ -162,6 +165,14 @@ Incluye Antártida Argentina e Islas del Atlántico Sur tal como las publica el 
 
 `cargar_regiones` lee los GeoJSON completos, calcula el área en la proyección de áreas iguales Mollweide y hace upsert por `codigo`, así que se puede correr varias veces. Si existe el GeoJSON de departamentos, los carga también.
 
+`descargar_historia` y `cruzar_historia`:
+
+1. `descargar_historia` baja los snapshots de historical-basemaps (54 años, del 123000 a. C. al 2010) y deja una fila por entidad en `data/raw/historia/<año>.geojson`. Acepta `--desde` y `--hasta`.
+2. `cruzar_historia` intersecta cada región con cada snapshot en Mollweide y guarda el porcentaje de superficie de cada entidad. Acepta `--anios`, `--umbral` (1% por defecto) y `--max-distancia-km`.
+3. Al terminar aplica los nombres de `data/entidades_es.json`. Después de editar ese archivo, `traducir_entidades` los vuelve a aplicar sin cruzar todo.
+
+Las fronteras de historical-basemaps son aproximadas y su licencia es GPL-3.0: los datos derivados quedan en la base y en `data/raw/`, fuera del repo.
+
 El sync con Notion ubica los **Lugares** argentinos en su departamento (Tilcara, General Pueyrredón…). Los **Destinos** quedan a nivel provincia, porque "Catamarca" se refiere a toda la provincia.
 
 ## Fuentes de datos
@@ -170,5 +181,6 @@ El sync con Notion ubica los **Lugares** argentinos en su departamento (Tilcara,
 - **FUENTE: Instituto Geográfico Nacional de la República Argentina**: capa Departamento, con la geometría modificada por última vez el 11/11/2019, de [Capas SIG](https://www.ign.gob.ar/NuestrasActividades/InformacionGeoespacial/CapasSIG).
   - Uso y redistribución libres y gratuitos, citando la fuente y la fecha; el mapa lo hace en sus créditos.
   - Este proyecto no está asociado ni avalado por el IGN.
+- [historical-basemaps](https://github.com/aourednik/historical-basemaps): fronteras históricas aproximadas, GPL-3.0.
 - [Nominatim](https://nominatim.org/) / OpenStreetMap: geocodificación de nombres, respetando su política de uso (1 pedido por segundo).
 - API de Notion: bases Destinations y Lugares del Travel Planner.

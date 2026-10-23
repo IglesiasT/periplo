@@ -13,9 +13,8 @@ from rest_framework.test import APITestCase
 from .estadisticas import calcular_estadisticas
 from .fotos import ErrorFoto, leer_foto
 from .logros import Logro, calcular_logros, continentes, grupos, provincias_de, regiones
-from .models import EntidadPoliticaHistorica, FichaRegion, Foto, Region, RegionEpoca, Ruta, Viaje, Visita
+from .models import EntidadPoliticaHistorica, FichaRegion, Foto, Region, RegionEpoca, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
-from .rutas import ErrorRuta, leer_archivo, longitud_km
 from .sincronizacion import planificar_visitas
 from .ubicacion import Ubicacion, area_bbox_km2, normalizar
 from .views import calcular_estados
@@ -164,6 +163,23 @@ class AnexarTests(SimpleTestCase):
         argentina = resultado.set_index('codigo').geometry['ARG']
         self.assertTrue(argentina.contains(box(-60, -52, -59, -51.5)))   # Malvinas
         self.assertTrue(argentina.contains(box(-37, -54.5, -36, -54.2)))  # Georgias del Sur
+
+
+class NormalizarProvinciasTests(SimpleTestCase):
+    def test_un_fragmento_sin_nombre_no_queda_como_nan(self):
+        import geopandas as gpd
+        from shapely.geometry import box
+
+        from .management.commands.descargar_natural_earth import normalizar_provincias
+
+        provincias = gpd.GeoDataFrame(
+            {'iso_3166_2': ['CO-ANT', 'CO-X01~'], 'adm1_code': ['COL-1', 'COL+99?'],
+             'name': ['Antioquia', None], 'adm0_a3': ['COL', 'COL']},
+            geometry=[box(0, 0, 1, 1), box(2, 2, 3, 3)], crs='EPSG:4326',
+        )
+        resultado = normalizar_provincias(provincias).set_index('codigo')
+        self.assertEqual(resultado.at['COL+99?', 'nombre'], 'Sin nombre')
+        self.assertEqual(resultado.at['CO-ANT', 'nombre'], 'Antioquia')
 
 
 class DescargarHistoriaTests(SimpleTestCase):
@@ -433,31 +449,46 @@ class ApiTests(APITestCase):
 class EstadisticasTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina', area_km2=1000,
-                                        continente='South America')
-        Region.objects.create(nivel='pais', codigo='CHL', nombre='Chile', area_km2=500, continente='South America')
-        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=cls.arg, area_km2=100)
-        cls.salta = Region.objects.create(nivel='provincia', codigo='AR-A', nombre='Salta', padre=cls.arg, area_km2=200)
-        cls.tilcara = Region.objects.create(nivel='departamento', codigo='AR-38094', nombre='Tilcara',
-                                            padre=cls.jujuy, area_km2=10)
-        cls.capital = Region.objects.create(nivel='departamento', codigo='AR-66028', nombre='Capital',
-                                            padre=cls.salta, area_km2=5)
+        cls.arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina', continente='South America')
+        Region.objects.create(nivel='pais', codigo='CHL', nombre='Chile', continente='South America')
+        cls.esp = Region.objects.create(nivel='pais', codigo='ESP', nombre='España', continente='Europe')
+        Region.objects.create(nivel='pais', codigo='MDV', nombre='Maldivas', continente='Seven seas (open ocean)')
+        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=cls.arg)
+        cls.salta = Region.objects.create(nivel='provincia', codigo='AR-A', nombre='Salta', padre=cls.arg)
+        Region.objects.create(nivel='provincia', codigo='AR-T', nombre='Tucumán', padre=cls.arg)
+        cls.tilcara = Region.objects.create(nivel='departamento', codigo='AR-38094', nombre='Tilcara', padre=cls.jujuy)
+        cls.madrid = Region.objects.create(nivel='provincia', codigo='ES-M', nombre='Madrid', padre=cls.esp)
+        Region.objects.create(nivel='provincia', codigo='ES-B', nombre='Barcelona', padre=cls.esp)
 
-    def test_no_cuenta_dos_veces_y_usa_la_region_mas_grande_visitada(self):
-        Visita.objects.create(region=self.jujuy)
-        Visita.objects.create(region=self.tilcara)   # ya incluida en Jujuy
-        Visita.objects.create(region=self.capital)   # solo el departamento, no toda Salta
+    def test_paises_provincias_y_continentes(self):
+        Visita.objects.create(region=self.tilcara)   # suma Jujuy y Argentina
+        Visita.objects.create(region=self.jujuy)     # Jujuy no se cuenta dos veces
+        Visita.objects.create(region=self.madrid)
         Visita.objects.create(region=self.salta, realizada=False)  # un deseo no suma
 
         datos = calcular_estadisticas()
-        self.assertEqual(datos['km2_visitados'], 105)
-        self.assertEqual(datos['porcentaje_mundo'], 7.0)  # 105 / (1000 + 500)
-        self.assertEqual(datos['paises_visitados'], 1)
-        self.assertEqual(datos['continentes'], [{'continente': 'Sudamérica', 'visitados': 1, 'total': 2}])
-        self.assertEqual(datos['paises'], [{
-            'codigo': 'ARG', 'nombre': 'Argentina', 'km2_visitados': 105, 'porcentaje': 10.5,
-            'provincias_visitadas': 2, 'provincias_total': 2,
-        }])
+        self.assertEqual((datos['paises_visitados'], datos['paises_total']), (2, 4))
+        self.assertEqual((datos['provincias_argentinas_visitadas'], datos['provincias_argentinas_total']), (1, 3))
+        # El "océano abierto" de Natural Earth no es un continente.
+        self.assertEqual((datos['continentes_visitados'], datos['continentes_total']), (2, 7))
+        self.assertEqual(datos['paises'], [
+            {'codigo': 'ESP', 'nombre': 'España', 'provincias_visitadas': 1, 'provincias_total': 2},
+            {'codigo': 'ARG', 'nombre': 'Argentina', 'provincias_visitadas': 1, 'provincias_total': 3},
+        ])
+        self.assertNotIn('km2_visitados', datos)
+
+    def test_entidades_historicas_con_la_regla_del_panel_de_la_epoca(self):
+        rio = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of the Río de la Plata')
+        peru = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of Peru')
+        arg = EntidadPoliticaHistorica.objects.create(nombre='Argentina')
+        RegionEpoca.objects.create(region=self.jujuy, anio=1800, entidad=rio, porcentaje_superficie=97)
+        RegionEpoca.objects.create(region=self.jujuy, anio=1800, entidad=peru, porcentaje_superficie=3)  # roce
+        RegionEpoca.objects.create(region=self.jujuy, anio=2010, entidad=arg, porcentaje_superficie=100)
+        RegionEpoca.objects.create(region=self.salta, anio=1800, entidad=peru, porcentaje_superficie=100)
+        Visita.objects.create(region=self.jujuy)
+        Visita.objects.create(region=self.salta, realizada=False)  # un deseo no pisa nada
+
+        self.assertEqual(calcular_estadisticas()['entidades_historicas_pisadas'], 2)
 
 
 class LogrosTests(TestCase):
@@ -508,76 +539,6 @@ class LogrosTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         jurisdicciones = next(l for l in respuesta.json() if l['id'] == 'jurisdicciones')
         self.assertEqual(jurisdicciones['total'], 3)
-
-
-GPX_DOS_SEGMENTOS = b'''<?xml version="1.0"?>
-<gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
-  <trk><name>Quebrada</name>
-    <trkseg><trkpt lat="-23.0" lon="-65.0"/><trkpt lat="-23.0" lon="-65.5"/></trkseg>
-    <trkseg><trkpt lat="-24.0" lon="-66.0"/><trkpt lat="-24.0" lon="-66.5"/></trkseg>
-  </trk>
-  <wpt lat="-23.0" lon="-65.0"><name>Un punto, no una ruta</name></wpt>
-</gpx>'''
-
-KML_LINEA = b'''<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>Ruta 40</name>
-  <LineString><coordinates>-65.0,-23.0,0 -65.0,-24.0,0 -65.1,-25.0,0</coordinates></LineString>
-</Placemark></Document></kml>'''
-
-
-class RutasTests(SimpleTestCase):
-    def test_longitud_geodesica(self):
-        # Un grado de longitud sobre el ecuador mide ~111,32 km.
-        self.assertAlmostEqual(longitud_km([[0, 0], [1, 0]]), 111.32, places=1)
-
-    def test_gpx_con_dos_segmentos_separados_da_dos_rutas_y_ignora_waypoints(self):
-        rutas = leer_archivo(GPX_DOS_SEGMENTOS, 'quebrada.gpx')
-        self.assertEqual([r.nombre for r in rutas], ['Quebrada (1)', 'Quebrada (2)'])
-        self.assertEqual(rutas[0].coordenadas, [[-65.0, -23.0], [-65.5, -23.0]])
-
-    def test_kml(self):
-        [ruta] = leer_archivo(KML_LINEA, 'ruta40.kml')
-        self.assertEqual(ruta.nombre, 'Ruta 40')
-        self.assertEqual(len(ruta.coordenadas), 3)
-
-    def test_formato_no_soportado(self):
-        with self.assertRaises(ErrorRuta):
-            leer_archivo(b'hola', 'notas.txt')
-
-
-class RutasApiTests(APITestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.viaje = Viaje.objects.create(nombre='NOA', estado='hecho')
-        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy')
-        Region.objects.create(nivel='departamento', codigo='AR-38094', nombre='Tilcara', padre=cls.jujuy)
-
-    def test_importar_gpx(self):
-        archivo = SimpleUploadedFile('quebrada.gpx', GPX_DOS_SEGMENTOS, content_type='application/gpx+xml')
-        respuesta = self.client.post('/api/rutas/importar/', {'viaje': self.viaje.id, 'archivo': archivo},
-                                     format='multipart')
-        self.assertEqual(respuesta.status_code, 201, respuesta.data)
-        self.assertEqual(len(respuesta.data), 2)
-        self.assertEqual(respuesta.data[0]['origen'], 'gpx')
-        self.assertGreater(respuesta.data[0]['longitud_km'], 50)
-
-    def test_ruta_dibujada_calcula_longitud_y_valida_puntos(self):
-        ok = self.client.post('/api/rutas/', {'viaje': self.viaje.id, 'coordenadas': [[0, 0], [1, 0]]}, format='json')
-        self.assertEqual(ok.status_code, 201, ok.data)
-        self.assertEqual(ok.data['origen'], 'dibujada')
-        self.assertAlmostEqual(ok.data['longitud_km'], 111.32, places=1)
-        mal = self.client.post('/api/rutas/', {'viaje': self.viaje.id, 'coordenadas': [[0, 0]]}, format='json')
-        self.assertEqual(mal.status_code, 400)
-
-    def test_marcar_transito_agrega_solo_las_regiones_nuevas(self):
-        ruta = Ruta.objects.create(viaje=self.viaje, coordenadas=[[0, 0], [1, 0]], longitud_km=111, origen='dibujada')
-        Visita.objects.create(viaje=self.viaje, region=self.jujuy)
-        with mock.patch('mapa.api.ubicador_compartido') as ubicador:
-            ubicador.return_value.regiones_atravesadas.return_value = ['AR-Y', 'AR-38094']
-            respuesta = self.client.post(f'/api/rutas/{ruta.id}/marcar_transito/')
-        self.assertEqual(respuesta.data, {'agregadas': ['AR-38094'], 'ya_estaban': 1})
-        tilcara = Visita.objects.get(region__codigo='AR-38094')
-        self.assertEqual((tilcara.tipo_presencia, tilcara.realizada), ('transito', True))
 
 
 def jpeg_con_gps(lat_ref='S', lat=(23, 34, 39.6), lon_ref='W', lon=(65, 23, 46.8), fecha='2025:01:10 14:30:00'):

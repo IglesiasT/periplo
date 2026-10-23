@@ -1,15 +1,14 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { ExpressionSpecification, GeoJSONSource, LayerSpecification, StyleSpecification } from 'maplibre-gl'
+import type { FeatureCollection, Point } from 'geojson'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import fuenteVersalitas from '@fontsource/im-fell-english-sc/files/im-fell-english-sc-latin-400-normal.woff2?url'
 import fuenteCursiva from '@fontsource/im-fell-english/files/im-fell-english-latin-400-italic.woff2?url'
-import { TerraDraw, TerraDrawLineStringMode } from 'terra-draw'
-import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { formatearFecha } from '../etiquetas'
 import { colorEntidad, nombreEntidad } from '../historia'
-import type { Epoca, EstadoRegion, EstadosRegiones, Foto, Ruta } from '../types'
+import type { Epoca, EstadoRegion, EstadosRegiones, Foto } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
@@ -22,8 +21,6 @@ const COLORES = {
   fronteraPais: '#7c6a50',
   fronteraProvincia: '#bfae8c',
   resaltado: '#2b2117',
-  ruta: '#5e4e3a',
-  rutaResaltada: '#2b2117',
   foto: '#2b2117',
   papel: '#f3ebda',
   rotuloPais: '#4f4232',
@@ -31,7 +28,7 @@ const COLORES = {
   rotuloAgua: '#4d6b63',
 } as const
 
-// De más a menos tinta, como un atlas coloreado a mano. El deseo no se rellena: se raya en índigo.
+// De más a menos tinta, como un atlas coloreado a mano. El deseo no se rellena: solo lleva un contorno índigo.
 const COLORES_ESTADO: Record<EstadoRegion, string> = {
   estadia: '#a8382c',
   paso: '#cf7356',
@@ -92,34 +89,18 @@ function rellenoHistorico(epoca: Epoca): ExpressionSpecification | string {
 type Valor = number | ExpressionSpecification
 
 // Opacidad que interpola entre paradas [zoom, valor]: así se hace el fundido entre niveles.
-// `factor` la multiplica por feature (el rayado solo se ve en los deseos).
-function opacidadPorZoom(factor: Valor, ...paradas: [number, Valor][]): ExpressionSpecification {
-  const valores = paradas.flatMap(([zoom, valor]) => [zoom, ['*', valor, factor]])
-  return ['interpolate', ['linear'], ['zoom'], ...valores] as unknown as ExpressionSpecification
+function opacidadPorZoom(...paradas: [number, Valor][]): ExpressionSpecification {
+  return ['interpolate', ['linear'], ['zoom'], ...paradas.flat()] as unknown as ExpressionSpecification
 }
 
-// Contorno solo para las regiones de la lista de deseos.
+// Contorno solo para las regiones de la lista de deseos: es todo lo que las marca en el mapa.
 const CONTORNO_DESEO = {
   'line-color': COLORES_ESTADO.deseo,
   'line-width': 1.2,
   'line-opacity': ES_DESEO,
 }
 
-// Rayado diagonal en índigo sobre fondo transparente (debajo queda el papel). Con pixelRatio 2,
-// una línea de 1,5 px cada 6 px de pantalla, igual que el --rayado de index.css.
-const RAYADO = 'rayado'
-function imagenRayado() {
-  const lado = 12
-  const data = new Uint8Array(lado * lado * 4)
-  for (let y = 0; y < lado; y++) {
-    for (let x = 0; x < lado; x++) {
-      if ((x + y) % lado < 3) data.set([0x3e, 0x5c, 0x76, 255], (y * lado + x) * 4)
-    }
-  }
-  return { width: lado, height: lado, data }
-}
-
-// Paradas [zoom, opacidad] de cada nivel: el relleno y el rayado de un mismo nivel se funden juntos.
+// Paradas [zoom, opacidad] del relleno de cada nivel.
 const PARADAS_PAISES: [number, Valor][] = [[ZOOM_PROVINCIAS - FUNDIDO, 1], [ZOOM_PROVINCIAS + FUNDIDO, 0]]
 const PARADAS_PROVINCIAS: [number, Valor][] = [
   [ZOOM_PROVINCIAS - FUNDIDO, 0],
@@ -228,8 +209,6 @@ const STYLE: StyleSpecification = {
     departamentos: {
       type: 'geojson', data: '/geo/departamentos.geojson', promoteId: 'codigo', attribution: ATRIBUCION_IGN,
     },
-    // Las rutas llegan de la API: arranca vacía y se completa con setData().
-    rutas: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     // cluster: MapLibre agrupa las fotos cercanas en un solo círculo (con "point_count") hasta este zoom.
     fotos: { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, cluster: true, clusterRadius: 40, clusterMaxZoom: 14 },
   },
@@ -240,24 +219,14 @@ const STYLE: StyleSpecification = {
     {
       id: 'provincias-relleno', type: 'fill', source: 'provincias',
       minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, ...PARADAS_PROVINCIAS) },
-    },
-    {
-      id: 'provincias-rayado', type: 'fill', source: 'provincias',
-      minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-      paint: { 'fill-pattern': RAYADO, 'fill-opacity': opacidadPorZoom(ES_DESEO, ...PARADAS_PROVINCIAS) },
+      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(...PARADAS_PROVINCIAS) },
     },
 
     // Departamentos (solo Argentina): aparecen al acercarse más.
     {
       id: 'departamentos-relleno', type: 'fill', source: 'departamentos',
       minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
-      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, ...PARADAS_DEPARTAMENTOS) },
-    },
-    {
-      id: 'departamentos-rayado', type: 'fill', source: 'departamentos',
-      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
-      paint: { 'fill-pattern': RAYADO, 'fill-opacity': opacidadPorZoom(ES_DESEO, ...PARADAS_DEPARTAMENTOS) },
+      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(...PARADAS_DEPARTAMENTOS) },
     },
     {
       id: 'departamentos-frontera', type: 'line', source: 'departamentos',
@@ -294,12 +263,7 @@ const STYLE: StyleSpecification = {
     {
       id: 'paises-relleno', type: 'fill', source: 'paises',
       maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(1, ...PARADAS_PAISES) },
-    },
-    {
-      id: 'paises-rayado', type: 'fill', source: 'paises',
-      maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-      paint: { 'fill-pattern': RAYADO, 'fill-opacity': opacidadPorZoom(ES_DESEO, ...PARADAS_PAISES) },
+      paint: { 'fill-color': COLOR_RELLENO, 'fill-opacity': opacidadPorZoom(...PARADAS_PAISES) },
     },
     // Sin maxzoom: un país deseado entero (Japón) mantiene su contorno aunque se vean las provincias.
     { id: 'paises-deseo', type: 'line', source: 'paises', paint: CONTORNO_DESEO },
@@ -311,24 +275,8 @@ const STYLE: StyleSpecification = {
       },
     },
 
-    // Nombres arriba de los rellenos y las fronteras; las rutas, las fotos y los resaltados van encima.
+    // Nombres arriba de los rellenos y las fronteras; las fotos y los resaltados van encima.
     ...ROTULOS,
-
-    // Rutas: trazo de tinta discontinuo, como un itinerario dibujado a mano.
-    // Las del viaje elegido (propiedad "resaltada" del feature), más gruesas y oscuras.
-    {
-      id: 'rutas', type: 'line', source: 'rutas',
-      layout: { 'line-join': 'round' },
-      paint: {
-        'line-dasharray': [3, 2],
-        'line-color': ['case', ['get', 'resaltada'], COLORES.rutaResaltada, COLORES.ruta],
-        'line-width': [
-          'interpolate', ['linear'], ['zoom'],
-          2, ['case', ['get', 'resaltada'], 2, 1],
-          8, ['case', ['get', 'resaltada'], 4.5, 2.5],
-        ],
-      },
-    },
 
     // Fotos: grupos (más grandes cuantas más fotos) y fotos sueltas.
     {
@@ -409,13 +357,8 @@ interface Props {
   resaltadas: Set<string>
   /** Si está, el mapa está en modo edición: cada click en una región la manda acá. */
   alClickearRegion?: (codigo: string) => void
-  rutas: Ruta[] | undefined
-  /** Viaje cuyas rutas se dibujan destacadas. */
-  viajeResaltado: number | null
-  /** Si está, el mapa está en modo dibujo: al terminar una línea (Enter o click en el último punto) la manda acá. */
-  alTerminarDibujo?: (coordenadas: [number, number][]) => void
   fotos: Foto[] | undefined
-  /** Click en una región fuera de los modos de marcar y dibujar (y que no cae en una foto): abre su ficha. */
+  /** Click en una región fuera del modo de marcar (y que no cae en una foto): abre su ficha. */
   alElegirRegion?: (codigo: string) => void
   /** Si está, el mapa se pinta como era ese año: cada región con el color de su entidad. */
   epoca?: Epoca
@@ -425,7 +368,7 @@ interface Props {
 
 const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
 
-function fotosComoGeoJSON(fotos: Foto[]): GeoJSON.FeatureCollection {
+function fotosComoGeoJSON(fotos: Foto[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
     features: fotos
@@ -447,32 +390,18 @@ function escapar(texto: string): string {
   return texto.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 }
 
-function rutasComoGeoJSON(rutas: Ruta[], viajeResaltado: number | null): GeoJSON.FeatureCollection {
-  return {
-    type: 'FeatureCollection',
-    features: rutas.map((ruta) => ({
-      type: 'Feature',
-      properties: { nombre: ruta.nombre, resaltada: ruta.viaje === viajeResaltado },
-      geometry: { type: 'LineString', coordinates: ruta.coordenadas },
-    })),
-  }
-}
-
 export default function Mapa({
-  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo, alElegirRegion, fotos, epoca,
-  children,
+  estados, resaltadas, alClickearRegion, alElegirRegion, fotos, epoca, children,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   // Los handlers de MapLibre se registran una sola vez al crear el mapa: si usaran la prop directamente,
   // verían siempre la versión de ese momento (un closure viejo). Leen la última desde este ref.
   const alClickearRef = useRef(alClickearRegion)
-  const alTerminarDibujoRef = useRef(alTerminarDibujo)
   const alElegirRegionRef = useRef(alElegirRegion)
   const epocaRef = useRef(epoca)
   useEffect(() => {
     alClickearRef.current = alClickearRegion
-    alTerminarDibujoRef.current = alTerminarDibujo
     alElegirRegionRef.current = alElegirRegion
     epocaRef.current = epoca
   })
@@ -495,10 +424,6 @@ export default function Mapa({
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right')
-    // El style pide la imagen del rayado antes de que exista: se genera la primera vez que falta.
-    map.on('styleimagemissing', (e) => {
-      if (e.id === RAYADO && !map.hasImage(RAYADO)) map.addImage(RAYADO, imagenRayado(), { pixelRatio: 2 })
-    })
     map.on('moveend', () => guardarVistaEnHash(map))
     map.on('load', () => setListo(true))
     // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
@@ -537,7 +462,6 @@ export default function Mapa({
         if (feature) alClickearRef.current(String(feature.properties.codigo))
         return
       }
-      if (alTerminarDibujoRef.current) return // los clicks son de terra-draw
 
       const [foto] = map.queryRenderedFeatures(e.point, { layers: CAPAS_FOTOS })
       if (!foto) {
@@ -545,7 +469,7 @@ export default function Mapa({
         if (region) alElegirRegionRef.current?.(String(region.properties.codigo))
         return
       }
-      const punto = (foto.geometry as GeoJSON.Point).coordinates as [number, number]
+      const punto = (foto.geometry as Point).coordinates as [number, number]
       if (foto.properties.cluster_id !== undefined) {
         // Un grupo: acercar hasta el zoom en el que se separa.
         const zoom = await map.getSource<GeoJSONSource>('fotos')!.getClusterExpansionZoom(foto.properties.cluster_id)
@@ -605,35 +529,8 @@ export default function Mapa({
   useEffect(() => {
     const map = mapRef.current
     if (!listo || !map) return
-    map.getSource<GeoJSONSource>('rutas')?.setData(rutasComoGeoJSON(rutas ?? [], viajeResaltado))
-  }, [rutas, viajeResaltado, listo])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map) return
     map.getSource<GeoJSONSource>('fotos')?.setData(fotosComoGeoJSON(fotos ?? []))
   }, [fotos, listo])
-
-  // Modo dibujo con terra-draw: se crea al entrar al modo y se destruye al salir.
-  const dibujando = Boolean(alTerminarDibujo)
-  useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map || !dibujando) return
-    const dibujo = new TerraDraw({
-      adapter: new TerraDrawMapLibreGLAdapter({ map }),
-      modes: [new TerraDrawLineStringMode({ styles: { lineStringColor: COLORES.rutaResaltada, lineStringWidth: 3 } })],
-    })
-    dibujo.start()
-    dibujo.setMode('linestring')
-    dibujo.on('finish', (id) => {
-      const trazo = dibujo.getSnapshotFeature(id)
-      if (trazo?.geometry.type === 'LineString') {
-        alTerminarDibujoRef.current?.(trazo.geometry.coordinates as [number, number][])
-      }
-      dibujo.clear()
-    })
-    return () => dibujo.stop()
-  }, [dibujando, listo])
 
   return (
     <div className="mapa">

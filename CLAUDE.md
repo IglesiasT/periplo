@@ -44,12 +44,6 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `tipo_presencia`: estadía, paso o tránsito; define la intensidad del color en el mapa
   - `realizada`: si es falso, todavía no fui y se pinta como deseo
   - `desde_notion`: la creó el sync, que la regenera en cada corrida
-- **`Ruta`**
-  - `viaje`: FK
-  - `nombre`
-  - `coordenadas`: LineString guardado como JSON (lista de `[lon, lat]`)
-  - `longitud_km`: geodésica, precalculada
-  - `origen`: GPX, KML o dibujada
 - **`Foto`**
   - `viaje` y/o `visita`: FK
   - `archivo` y `miniatura`: van a `backend/media/`, que está fuera del repo
@@ -60,17 +54,18 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 ### Fase 3
 
 - **`EntidadPoliticaHistorica`**: imperio, reino, estado o cultura que aparece en los snapshots históricos.
-  - `nombre`
+  - `nombre`: tal cual viene en historical-basemaps; identifica a la entidad en todos los años
+  - `nombre_es`: opcional, sale de `backend/data/entidades_es.json`
   - `color`: opcional, para pintarla en el mapa
 - **`RegionEpoca`**: a qué entidad pertenecía cada región en cada año disponible.
   - `region`: FK
   - `anio`
   - `entidad`: FK a `EntidadPoliticaHistorica`
   - `porcentaje_superficie`: opcional, para regiones que caen entre dos entidades
-- **`RutaHistorica`**: Ruta de la Seda, Camino del Inca, recorrido de la independencia sudamericana, etc.
-  - `nombre`
-  - `descripcion`
-  - `regiones`: M2M a `Region`; el progreso se calcula contra mis `Visita`
+- **`FichaRegion`**: texto en markdown escrito a mano sobre una región.
+  - `region`: OneToOne, protegida: `cargar_regiones` no puede borrar una región con ficha
+  - `texto`, `creada`, `actualizada`
+- Las rutas históricas (Ruta de la Seda, Camino del Inca, la Campaña Libertadora) **no tienen modelo**: son logros definidos en código, con un objetivo por etapa.
 
 ## Fases
 
@@ -97,9 +92,9 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 ### Fase 2: el diario
 
 1. CRUD de viajes y visitas desde el frontend, idealmente haciendo click en el mapa para marcar regiones.
-2. Rutas: dibujarlas a mano en el mapa o importarlas desde GPX o KML (por ejemplo, Google Maps Timeline).
-3. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
-4. Estadísticas: % del mundo y de Argentina recorrido, km² visitados, km de rutas, países por continente.
+2. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
+3. Estadísticas: países visitados, provincias argentinas, continentes y entidades históricas pisadas.
+   - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.
 
 ### Fase 3: la historia
 
@@ -110,6 +105,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 4. Fichas de región: texto en markdown escrito a mano al visitar cada lugar. No automatizarlo de entrada.
 5. Rutas históricas y logros: se definen en código como conjuntos de regiones requeridas, y el progreso se calcula contra mis `Visita`.
    - Ejemplos de logros: "las 24 jurisdicciones argentinas", "todos los sucesores de la URSS", "las dos orillas del Bósforo".
+   - Una ruta histórica es un logro con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil.
 
 **Ojo:** las fronteras de historical-basemaps son aproximadas y no cubren todos los años. Sirven para un diario personal, no como fuente académica.
 

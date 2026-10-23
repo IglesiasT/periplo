@@ -37,22 +37,6 @@ export interface Viaje {
   notion_id: string | null
   notas: string
   visitas: Visita[]
-  rutas: RutaResumen[]
-}
-
-export type OrigenRuta = 'gpx' | 'kml' | 'dibujada'
-
-export interface RutaResumen {
-  id: number
-  nombre: string
-  longitud_km: number
-  origen: OrigenRuta
-}
-
-export interface Ruta extends RutaResumen {
-  viaje: number
-  /** LineString: lista de [lon, lat], el mismo orden que GeoJSON. */
-  coordenadas: [number, number][]
 }
 
 /** Campos de un viaje que se pueden mandar a la API. */
@@ -62,18 +46,20 @@ export type DatosVisita = Pick<Visita, 'viaje' | 'region'> & Partial<Pick<Visita
 
 /** Respuesta de /api/estadisticas/. */
 export interface Estadisticas {
-  km2_visitados: number
-  porcentaje_mundo: number
   paises_visitados: number
   paises_total: number
-  viajes_hechos: number
-  km_rutas: number
+  provincias_argentinas_visitadas: number
+  provincias_argentinas_total: number
+  /** Sin contar las islas en mar abierto, que Natural Earth agrupa como un continente más. */
+  continentes_visitados: number
+  continentes_total: number
+  /** Entidades distintas pisadas en algún año, con la misma regla que el panel de la época. */
+  entidades_historicas_pisadas: number
   continentes: { continente: string; visitados: number; total: number }[]
+  /** De los que más provincias tienen recorridas (en proporción) a los que menos. */
   paises: {
     codigo: string
     nombre: string
-    km2_visitados: number
-    porcentaje: number
     provincias_visitadas: number
     provincias_total: number
   }[]

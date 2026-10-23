@@ -19,7 +19,7 @@ from django.core.management.base import BaseCommand, CommandError
 from shapely.geometry import MultiPolygon
 from shapely.ops import polylabel
 
-from mapa.geodatos import CRS_AREAS_IGUALES, GEO_DIR
+from mapa.geodatos import CRS_AREAS_IGUALES, GEO_DIR, SIN_NOMBRE
 
 # (nombre, nivel, lon, lat). El nivel decide desde qué zoom aparece: océanos siempre,
 # mares al alejarse un poco menos, y mares menores, golfos y estrechos solo de cerca.
@@ -86,7 +86,7 @@ class Command(BaseCommand):
             if not ruta.exists():
                 raise CommandError(f'No existe {ruta}. Corré antes `python manage.py descargar_natural_earth`.')
             gdf = gpd.read_file(ruta)
-            gdf = gdf[gdf.geometry.notna() & gdf['nombre'].notna()]
+            gdf = gdf[gdf.geometry.notna() & gdf['nombre'].notna() & (gdf['nombre'] != SIN_NOMBRE)]
             areas = gdf.geometry.to_crs(CRS_AREAS_IGUALES).area / 1_000_000
             for fila, area in zip(gdf.itertuples(), areas):
                 punto = punto_de_rotulo(fila.geometry)
