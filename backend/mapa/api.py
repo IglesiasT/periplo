@@ -9,7 +9,7 @@ class ViajeViewSet(viewsets.ModelViewSet):
     """CRUD de viajes. Los de Notion no se borran (el sync los volvería a crear)."""
 
     serializer_class = ViajeSerializer
-    queryset = Viaje.objects.prefetch_related('visitas__region')
+    queryset = Viaje.objects.prefetch_related('visitas__region__padre__padre')
 
     def perform_destroy(self, viaje):
         if viaje.notion_id:
@@ -24,7 +24,7 @@ class VisitaViewSet(viewsets.ModelViewSet):
     serializer_class = VisitaSerializer
 
     def get_queryset(self):
-        visitas = Visita.objects.select_related('region')
+        visitas = Visita.objects.select_related('region__padre__padre')
         viaje = self.request.query_params.get('viaje')
         if viaje == 'ninguno':
             return visitas.filter(viaje__isnull=True)

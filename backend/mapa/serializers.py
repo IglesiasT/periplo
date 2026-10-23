@@ -10,12 +10,21 @@ class VisitaSerializer(serializers.ModelSerializer):
     region = serializers.SlugRelatedField(slug_field='codigo', queryset=Region.objects.all())
     region_nombre = serializers.CharField(source='region.nombre', read_only=True)
     region_nivel = serializers.CharField(source='region.nivel', read_only=True)
+    # Códigos de las regiones que la contienen (provincia, país): el mapa los resalta en cualquier zoom.
+    region_ancestros = serializers.SerializerMethodField()
 
     class Meta:
         model = Visita
-        fields = ['id', 'viaje', 'region', 'region_nombre', 'region_nivel',
+        fields = ['id', 'viaje', 'region', 'region_nombre', 'region_nivel', 'region_ancestros',
                   'tipo_presencia', 'realizada', 'desde_notion']
         read_only_fields = ['desde_notion']
+
+    def get_region_ancestros(self, visita) -> list[str]:
+        codigos, region = [], visita.region.padre
+        while region is not None:
+            codigos.append(region.codigo)
+            region = region.padre
+        return codigos
 
 
 class ViajeSerializer(serializers.ModelSerializer):

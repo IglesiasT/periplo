@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { ExpressionSpecification, StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import { obtenerEstados } from '../api'
-import type { EstadoRegion } from '../types'
+import type { EstadoRegion, EstadosRegiones } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
@@ -15,6 +14,7 @@ const COLORES = {
   noVisitado: '#4a4f55',
   fronteraPais: '#1b2838',
   fronteraProvincia: '#2f353c',
+  resaltado: '#f4efe6',
 }
 
 // De más a menos intenso; el deseo es un tono frío para que no se confunda con lo visitado.
@@ -41,6 +41,7 @@ const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
 const SOURCES = ['paises', 'provincias', 'departamentos'] as const
 
 const ESTADO: ExpressionSpecification = ['coalesce', ['feature-state', 'estado'], 'ninguno']
+const RESALTADA: ExpressionSpecification = ['boolean', ['feature-state', 'resaltada'], false]
 
 // Provincias con un nivel más detallado debajo (por ahora, solo las argentinas del IGN).
 const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['==', ['get', 'padre'], 'ARG']
@@ -165,6 +166,31 @@ const STYLE: StyleSpecification = {
         'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 6, 2],
       },
     },
+
+    // Contorno claro de las regiones del viaje elegido en el panel (feature-state "resaltada").
+    {
+      id: 'departamentos-resaltada', type: 'line', source: 'departamentos',
+      minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+      paint: { 'line-color': COLORES.resaltado, 'line-width': 2, 'line-opacity': ['case', RESALTADA, 1, 0] },
+    },
+    {
+      id: 'provincias-resaltada', type: 'line', source: 'provincias',
+      minzoom: ZOOM_PROVINCIAS - FUNDIDO,
+      paint: {
+        'line-color': COLORES.resaltado,
+        'line-width': 2,
+        'line-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          ZOOM_DEPARTAMENTOS - FUNDIDO, ['case', RESALTADA, 1, 0],
+          ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', RESALTADA, ['case', TIENE_DEPARTAMENTOS, 0, 1], 0],
+        ],
+      },
+    },
+    {
+      id: 'paises-resaltada', type: 'line', source: 'paises',
+      maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
+      paint: { 'line-color': COLORES.resaltado, 'line-width': 2, 'line-opacity': ['case', RESALTADA, 1, 0] },
+    },
   ],
 }
 
@@ -191,30 +217,41 @@ function capasConsultables(zoom: number): string[] {
   return ['departamentos-relleno', 'provincias-relleno']
 }
 
-export default function Mapa() {
+// Los códigos de país, provincia y departamento no se pisan: alcanza con darle el estado a todas las sources.
+function aplicarFeatureState(map: maplibregl.Map, codigo: string, estado: Record<string, unknown>) {
+  for (const source of SOURCES) map.setFeatureState({ source, id: codigo }, estado)
+}
+
+interface Props {
+  /** Estado de cada región visitada o deseada (de /api/estados/). */
+  estados: EstadosRegiones | undefined
+  /** Códigos de las regiones a destacar con un contorno claro (las del viaje elegido). */
+  resaltadas: Set<string>
+}
+
+export default function Mapa({ estados, resaltadas }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
+  const [listo, setListo] = useState(false)
+  // Lo que ya está aplicado en el mapa actual, para calcular la diferencia en cada cambio.
+  const estadosAplicados = useRef<EstadosRegiones>({})
+  const resaltadasAplicadas = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    let desmontado = false
+    // Mapa nuevo (StrictMode monta dos veces en desarrollo): todavía no tiene nada pintado.
+    estadosAplicados.current = {}
+    resaltadasAplicadas.current = new Set()
     const map = new maplibregl.Map({
       container: contenedor.current!,
       style: STYLE,
       ...(vistaDesdeHash() ?? VISTA_INICIAL),
       renderWorldCopies: false,
     })
+    mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     map.on('moveend', () => guardarVistaEnHash(map))
-
-    map.on('load', async () => {
-      const estados = await obtenerEstados()
-      if (desmontado) return
-      // Los códigos de país, provincia y departamento no se pisan: alcanza con darle el estado a todas las sources.
-      for (const [codigo, estado] of Object.entries(estados)) {
-        for (const source of SOURCES) {
-          map.setFeatureState({ source, id: codigo }, { estado })
-        }
-      }
-    })
+    map.on('load', () => setListo(true))
 
     // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false })
@@ -237,13 +274,38 @@ export default function Mapa() {
     map.getCanvas().addEventListener('mouseleave', () => popup.remove())
 
     return () => {
-      desmontado = true
       map.remove()
+      mapRef.current = null
+      setListo(false)
     }
   }, [])
 
+  // React es declarativo ("el mapa tiene estos estados") y MapLibre imperativo ("pintá esta región"):
+  // cada vez que cambian las props se aplica solo la diferencia con lo que ya está pintado.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map || !estados) return
+    for (const codigo of Object.keys(estadosAplicados.current)) {
+      if (!(codigo in estados)) aplicarFeatureState(map, codigo, { estado: null })
+    }
+    for (const [codigo, estado] of Object.entries(estados)) {
+      if (estadosAplicados.current[codigo] !== estado) aplicarFeatureState(map, codigo, { estado })
+    }
+    estadosAplicados.current = estados
+  }, [estados, listo])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map) return
+    for (const codigo of resaltadasAplicadas.current) {
+      if (!resaltadas.has(codigo)) aplicarFeatureState(map, codigo, { resaltada: false })
+    }
+    for (const codigo of resaltadas) aplicarFeatureState(map, codigo, { resaltada: true })
+    resaltadasAplicadas.current = resaltadas
+  }, [resaltadas, listo])
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div className="mapa">
       <div ref={contenedor} style={{ width: '100%', height: '100%' }} />
       <Leyenda />
     </div>
