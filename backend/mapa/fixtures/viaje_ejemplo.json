@@ -1,0 +1,14 @@
+[
+  {
+    "model": "mapa.viaje",
+    "pk": 1,
+    "fields": {
+      "nombre": "Norte argentino",
+      "estado": "hecho",
+      "notas": "Viaje de ejemplo del MVP. Reemplazar por los viajes reales al sincronizar con Notion."
+    }
+  },
+  { "model": "mapa.visita", "pk": 1, "fields": { "viaje": 1, "region": ["AR-A"], "tipo_presencia": "estadia" } },
+  { "model": "mapa.visita", "pk": 2, "fields": { "viaje": 1, "region": ["AR-Y"], "tipo_presencia": "estadia" } },
+  { "model": "mapa.visita", "pk": 3, "fields": { "viaje": 1, "region": ["AR-T"], "tipo_presencia": "paso" } }
+]
