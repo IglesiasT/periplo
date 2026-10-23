@@ -4,4 +4,10 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // El navegador le pide /api a Vite y Vite se lo reenvía a Django: mismo origen, sin CORS.
+    proxy: {
+      '/api': 'http://127.0.0.1:8000',
+    },
+  },
 })
