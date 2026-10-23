@@ -15,12 +15,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import ProtectedError
 
+from mapa.geodatos import CRS_AREAS_IGUALES
 from mapa.models import Region
 
 RAW_DIR = Path(settings.BASE_DIR) / 'data' / 'raw'
-
-# Mollweide: proyección de áreas iguales válida para todo el planeta (incluida la Antártida).
-CRS_AREAS_IGUALES = 'ESRI:54009'
 
 
 def leer_con_area(path: Path) -> gpd.GeoDataFrame:

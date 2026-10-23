@@ -10,6 +10,9 @@ RAW_DIR = Path(settings.BASE_DIR) / 'data' / 'raw'
 FRONTEND_DIR = Path(settings.BASE_DIR).parent / 'frontend'
 GEO_DIR = FRONTEND_DIR / 'public' / 'geo'
 
+# Mollweide: proyección de áreas iguales válida para todo el planeta (incluida la Antártida).
+CRS_AREAS_IGUALES = 'ESRI:54009'
+
 
 class ErrorGeodatos(Exception):
     pass

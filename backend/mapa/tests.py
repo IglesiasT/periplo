@@ -3,6 +3,8 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+import pandas as pd
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APITestCase
@@ -191,6 +193,53 @@ class DescargarHistoriaTests(SimpleTestCase):
         self.assertTrue(resultado.geometry['Spain'].contains(box(3.5, 38.5, 3.9, 39.5)))  # Baleares
         self.assertEqual(resultado.at['Spain', 'sujeta_a'], '')
         self.assertEqual(resultado.at['Viceroyalty of New Spain', 'sujeta_a'], 'Spain')
+
+
+class CruzarHistoriaTests(SimpleTestCase):
+    def cruzar(self, regiones: dict, entidades: dict, **kwargs):
+        import geopandas as gpd
+
+        from .historia import cruzar, preparar_regiones
+
+        regiones = preparar_regiones(gpd.GeoDataFrame(
+            {'codigo': list(regiones)}, geometry=list(regiones.values()), crs='EPSG:4326'))
+        snapshot = gpd.GeoDataFrame({'nombre': list(entidades)}, geometry=list(entidades.values()), crs='EPSG:4326')
+        return cruzar(regiones, snapshot, **kwargs)
+
+    def test_region_entre_dos_entidades(self):
+        from shapely.geometry import box
+
+        resultado = self.cruzar({'R': box(0, 0, 2, 1)}, {'A': box(-5, -5, 0.5, 5), 'B': box(0.5, -5, 5, 5)})
+
+        porcentajes = dict(zip(resultado['entidad'], resultado['porcentaje']))
+        self.assertAlmostEqual(porcentajes['A'], 25, delta=0.5)
+        self.assertAlmostEqual(porcentajes['B'], 75, delta=0.5)
+
+    def test_el_porcentaje_ignora_la_parte_que_cae_fuera_de_toda_entidad(self):
+        from shapely.geometry import box
+
+        # La costa del snapshot deja afuera media región: igual cuenta como 100% de A.
+        resultado = self.cruzar({'R': box(0, 0, 2, 1)}, {'A': box(-5, -5, 1, 5)})
+
+        self.assertEqual(list(resultado['entidad']), ['A'])
+        self.assertAlmostEqual(resultado['porcentaje'][0], 100)
+
+    def test_descarta_las_entidades_por_debajo_del_umbral(self):
+        from shapely.geometry import box
+
+        resultado = self.cruzar({'R': box(0, 0, 10, 1)}, {'A': box(-5, -5, 9.95, 5), 'B': box(9.95, -5, 15, 5)})
+
+        self.assertEqual(list(resultado['entidad']), ['A'])
+
+    def test_isla_sin_entidad_toma_la_mas_cercana_si_esta_cerca(self):
+        from shapely.geometry import box
+
+        entidades = {'A': box(-5, -5, 0, 5)}
+        resultado = self.cruzar({'Cerca': box(0.2, 0, 0.3, 0.1), 'Lejos': box(10, 0, 11, 1)}, entidades)
+
+        self.assertEqual(list(resultado['codigo']), ['Cerca'])
+        self.assertEqual(resultado['entidad'][0], 'A')
+        self.assertTrue(pd.isna(resultado['porcentaje'][0]))
 
 
 class UtilidadesTests(SimpleTestCase):

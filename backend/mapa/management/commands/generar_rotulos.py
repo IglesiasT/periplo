@@ -19,8 +19,7 @@ from django.core.management.base import BaseCommand, CommandError
 from shapely.geometry import MultiPolygon
 from shapely.ops import polylabel
 
-from mapa.geodatos import GEO_DIR
-from mapa.management.commands.cargar_regiones import CRS_AREAS_IGUALES
+from mapa.geodatos import CRS_AREAS_IGUALES, GEO_DIR
 
 # (nombre, nivel, lon, lat). El nivel decide desde qué zoom aparece: océanos siempre,
 # mares al alejarse un poco menos, y mares menores, golfos y estrechos solo de cerca.
