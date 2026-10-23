@@ -1,0 +1,32 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Django ---
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+.env
+
+# --- Datos geográficos crudos (se regeneran con los management commands) ---
+backend/data/raw/
+
+# --- Node / Vite ---
+node_modules/
+dist/
+*.local
+npm-debug.log*
+
+# --- Editores y SO ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
