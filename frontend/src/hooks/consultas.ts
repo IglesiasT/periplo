@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as api from '../api'
 import type { DatosViaje, DatosVisita, Ruta } from '../types'
 
@@ -10,9 +10,24 @@ const CLAVES = {
   logros: ['logros'],
   rutas: ['rutas'],
   fotos: ['fotos'],
+  // Prefijo de los años disponibles y de cada época: invalidarlo recalcula las entidades pisadas.
+  historia: ['historia'],
 } as const
 
 export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: api.obtenerEstados })
+
+export const useAniosHistoricos = () =>
+  useQuery({ queryKey: [...CLAVES.historia, 'anios'], queryFn: api.obtenerAniosHistoricos })
+
+/** El mapa en `anio`, o nada si es null (el presente). Al mover el slider se sigue viendo el año
+ *  anterior hasta que llega el nuevo, en lugar de parpadear al color del presente. */
+export const useEpoca = (anio: number | null) =>
+  useQuery({
+    queryKey: [...CLAVES.historia, anio],
+    queryFn: () => api.obtenerEpoca(anio!),
+    enabled: anio !== null,
+    placeholderData: keepPreviousData,
+  })
 
 export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
 

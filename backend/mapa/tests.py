@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 from .estadisticas import calcular_estadisticas
 from .fotos import ErrorFoto, leer_foto
 from .logros import Logro, calcular_logros, continentes, grupos, provincias_de, regiones
-from .models import Foto, Region, Ruta, Viaje, Visita
+from .models import EntidadPoliticaHistorica, Foto, Region, RegionEpoca, Ruta, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
 from .rutas import ErrorRuta, leer_archivo, longitud_km
 from .sincronizacion import planificar_visitas
@@ -240,6 +240,56 @@ class CruzarHistoriaTests(SimpleTestCase):
         self.assertEqual(list(resultado['codigo']), ['Cerca'])
         self.assertEqual(resultado['entidad'][0], 'A')
         self.assertTrue(pd.isna(resultado['porcentaje'][0]))
+
+
+class EpocasApiTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina')
+        salta = Region.objects.create(nivel='provincia', codigo='AR-A', nombre='Salta', padre=arg)
+        jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=arg)
+        cusco = Region.objects.create(nivel='provincia', codigo='PE-CUS', nombre='Cusco')
+        rio = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of the Río de la Plata', color='#c0a060')
+        peru = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of Peru')
+        RegionEpoca.objects.create(region=salta, anio=1800, entidad=rio, porcentaje_superficie=96.6)
+        RegionEpoca.objects.create(region=salta, anio=1800, entidad=peru, porcentaje_superficie=3.4)
+        RegionEpoca.objects.create(region=jujuy, anio=1800, entidad=rio, porcentaje_superficie=70)
+        RegionEpoca.objects.create(region=jujuy, anio=1800, entidad=peru, porcentaje_superficie=30)
+        RegionEpoca.objects.create(region=cusco, anio=1800, entidad=peru, porcentaje_superficie=None)
+        RegionEpoca.objects.create(region=salta, anio=-500, entidad=peru, porcentaje_superficie=100)
+        Visita.objects.create(region=salta)
+        Visita.objects.create(region=cusco, realizada=False)
+
+    def test_anios_disponibles(self):
+        self.assertEqual(self.client.get('/api/historia/').data, [-500, 1800])
+
+    def test_regiones_con_su_entidad_principal(self):
+        datos = self.client.get('/api/historia/1800/').data
+        self.assertEqual(datos['regiones'], {
+            'AR-A': 'Viceroyalty of the Río de la Plata',
+            'AR-Y': 'Viceroyalty of the Río de la Plata',
+            'PE-CUS': 'Viceroyalty of Peru',
+        })
+        self.assertEqual(datos['colores'], {'Viceroyalty of the Río de la Plata': '#c0a060'})
+
+    def test_pisadas_ignoran_el_roce_de_frontera_y_los_deseos(self):
+        # Salta toca Perú en un 3,4%: no cuenta. Cusco es solo un deseo.
+        datos = self.client.get('/api/historia/1800/').data
+        self.assertEqual(datos['pisadas'], [
+            {'entidad': 'Viceroyalty of the Río de la Plata', 'regiones': [{'codigo': 'AR-A', 'nombre': 'Salta'}]},
+        ])
+
+    def test_pisadas_cuentan_las_entidades_con_parte_grande_de_la_region(self):
+        Visita.objects.create(region=Region.objects.get(codigo='AR-Y'))
+        entidades = [p['entidad'] for p in self.client.get('/api/historia/1800/').data['pisadas']]
+        self.assertEqual(entidades, ['Viceroyalty of the Río de la Plata', 'Viceroyalty of Peru'])
+
+    def test_anio_antes_de_cristo(self):
+        datos = self.client.get('/api/historia/-500/').data
+        self.assertEqual(datos['regiones'], {'AR-A': 'Viceroyalty of Peru'})
+
+    def test_anio_sin_datos(self):
+        self.assertEqual(self.client.get('/api/historia/1234/').status_code, 404)
 
 
 class UtilidadesTests(SimpleTestCase):

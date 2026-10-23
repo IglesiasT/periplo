@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from rest_framework.routers import DefaultRouter
 
 from . import api, views
@@ -15,5 +15,8 @@ urlpatterns = [
     path('estados/', views.estados, name='estados'),
     path('estadisticas/', views.estadisticas, name='estadisticas'),
     path('logros/', views.logros, name='logros'),
+    path('historia/', views.historia, name='historia'),
+    # re_path y no <int:anio>: los años a. C. son negativos.
+    re_path(r'^historia/(?P<anio>-?\d+)/$', views.epoca, name='epoca'),
     *router.urls,
 ]

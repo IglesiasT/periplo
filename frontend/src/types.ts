@@ -95,6 +95,18 @@ export interface Logro {
   }[]
 }
 
+/** Respuesta de /api/historia/<anio>/: el mapa en un año histórico. */
+export interface Epoca {
+  /** Los a. C. van en negativo. */
+  anio: number
+  /** Código de región → entidad que ocupaba la mayor parte. Las regiones sin entidad no aparecen. */
+  regiones: Record<string, string>
+  /** Solo las entidades con color propio; el resto se colorea por su nombre. */
+  colores: Record<string, string>
+  /** Entidades cuyo territorio pisé en alguna visita realizada, de la que más regiones tiene a la que menos. */
+  pisadas: { entidad: string; regiones: { codigo: string; nombre: string }[] }[]
+}
+
 export interface Foto {
   id: number
   viaje: number | null

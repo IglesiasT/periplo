@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { ExpressionSpecification, GeoJSONSource, LayerSpecification, StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -8,7 +8,8 @@ import fuenteCursiva from '@fontsource/im-fell-english/files/im-fell-english-lat
 import { TerraDraw, TerraDrawLineStringMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { formatearFecha } from '../etiquetas'
-import type { EstadoRegion, EstadosRegiones, Foto, Ruta } from '../types'
+import { colorEntidad } from '../historia'
+import type { Epoca, EstadoRegion, EstadosRegiones, Foto, Ruta } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
@@ -69,6 +70,24 @@ const COLOR_RELLENO: ExpressionSpecification = [
 ]
 
 const ES_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 1, 0]
+
+const VISITADA: ExpressionSpecification = ['match', ESTADO, ['estadia', 'paso', 'transito'], true, false]
+
+// En un año histórico, cada región toma el color de la entidad que la ocupaba: entintado si la
+// visité, en aguada si no. Un solo match por intensidad, con todas las regiones de cada entidad juntas.
+function rellenoHistorico(epoca: Epoca): ExpressionSpecification | string {
+  const regionesDe = new Map<string, string[]>()
+  for (const [codigo, entidad] of Object.entries(epoca.regiones)) {
+    regionesDe.set(entidad, [...(regionesDe.get(entidad) ?? []), codigo])
+  }
+  if (regionesDe.size === 0) return COLORES.noVisitado
+  const porEntidad = (intenso: boolean) => [
+    'match', ['get', 'codigo'],
+    ...[...regionesDe].flatMap(([entidad, codigos]) => [codigos, colorEntidad(entidad, epoca, intenso)]),
+    COLORES.noVisitado,
+  ] as unknown as ExpressionSpecification
+  return ['case', VISITADA, porEntidad(true), porEntidad(false)]
+}
 
 type Valor = number | ExpressionSpecification
 
@@ -396,6 +415,10 @@ interface Props {
   /** Si está, el mapa está en modo dibujo: al terminar una línea (Enter o click en el último punto) la manda acá. */
   alTerminarDibujo?: (coordenadas: [number, number][]) => void
   fotos: Foto[] | undefined
+  /** Si está, el mapa se pinta como era ese año: cada región con el color de su entidad. */
+  epoca?: Epoca
+  /** Controles superpuestos al mapa (el selector de época y su panel). */
+  children?: ReactNode
 }
 
 const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
@@ -434,7 +457,7 @@ function rutasComoGeoJSON(rutas: Ruta[], viajeResaltado: number | null): GeoJSON
 }
 
 export default function Mapa({
-  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo, fotos,
+  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo, fotos, epoca, children,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -442,9 +465,11 @@ export default function Mapa({
   // verían siempre la versión de ese momento (un closure viejo). Leen la última desde este ref.
   const alClickearRef = useRef(alClickearRegion)
   const alTerminarDibujoRef = useRef(alTerminarDibujo)
+  const epocaRef = useRef(epoca)
   useEffect(() => {
     alClickearRef.current = alClickearRegion
     alTerminarDibujoRef.current = alTerminarDibujo
+    epocaRef.current = epoca
   })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
@@ -487,10 +512,15 @@ export default function Mapa({
       }
       const estado = feature.state.estado as EstadoRegion | undefined
       const detalle = estado ? ETIQUETAS_ESTADO[estado] : 'Sin visitar'
+      const epocaActual = epocaRef.current
+      const entidad = epocaActual
+        ? `<em>${escapar(epocaActual.regiones[feature.properties.codigo] ?? 'Sin entidad en este mapa')}</em><br>`
+        : ''
       map.getCanvas().style.cursor = editando ? 'crosshair' : 'pointer'
       popup
         .setLngLat(e.lngLat)
-        .setHTML(`<strong>${feature.properties.nombre}</strong><br>${detalle}${editando ? '<br><em>Click para marcar</em>' : ''}`)
+        .setHTML(`<strong>${feature.properties.nombre}</strong><br>${entidad}${detalle}`
+          + `${editando ? '<br><em>Click para marcar</em>' : ''}`)
         .addTo(map)
     })
     map.getCanvas().addEventListener('mouseleave', () => popup.remove())
@@ -558,6 +588,13 @@ export default function Mapa({
   useEffect(() => {
     const map = mapRef.current
     if (!listo || !map) return
+    const relleno = epoca ? rellenoHistorico(epoca) : COLOR_RELLENO
+    for (const source of SOURCES) map.setPaintProperty(`${source}-relleno`, 'fill-color', relleno)
+  }, [epoca, listo])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map) return
     map.getSource<GeoJSONSource>('rutas')?.setData(rutasComoGeoJSON(rutas ?? [], viajeResaltado))
   }, [rutas, viajeResaltado, listo])
 
@@ -593,8 +630,10 @@ export default function Mapa({
       <div ref={contenedor} style={{ width: '100%', height: '100%' }} />
       {/* Los GeoJSON pesan varios MB: mientras bajan, el mapa no queda vacío y mudo. */}
       {!listo && <div className="cargando">Grabando las planchas del mapa…</div>}
-      <Leyenda />
+      {/* En un año histórico, el panel de la época ocupa el lugar de la leyenda. */}
+      {!epoca && <Leyenda />}
       <RosaDeLosVientos />
+      {children}
     </div>
   )
 }

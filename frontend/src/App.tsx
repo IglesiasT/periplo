@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { siguientePaso } from './ciclo'
+import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
 import Mapa from './components/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
-  useActualizarVisita, useBorrarVisita, useCrearRuta, useCrearVisita, useEstados, useFotos, useLogros, useRutas,
-  useViajes,
+  useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearRuta, useCrearVisita, useEpoca, useEstados,
+  useFotos, useLogros, useRutas, useViajes,
 } from './hooks/consultas'
 
 export default function App() {
@@ -13,6 +14,12 @@ export default function App() {
   const rutas = useRutas()
   const fotos = useFotos()
   const logros = useLogros()
+  const anios = useAniosHistoricos()
+  // null = el presente.
+  const [anio, setAnio] = useState<number | null>(null)
+  const epocaConsulta = useEpoca(anio)
+  // Al volver al presente la consulta queda deshabilitada pero conserva el último año como placeholder.
+  const epoca = anio === null ? undefined : epocaConsulta.data
   const [seleccion, setSeleccion] = useState<Seleccion>(null)
   const [logroElegido, setLogroElegido] = useState<string | null>(null)
   const [modo, setModo] = useState<Modo>('ninguno')
@@ -93,7 +100,12 @@ export default function App() {
         alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
         alTerminarDibujo={modo === 'dibujar' && viaje ? alTerminarDibujo : undefined}
         fotos={fotos.data}
-      />
+        epoca={epoca}
+      >
+        {/* Sin años cruzados (no se corrió cruzar_historia) no hay nada que elegir. */}
+        {anios.data && anios.data.length > 0 && <SelectorEpoca anios={anios.data} anio={anio} onCambiar={setAnio} />}
+        {epoca && <EntidadesPisadas epoca={epoca} />}
+      </Mapa>
     </div>
   )
 }
