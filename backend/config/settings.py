@@ -138,3 +138,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Notion (ver backend/.env.example)
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN', '')
 NOTION_DATABASE_ID = os.environ.get('NOTION_DATABASE_ID', '')
+
+# API sin autenticación: el proyecto es de uso local. Sin esto, DRF usa la sesión del admin
+# (la cookie de localhost viaja también por el proxy de Vite) y exige CSRF en cada POST del frontend.
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+    'UNAUTHENTICATED_USER': None,
+}
