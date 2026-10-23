@@ -34,9 +34,14 @@ Se necesitan dos terminales: una para el backend y otra para el frontend.
 cd backend
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+# Generá una SECRET_KEY y pegala en .env como DJANGO_SECRET_KEY:
+.venv\Scripts\python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"
 .venv\Scripts\python manage.py migrate
 .venv\Scripts\python manage.py runserver
 ```
+
+> Los secretos (la `SECRET_KEY` de Django y, más adelante, el token de Notion) van en `backend/.env`, que git ignora. Nunca los escribas en `settings.py` ni en otro archivo versionado.
 
 > Si preferís activar el entorno con `.venv\Scripts\Activate.ps1` y PowerShell lo bloquea, corré una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Los comandos de arriba no lo necesitan.
 
