@@ -10,5 +10,6 @@ router.register('visitas', api.VisitaViewSet, basename='visita')
 
 urlpatterns = [
     path('estados/', views.estados, name='estados'),
+    path('estadisticas/', views.estadisticas, name='estadisticas'),
     *router.urls,
 ]

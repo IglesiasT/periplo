@@ -6,21 +6,20 @@ import type { DatosViaje, DatosVisita } from '../types'
 const CLAVES = {
   estados: ['estados'],
   viajes: ['viajes'],
+  estadisticas: ['estadisticas'],
 } as const
 
 export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: api.obtenerEstados })
 
+export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
+
 export const useViajes = () => useQuery({ queryKey: CLAVES.viajes, queryFn: api.listarViajes })
 
-/** Cualquier cambio en viajes o visitas puede cambiar el color del mapa: se invalidan ambas claves
- *  y TanStack Query las vuelve a pedir. */
+/** Cualquier cambio en viajes o visitas puede cambiar el color del mapa y las estadísticas:
+ *  se invalidan todas las claves y TanStack Query las vuelve a pedir. */
 function useInvalidar() {
   const cliente = useQueryClient()
-  return () =>
-    Promise.all([
-      cliente.invalidateQueries({ queryKey: CLAVES.viajes }),
-      cliente.invalidateQueries({ queryKey: CLAVES.estados }),
-    ])
+  return () => Promise.all(Object.values(CLAVES).map((queryKey) => cliente.invalidateQueries({ queryKey })))
 }
 
 export function useGuardarViaje() {

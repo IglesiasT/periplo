@@ -123,6 +123,69 @@ textarea {
   font-size: 11px;
 }
 
+/* --- Estadísticas --- */
+
+.estadisticas {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--panel-claro);
+}
+
+.cifra strong {
+  font-size: 16px;
+}
+
+.desplegar {
+  margin-top: 8px;
+  border: none !important;
+  background: none !important;
+  padding: 0 !important;
+  color: var(--tenue);
+}
+
+.barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.barras li {
+  margin-bottom: 8px;
+}
+
+.barra-titulo {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.barra {
+  height: 4px;
+  margin-top: 3px;
+  border-radius: 2px;
+  background: var(--borde);
+}
+
+.barra div {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--acento);
+}
+
 /* --- Lista de viajes --- */
 
 .pestanias {

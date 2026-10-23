@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APITestCase
 
+from .estadisticas import calcular_estadisticas
 from .models import Region, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
 from .sincronizacion import planificar_visitas
@@ -211,3 +212,33 @@ class ApiTests(APITestCase):
         self.assertEqual(self.client.patch(url, {'tipo_presencia': 'paso'}, format='json').status_code, 403)
         self.assertEqual(self.client.delete(url).status_code, 403)
         self.assertTrue(Visita.objects.filter(id=self.visita_notion.id).exists())
+
+
+class EstadisticasTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina', area_km2=1000,
+                                        continente='South America')
+        Region.objects.create(nivel='pais', codigo='CHL', nombre='Chile', area_km2=500, continente='South America')
+        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=cls.arg, area_km2=100)
+        cls.salta = Region.objects.create(nivel='provincia', codigo='AR-A', nombre='Salta', padre=cls.arg, area_km2=200)
+        cls.tilcara = Region.objects.create(nivel='departamento', codigo='AR-38094', nombre='Tilcara',
+                                            padre=cls.jujuy, area_km2=10)
+        cls.capital = Region.objects.create(nivel='departamento', codigo='AR-66028', nombre='Capital',
+                                            padre=cls.salta, area_km2=5)
+
+    def test_no_cuenta_dos_veces_y_usa_la_region_mas_grande_visitada(self):
+        Visita.objects.create(region=self.jujuy)
+        Visita.objects.create(region=self.tilcara)   # ya incluida en Jujuy
+        Visita.objects.create(region=self.capital)   # solo el departamento, no toda Salta
+        Visita.objects.create(region=self.salta, realizada=False)  # un deseo no suma
+
+        datos = calcular_estadisticas()
+        self.assertEqual(datos['km2_visitados'], 105)
+        self.assertEqual(datos['porcentaje_mundo'], 7.0)  # 105 / (1000 + 500)
+        self.assertEqual(datos['paises_visitados'], 1)
+        self.assertEqual(datos['continentes'], [{'continente': 'Sudamérica', 'visitados': 1, 'total': 2}])
+        self.assertEqual(datos['paises'], [{
+            'codigo': 'ARG', 'nombre': 'Argentina', 'km2_visitados': 105, 'porcentaje': 10.5,
+            'provincias_visitadas': 2, 'provincias_total': 2,
+        }])

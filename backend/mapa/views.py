@@ -1,6 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from .estadisticas import calcular_estadisticas
 from .models import Visita
 
 # De más a menos intenso: si una región tiene varios estados, gana el de mayor prioridad.
@@ -32,3 +33,9 @@ def calcular_estados() -> dict[str, str]:
 def estados(request):
     """{codigo: estado} con estado en estadia | paso | transito | deseo. Las regiones sin estado no aparecen."""
     return Response(calcular_estados())
+
+
+@api_view(['GET'])
+def estadisticas(request):
+    """Superficie recorrida, países por continente y avance por país (ver mapa/estadisticas.py)."""
+    return Response(calcular_estadisticas())

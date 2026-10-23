@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
 import type { Viaje } from '../types'
+import Estadisticas from './Estadisticas'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
 
@@ -74,6 +75,8 @@ export default function Panel({
         <h1>Periplo</h1>
         <button onClick={() => onSeleccionar('nuevo')}>+ Viaje</button>
       </header>
+
+      <Estadisticas />
 
       <div className="pestanias">
         {(Object.keys(FILTROS) as Filtro[]).map((f) => (

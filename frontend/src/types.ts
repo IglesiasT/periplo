@@ -43,3 +43,21 @@ export interface Viaje {
 export type DatosViaje = Pick<Viaje, 'nombre' | 'estado' | 'fecha_inicio' | 'fecha_fin' | 'notas'>
 
 export type DatosVisita = Pick<Visita, 'viaje' | 'region'> & Partial<Pick<Visita, 'tipo_presencia' | 'realizada'>>
+
+/** Respuesta de /api/estadisticas/. */
+export interface Estadisticas {
+  km2_visitados: number
+  porcentaje_mundo: number
+  paises_visitados: number
+  paises_total: number
+  viajes_hechos: number
+  continentes: { continente: string; visitados: number; total: number }[]
+  paises: {
+    codigo: string
+    nombre: string
+    km2_visitados: number
+    porcentaje: number
+    provincias_visitadas: number
+    provincias_total: number
+  }[]
+}
