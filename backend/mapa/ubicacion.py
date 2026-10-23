@@ -15,7 +15,7 @@ from pathlib import Path
 
 import geopandas as gpd
 from django.conf import settings
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
 
 from .models import Region
 
@@ -75,6 +75,12 @@ class Localizador:
         _, cercanos = gdf.sindex.nearest(punto, max_distance=DISTANCIA_MAXIMA_GRADOS)
         return gdf['codigo'].iloc[cercanos[0]] if len(cercanos) else None
 
+    def regiones_que_cruza(self, coordenadas: list[list[float]], capa: str = 'provincias') -> list[str]:
+        """Regiones cuyo polígono interseca la línea (el índice espacial descarta primero las lejanas)."""
+        gdf = self._capa(capa)
+        indices = gdf.sindex.query(LineString(coordenadas), predicate='intersects')
+        return list(gdf['codigo'].iloc[sorted(indices)])
+
 
 class Nominatim:
     """Geocodificador de OpenStreetMap. Política de uso: máximo 1 pedido por segundo y User-Agent propio."""
@@ -110,6 +116,14 @@ class Ubicador:
         for nivel, codigo, nombre, area in Region.objects.values_list('nivel', 'codigo', 'nombre', 'area_km2'):
             self.indice_nombres.setdefault(normalizar(nombre), []).append((nivel, codigo))
             self.areas[codigo] = area or 0
+
+    def regiones_atravesadas(self, coordenadas: list[list[float]]) -> list[str]:
+        """Provincias que cruza una ruta; en las que tienen departamentos, los departamentos."""
+        provincias = self.localizador.regiones_que_cruza(coordenadas)
+        resultado = [c for c in provincias if c not in self.provincias_con_departamentos]
+        if len(resultado) < len(provincias):
+            resultado += self.localizador.regiones_que_cruza(coordenadas, capa='departamentos')
+        return resultado
 
     def por_coordenadas(self, lat: float, lon: float, detallar: bool = False) -> Ubicacion | None:
         """Provincia donde cae el punto. Con `detallar`, baja a departamento si esa provincia los tiene."""

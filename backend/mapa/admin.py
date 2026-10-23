@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Region, Viaje, Visita
+from .models import Region, Ruta, Viaje, Visita
 
 
 @admin.register(Region)
@@ -34,3 +34,10 @@ class VisitaAdmin(admin.ModelAdmin):
     list_filter = ['realizada', 'desde_notion', 'tipo_presencia']
     search_fields = ['region__nombre', 'viaje__nombre']
     autocomplete_fields = ['region', 'viaje']
+
+
+@admin.register(Ruta)
+class RutaAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'viaje', 'longitud_km', 'origen']
+    list_filter = ['origen']
+    exclude = ['coordenadas']

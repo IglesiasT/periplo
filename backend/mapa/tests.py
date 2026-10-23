@@ -1,9 +1,13 @@
+from unittest import mock
+
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APITestCase
 
 from .estadisticas import calcular_estadisticas
-from .models import Region, Viaje, Visita
+from .models import Region, Ruta, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
+from .rutas import ErrorRuta, leer_archivo, longitud_km
 from .sincronizacion import planificar_visitas
 from .ubicacion import Ubicacion, area_bbox_km2, normalizar
 from .views import calcular_estados
@@ -242,3 +246,73 @@ class EstadisticasTests(TestCase):
             'codigo': 'ARG', 'nombre': 'Argentina', 'km2_visitados': 105, 'porcentaje': 10.5,
             'provincias_visitadas': 2, 'provincias_total': 2,
         }])
+
+
+GPX_DOS_SEGMENTOS = b'''<?xml version="1.0"?>
+<gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk><name>Quebrada</name>
+    <trkseg><trkpt lat="-23.0" lon="-65.0"/><trkpt lat="-23.0" lon="-65.5"/></trkseg>
+    <trkseg><trkpt lat="-24.0" lon="-66.0"/><trkpt lat="-24.0" lon="-66.5"/></trkseg>
+  </trk>
+  <wpt lat="-23.0" lon="-65.0"><name>Un punto, no una ruta</name></wpt>
+</gpx>'''
+
+KML_LINEA = b'''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>Ruta 40</name>
+  <LineString><coordinates>-65.0,-23.0,0 -65.0,-24.0,0 -65.1,-25.0,0</coordinates></LineString>
+</Placemark></Document></kml>'''
+
+
+class RutasTests(SimpleTestCase):
+    def test_longitud_geodesica(self):
+        # Un grado de longitud sobre el ecuador mide ~111,32 km.
+        self.assertAlmostEqual(longitud_km([[0, 0], [1, 0]]), 111.32, places=1)
+
+    def test_gpx_con_dos_segmentos_separados_da_dos_rutas_y_ignora_waypoints(self):
+        rutas = leer_archivo(GPX_DOS_SEGMENTOS, 'quebrada.gpx')
+        self.assertEqual([r.nombre for r in rutas], ['Quebrada (1)', 'Quebrada (2)'])
+        self.assertEqual(rutas[0].coordenadas, [[-65.0, -23.0], [-65.5, -23.0]])
+
+    def test_kml(self):
+        [ruta] = leer_archivo(KML_LINEA, 'ruta40.kml')
+        self.assertEqual(ruta.nombre, 'Ruta 40')
+        self.assertEqual(len(ruta.coordenadas), 3)
+
+    def test_formato_no_soportado(self):
+        with self.assertRaises(ErrorRuta):
+            leer_archivo(b'hola', 'notas.txt')
+
+
+class RutasApiTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.viaje = Viaje.objects.create(nombre='NOA', estado='hecho')
+        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy')
+        Region.objects.create(nivel='departamento', codigo='AR-38094', nombre='Tilcara', padre=cls.jujuy)
+
+    def test_importar_gpx(self):
+        archivo = SimpleUploadedFile('quebrada.gpx', GPX_DOS_SEGMENTOS, content_type='application/gpx+xml')
+        respuesta = self.client.post('/api/rutas/importar/', {'viaje': self.viaje.id, 'archivo': archivo},
+                                     format='multipart')
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertEqual(len(respuesta.data), 2)
+        self.assertEqual(respuesta.data[0]['origen'], 'gpx')
+        self.assertGreater(respuesta.data[0]['longitud_km'], 50)
+
+    def test_ruta_dibujada_calcula_longitud_y_valida_puntos(self):
+        ok = self.client.post('/api/rutas/', {'viaje': self.viaje.id, 'coordenadas': [[0, 0], [1, 0]]}, format='json')
+        self.assertEqual(ok.status_code, 201, ok.data)
+        self.assertEqual(ok.data['origen'], 'dibujada')
+        self.assertAlmostEqual(ok.data['longitud_km'], 111.32, places=1)
+        mal = self.client.post('/api/rutas/', {'viaje': self.viaje.id, 'coordenadas': [[0, 0]]}, format='json')
+        self.assertEqual(mal.status_code, 400)
+
+    def test_marcar_transito_agrega_solo_las_regiones_nuevas(self):
+        ruta = Ruta.objects.create(viaje=self.viaje, coordenadas=[[0, 0], [1, 0]], longitud_km=111, origen='dibujada')
+        Visita.objects.create(viaje=self.viaje, region=self.jujuy)
+        with mock.patch('mapa.api.Ubicador') as ubicador:
+            ubicador.return_value.regiones_atravesadas.return_value = ['AR-Y', 'AR-38094']
+            respuesta = self.client.post(f'/api/rutas/{ruta.id}/marcar_transito/')
+        self.assertEqual(respuesta.data, {'agregadas': ['AR-38094'], 'ya_estaban': 1})
+        tilcara = Visita.objects.get(region__codigo='AR-38094')
+        self.assertEqual((tilcara.tipo_presencia, tilcara.realizada), ('transito', True))

@@ -78,3 +78,22 @@ class Visita(models.Model):
     def __str__(self):
         estado = self.get_tipo_presencia_display() if self.realizada else 'deseo'
         return f'{self.viaje or "Sin viaje"} → {self.region} ({estado})'
+
+
+class Ruta(models.Model):
+    """Recorrido de un viaje: importado de GPX/KML o dibujado en el mapa."""
+
+    class Origen(models.TextChoices):
+        GPX = 'gpx', 'GPX'
+        KML = 'kml', 'KML'
+        DIBUJADA = 'dibujada', 'Dibujada'
+
+    viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name='rutas')
+    nombre = models.CharField(max_length=200, blank=True)
+    # LineString como lista de [lon, lat], el mismo orden que GeoJSON.
+    coordenadas = models.JSONField()
+    longitud_km = models.FloatField(help_text='Geodésica, sobre el elipsoide WGS84.')
+    origen = models.CharField(max_length=10, choices=Origen.choices)
+
+    def __str__(self):
+        return f'{self.nombre or "Ruta"} ({self.longitud_km:.0f} km)'

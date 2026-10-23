@@ -1,5 +1,5 @@
 """
-Estadísticas del mapa: superficie recorrida, países por continente y avance por país.
+Estadísticas del mapa: superficie recorrida, km de rutas, países por continente y avance por país.
 
 Solo cuentan las visitas realizadas (no los deseos). Para no contar dos veces la misma superficie,
 de las regiones visitadas se suman solo las que no están dentro de otra región visitada:
@@ -8,7 +8,9 @@ si marcaste Jujuy entera, Tilcara ya está incluida; si marcaste solo Tilcara, c
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
-from .models import Region, Viaje, Visita
+from django.db.models import Sum
+
+from .models import Region, Ruta, Viaje, Visita
 
 CONTINENTES = {
     'South America': 'Sudamérica',
@@ -75,6 +77,9 @@ def calcular_estadisticas() -> dict:
         'paises_visitados': len(paises_visitados),
         'paises_total': len(paises),
         'viajes_hechos': Viaje.objects.filter(estado=Viaje.Estado.HECHO).count(),
+        # Solo rutas de viajes hechos: una ruta planificada todavía no se recorrió.
+        'km_rutas': round(Ruta.objects.filter(viaje__estado=Viaje.Estado.HECHO)
+                          .aggregate(total=Sum('longitud_km'))['total'] or 0),
         'continentes': sorted(
             (
                 {'continente': CONTINENTES.get(c, c), 'visitados': visitados_por_continente[c], 'total': total}
