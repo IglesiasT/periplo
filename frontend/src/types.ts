@@ -103,6 +103,8 @@ export interface Epoca {
   regiones: Record<string, string>
   /** Solo las entidades con color propio; el resto se colorea por su nombre. */
   colores: Record<string, string>
+  /** Nombre en castellano, solo de las entidades traducidas. Las claves de todo lo demás son el nombre original. */
+  nombres: Record<string, string>
   /** Entidades cuyo territorio pisé en alguna visita realizada, de la que más regiones tiene a la que menos. */
   pisadas: { entidad: string; regiones: { codigo: string; nombre: string }[] }[]
 }

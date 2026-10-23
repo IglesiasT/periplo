@@ -8,7 +8,7 @@ import fuenteCursiva from '@fontsource/im-fell-english/files/im-fell-english-lat
 import { TerraDraw, TerraDrawLineStringMode } from 'terra-draw'
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
 import { formatearFecha } from '../etiquetas'
-import { colorEntidad } from '../historia'
+import { colorEntidad, nombreEntidad } from '../historia'
 import type { Epoca, EstadoRegion, EstadosRegiones, Foto, Ruta } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
@@ -513,8 +513,9 @@ export default function Mapa({
       const estado = feature.state.estado as EstadoRegion | undefined
       const detalle = estado ? ETIQUETAS_ESTADO[estado] : 'Sin visitar'
       const epocaActual = epocaRef.current
+      const original = epocaActual?.regiones[feature.properties.codigo]
       const entidad = epocaActual
-        ? `<em>${escapar(epocaActual.regiones[feature.properties.codigo] ?? 'Sin entidad en este mapa')}</em><br>`
+        ? `<em>${escapar(original ? nombreEntidad(original, epocaActual) : 'Sin entidad en este mapa')}</em><br>`
         : ''
       map.getCanvas().style.cursor = editando ? 'crosshair' : 'pointer'
       popup

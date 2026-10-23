@@ -45,8 +45,9 @@ class RutaAdmin(admin.ModelAdmin):
 
 @admin.register(EntidadPoliticaHistorica)
 class EntidadPoliticaHistoricaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'color']
-    search_fields = ['nombre']
+    list_display = ['nombre', 'nombre_es', 'color']
+    search_fields = ['nombre', 'nombre_es']
+    readonly_fields = ['nombre_es']  # sale de data/entidades_es.json
 
 
 @admin.register(RegionEpoca)

@@ -1,3 +1,4 @@
+import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -290,6 +291,28 @@ class EpocasApiTests(APITestCase):
 
     def test_anio_sin_datos(self):
         self.assertEqual(self.client.get('/api/historia/1234/').status_code, 404)
+
+    def test_nombres_en_castellano_desde_el_json(self):
+        from .epocas import aplicar_nombres_es
+
+        # Una traducción que ya no está en el JSON se borra.
+        EntidadPoliticaHistorica.objects.filter(nombre='Viceroyalty of Peru').update(nombre_es='Viejo nombre')
+        with tempfile.TemporaryDirectory() as directorio:
+            ruta = Path(directorio) / 'entidades_es.json'
+            ruta.write_text('{"Viceroyalty of the Río de la Plata": "Virreinato del Río de la Plata", '
+                            '"Inca Empire": "Imperio incaico"}', encoding='utf-8')
+            self.assertEqual(aplicar_nombres_es(ruta), 1)
+
+        datos = self.client.get('/api/historia/1800/').data
+        self.assertEqual(datos['nombres'], {'Viceroyalty of the Río de la Plata': 'Virreinato del Río de la Plata'})
+        # Las claves siguen siendo el nombre original.
+        self.assertEqual(datos['pisadas'][0]['entidad'], 'Viceroyalty of the Río de la Plata')
+
+    def test_el_json_del_repo_es_valido(self):
+        from .epocas import NOMBRES_ES
+
+        traducciones = json.loads(NOMBRES_ES.read_text(encoding='utf-8'))
+        self.assertTrue(all(isinstance(v, str) and v.strip() for v in traducciones.values()))
 
 
 class UtilidadesTests(SimpleTestCase):

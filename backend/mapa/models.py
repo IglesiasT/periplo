@@ -134,6 +134,8 @@ class EntidadPoliticaHistorica(models.Model):
     El mismo nombre en distintos años es la misma entidad."""
 
     nombre = models.CharField(max_length=200, unique=True, help_text='Tal cual viene en historical-basemaps.')
+    nombre_es = models.CharField(max_length=200, blank=True,
+                                 help_text='Vacío si es igual al original. Sale de data/entidades_es.json.')
     color = models.CharField(max_length=7, blank=True, help_text='Hex (#rrggbb) para pintarla en el mapa.')
 
     class Meta:

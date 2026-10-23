@@ -1,4 +1,4 @@
-import { colorEntidad, formatearAnio } from '../historia'
+import { colorEntidad, formatearAnio, nombreEntidad } from '../historia'
 import type { Epoca } from '../types'
 
 interface SelectorProps {
@@ -56,7 +56,7 @@ export function EntidadesPisadas({ epoca }: { epoca: Epoca }) {
             <li key={entidad}>
               <span className="leyenda-color" style={{ background: colorEntidad(entidad, epoca, true) }} />
               <span>
-                {entidad}
+                {nombreEntidad(entidad, epoca)}
                 <span className="tenue">
                   {' · '}{nombres.slice(0, REGIONES_A_LA_VISTA).join(', ')}
                   {resto > 0 && ` y ${resto} más`}

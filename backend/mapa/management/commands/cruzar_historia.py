@@ -17,6 +17,7 @@ import pandas as pd
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from mapa.epocas import aplicar_nombres_es
 from mapa.geodatos import RAW_DIR
 from mapa.historia import cruzar, preparar_regiones
 from mapa.management.commands.descargar_historia import HISTORIA_DIR
@@ -66,8 +67,10 @@ class Command(BaseCommand):
                 f'{anio}: {len(cruce)} filas, {cruce["entidad"].nunique()} entidades, '
                 f'{sin_entidad} regiones sin entidad')
 
+        # Las entidades nuevas llegan sin traducir.
+        traducidas = aplicar_nombres_es()
         self.stdout.write(self.style.SUCCESS(
-            f'{EntidadPoliticaHistorica.objects.count()} entidades y '
+            f'{EntidadPoliticaHistorica.objects.count()} entidades ({traducidas} traducidas) y '
             f'{RegionEpoca.objects.count()} filas de RegionEpoca en total.'))
 
     def leer_regiones(self, codigos: set[str]) -> gpd.GeoDataFrame:

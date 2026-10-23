@@ -5,6 +5,11 @@ export function formatearAnio(anio: number): string {
   return anio < 0 ? `${-anio} a. C.` : String(anio)
 }
 
+/** Nombre para mostrar: en castellano si está traducido, si no tal cual viene en historical-basemaps. */
+export function nombreEntidad(entidad: string, epoca: Epoca): string {
+  return epoca.nombres[entidad] ?? entidad
+}
+
 // Hash de texto estable (FNV-1a): la misma entidad tiene el mismo tono en todos los años.
 function hash(texto: string): number {
   let h = 0x811c9dc5
