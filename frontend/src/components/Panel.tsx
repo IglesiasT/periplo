@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
 import type { Viaje } from '../types'
 import Estadisticas from './Estadisticas'
+import RutasLista from './RutasLista'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
 
@@ -21,15 +22,20 @@ interface Props {
   error: Error | null
   seleccion: Seleccion
   onSeleccionar: (seleccion: Seleccion) => void
-  /** Modo edición: los clicks en el mapa marcan regiones del viaje elegido. */
-  editando: boolean
-  onEditar: (editando: boolean) => void
+  /** Qué hacen los clicks en el mapa: nada especial, marcar regiones o dibujar una ruta del viaje elegido. */
+  modo: Modo
+  onCambiarModo: (modo: Modo) => void
+  /** Resultado o error de la última acción sobre el mapa. */
   aviso: string | null
+  onAviso: (aviso: string | null) => void
 }
 
+export type Modo = 'ninguno' | 'marcar' | 'dibujar'
+
 export default function Panel({
-  viajes, cargando, error, seleccion, onSeleccionar, editando, onEditar, aviso,
+  viajes, cargando, error, seleccion, onSeleccionar, modo, onCambiarModo, aviso, onAviso,
 }: Props) {
+  const alternar = (m: Modo) => onCambiarModo(modo === m ? 'ninguno' : m)
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const viaje = typeof seleccion === 'number' ? viajes?.find((v) => v.id === seleccion) : undefined
 
@@ -50,20 +56,24 @@ export default function Panel({
         <h2>{viaje.nombre}</h2>
         {/* key: si cambia el viaje elegido, el formulario se vuelve a montar con sus datos. */}
         <ViajeForm key={viaje.id} viaje={viaje} onBorrado={() => onSeleccionar(null)} />
+        {aviso && <p className="aviso-accion">{aviso}</p>}
+
         <div className="encabezado-seccion">
           <h3>Regiones</h3>
-          <button className={editando ? 'activa' : ''} onClick={() => onEditar(!editando)}>
-            {editando ? 'Listo' : 'Marcar en el mapa'}
+          <button className={modo === 'marcar' ? 'activa' : ''} onClick={() => alternar('marcar')}>
+            {modo === 'marcar' ? 'Listo' : 'Marcar en el mapa'}
           </button>
         </div>
-        {editando && (
+        {modo === 'marcar' && (
           <p className="aviso">
             Hacé click en una región. Cada click avanza: estadía → de paso → tránsito → deseo → sin marcar.
             Marca el nivel que estás viendo: país, provincia o departamento.
           </p>
         )}
-        {aviso && <p className="error">{aviso}</p>}
         <VisitasLista visitas={viaje.visitas} />
+
+        <RutasLista viaje={viaje} dibujando={modo === 'dibujar'} onDibujar={() => alternar('dibujar')}
+                    onAviso={onAviso} />
       </aside>
     )
   }

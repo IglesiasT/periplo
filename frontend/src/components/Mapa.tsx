@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
-import type { ExpressionSpecification, StyleSpecification } from 'maplibre-gl'
+import type { ExpressionSpecification, GeoJSONSource, StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import type { EstadoRegion, EstadosRegiones } from '../types'
+import { TerraDraw, TerraDrawLineStringMode } from 'terra-draw'
+import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter'
+import type { EstadoRegion, EstadosRegiones, Ruta } from '../types'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
@@ -15,7 +17,9 @@ const COLORES = {
   fronteraPais: '#1b2838',
   fronteraProvincia: '#2f353c',
   resaltado: '#f4efe6',
-}
+  ruta: '#c9a13b',
+  rutaResaltada: '#f2c14e',
+} as const
 
 // De más a menos intenso; el deseo es un tono frío para que no se confunda con lo visitado.
 const COLORES_ESTADO: Record<EstadoRegion, string> = {
@@ -89,6 +93,8 @@ const STYLE: StyleSpecification = {
     departamentos: {
       type: 'geojson', data: '/geo/departamentos.geojson', promoteId: 'codigo', attribution: ATRIBUCION_IGN,
     },
+    // Las rutas llegan de la API: arranca vacía y se completa con setData().
+    rutas: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
   },
   layers: [
     { id: 'fondo', type: 'background', paint: { 'background-color': COLORES.mar } },
@@ -167,6 +173,20 @@ const STYLE: StyleSpecification = {
       },
     },
 
+    // Rutas: las del viaje elegido (propiedad "resaltada" del feature) más gruesas y claras.
+    {
+      id: 'rutas', type: 'line', source: 'rutas',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': ['case', ['get', 'resaltada'], COLORES.rutaResaltada, COLORES.ruta],
+        'line-width': [
+          'interpolate', ['linear'], ['zoom'],
+          2, ['case', ['get', 'resaltada'], 2, 1],
+          8, ['case', ['get', 'resaltada'], 4.5, 2.5],
+        ],
+      },
+    },
+
     // Contorno claro de las regiones del viaje elegido en el panel (feature-state "resaltada").
     {
       id: 'departamentos-resaltada', type: 'line', source: 'departamentos',
@@ -229,16 +249,36 @@ interface Props {
   resaltadas: Set<string>
   /** Si está, el mapa está en modo edición: cada click en una región la manda acá. */
   alClickearRegion?: (codigo: string) => void
+  rutas: Ruta[] | undefined
+  /** Viaje cuyas rutas se dibujan destacadas. */
+  viajeResaltado: number | null
+  /** Si está, el mapa está en modo dibujo: al terminar una línea (Enter o click en el último punto) la manda acá. */
+  alTerminarDibujo?: (coordenadas: [number, number][]) => void
 }
 
-export default function Mapa({ estados, resaltadas, alClickearRegion }: Props) {
+function rutasComoGeoJSON(rutas: Ruta[], viajeResaltado: number | null): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: rutas.map((ruta) => ({
+      type: 'Feature',
+      properties: { nombre: ruta.nombre, resaltada: ruta.viaje === viajeResaltado },
+      geometry: { type: 'LineString', coordinates: ruta.coordenadas },
+    })),
+  }
+}
+
+export default function Mapa({
+  estados, resaltadas, alClickearRegion, rutas, viajeResaltado, alTerminarDibujo,
+}: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   // Los handlers de MapLibre se registran una sola vez al crear el mapa: si usaran la prop directamente,
   // verían siempre la versión de ese momento (un closure viejo). Leen la última desde este ref.
   const alClickearRef = useRef(alClickearRegion)
+  const alTerminarDibujoRef = useRef(alTerminarDibujo)
   useEffect(() => {
     alClickearRef.current = alClickearRegion
+    alTerminarDibujoRef.current = alTerminarDibujo
   })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
@@ -320,6 +360,33 @@ export default function Mapa({ estados, resaltadas, alClickearRegion }: Props) {
     for (const codigo of resaltadas) aplicarFeatureState(map, codigo, { resaltada: true })
     resaltadasAplicadas.current = resaltadas
   }, [resaltadas, listo])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map) return
+    map.getSource<GeoJSONSource>('rutas')?.setData(rutasComoGeoJSON(rutas ?? [], viajeResaltado))
+  }, [rutas, viajeResaltado, listo])
+
+  // Modo dibujo con terra-draw: se crea al entrar al modo y se destruye al salir.
+  const dibujando = Boolean(alTerminarDibujo)
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map || !dibujando) return
+    const dibujo = new TerraDraw({
+      adapter: new TerraDrawMapLibreGLAdapter({ map }),
+      modes: [new TerraDrawLineStringMode({ styles: { lineStringColor: COLORES.rutaResaltada, lineStringWidth: 3 } })],
+    })
+    dibujo.start()
+    dibujo.setMode('linestring')
+    dibujo.on('finish', (id) => {
+      const trazo = dibujo.getSnapshotFeature(id)
+      if (trazo?.geometry.type === 'LineString') {
+        alTerminarDibujoRef.current?.(trazo.geometry.coordinates as [number, number][])
+      }
+      dibujo.clear()
+    })
+    return () => dibujo.stop()
+  }, [dibujando, listo])
 
   return (
     <div className="mapa">

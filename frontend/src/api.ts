@@ -1,4 +1,4 @@
-import type { DatosViaje, DatosVisita, Estadisticas, EstadosRegiones, Viaje, Visita } from './types'
+import type { DatosViaje, DatosVisita, Estadisticas, EstadosRegiones, Ruta, Viaje, Visita } from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
 export class ErrorApi extends Error {
@@ -17,10 +17,12 @@ export class ErrorApi extends Error {
 }
 
 async function pedir<T>(metodo: string, url: string, cuerpo?: unknown): Promise<T> {
+  // FormData (subida de archivos) va tal cual: el navegador arma el multipart y su Content-Type.
+  const esFormulario = cuerpo instanceof FormData
   const respuesta = await fetch(url, {
     method: metodo,
-    headers: cuerpo === undefined ? {} : { 'Content-Type': 'application/json' },
-    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    headers: cuerpo === undefined || esFormulario ? {} : { 'Content-Type': 'application/json' },
+    body: cuerpo === undefined ? undefined : esFormulario ? cuerpo : JSON.stringify(cuerpo),
   })
   if (!respuesta.ok) {
     throw new ErrorApi(respuesta.status, await respuesta.json().catch(() => null))
@@ -41,3 +43,16 @@ export const crearVisita = (datos: DatosVisita) => pedir<Visita>('POST', '/api/v
 export const actualizarVisita = (id: number, datos: Partial<DatosVisita>) =>
   pedir<Visita>('PATCH', `/api/visitas/${id}/`, datos)
 export const borrarVisita = (id: number) => pedir<void>('DELETE', `/api/visitas/${id}/`)
+
+export const listarRutas = () => pedir<Ruta[]>('GET', '/api/rutas/')
+export const crearRuta = (datos: Pick<Ruta, 'viaje' | 'coordenadas'> & { nombre?: string }) =>
+  pedir<Ruta>('POST', '/api/rutas/', datos)
+export const borrarRuta = (id: number) => pedir<void>('DELETE', `/api/rutas/${id}/`)
+export function importarRutas(viaje: number, archivo: File) {
+  const formulario = new FormData()
+  formulario.append('viaje', String(viaje))
+  formulario.append('archivo', archivo)
+  return pedir<Ruta[]>('POST', '/api/rutas/importar/', formulario)
+}
+export const marcarTransito = (id: number) =>
+  pedir<{ agregadas: string[]; ya_estaban: number }>('POST', `/api/rutas/${id}/marcar_transito/`)

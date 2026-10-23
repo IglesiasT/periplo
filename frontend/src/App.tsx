@@ -1,20 +1,22 @@
 import { useMemo, useState } from 'react'
 import { siguientePaso } from './ciclo'
 import Mapa from './components/Mapa'
-import Panel, { type Seleccion } from './components/Panel'
+import Panel, { type Modo, type Seleccion } from './components/Panel'
 import {
-  useActualizarVisita, useBorrarVisita, useCrearVisita, useEstados, useViajes,
+  useActualizarVisita, useBorrarVisita, useCrearRuta, useCrearVisita, useEstados, useRutas, useViajes,
 } from './hooks/consultas'
 
 export default function App() {
   const estados = useEstados()
   const viajes = useViajes()
+  const rutas = useRutas()
   const [seleccion, setSeleccion] = useState<Seleccion>(null)
-  const [editando, setEditando] = useState(false)
+  const [modo, setModo] = useState<Modo>('ninguno')
   const [aviso, setAviso] = useState<string | null>(null)
   const crear = useCrearVisita()
   const actualizar = useActualizarVisita()
   const borrar = useBorrarVisita()
+  const crearRuta = useCrearRuta()
 
   const viaje = viajes.data?.find((v) => v.id === seleccion)
 
@@ -26,14 +28,20 @@ export default function App() {
 
   const seleccionar = (nueva: Seleccion) => {
     setSeleccion(nueva)
-    setEditando(false)
+    setModo('ninguno')
     setAviso(null)
   }
+
+  const cambiarModo = (nuevo: Modo) => {
+    setModo(nuevo)
+    setAviso(null)
+  }
+
+  const alFallar = (error: Error) => setAviso(error.message)
 
   const alClickearRegion = (codigo: string) => {
     if (!viaje) return
     const accion = siguientePaso(viaje.id, viaje.visitas, codigo)
-    const alFallar = (error: Error) => setAviso(error.message)
     setAviso(null)
     switch (accion.tipo) {
       case 'crear':
@@ -47,6 +55,12 @@ export default function App() {
     }
   }
 
+  const alTerminarDibujo = (coordenadas: [number, number][]) => {
+    if (!viaje) return
+    const numero = viaje.rutas.length + 1
+    crearRuta.mutate({ viaje: viaje.id, coordenadas, nombre: `Ruta dibujada ${numero}` }, { onError: alFallar })
+  }
+
   return (
     <div className="app">
       <Panel
@@ -55,14 +69,18 @@ export default function App() {
         error={viajes.error}
         seleccion={seleccion}
         onSeleccionar={seleccionar}
-        editando={editando}
-        onEditar={setEditando}
+        modo={modo}
+        onCambiarModo={cambiarModo}
         aviso={aviso}
+        onAviso={setAviso}
       />
       <Mapa
         estados={estados.data}
         resaltadas={resaltadas}
-        alClickearRegion={editando && viaje ? alClickearRegion : undefined}
+        rutas={rutas.data}
+        viajeResaltado={viaje?.id ?? null}
+        alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
+        alTerminarDibujo={modo === 'dibujar' && viaje ? alTerminarDibujo : undefined}
       />
     </div>
   )

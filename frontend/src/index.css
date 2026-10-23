@@ -133,7 +133,7 @@ textarea {
 
 .cifras {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 
@@ -208,6 +208,20 @@ textarea {
 
 .encabezado-seccion h3 {
   margin: 0;
+}
+
+.botones {
+  display: flex;
+  gap: 6px;
+}
+
+.aviso-accion {
+  margin: 12px 0 0;
+  padding: 8px;
+  border-left: 3px solid var(--acento);
+  border-radius: 4px;
+  background: var(--panel-claro);
+  font-size: 12px;
 }
 
 .viajes,

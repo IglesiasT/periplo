@@ -37,6 +37,22 @@ export interface Viaje {
   notion_id: string | null
   notas: string
   visitas: Visita[]
+  rutas: RutaResumen[]
+}
+
+export type OrigenRuta = 'gpx' | 'kml' | 'dibujada'
+
+export interface RutaResumen {
+  id: number
+  nombre: string
+  longitud_km: number
+  origen: OrigenRuta
+}
+
+export interface Ruta extends RutaResumen {
+  viaje: number
+  /** LineString: lista de [lon, lat], el mismo orden que GeoJSON. */
+  coordenadas: [number, number][]
 }
 
 /** Campos de un viaje que se pueden mandar a la API. */
@@ -51,6 +67,7 @@ export interface Estadisticas {
   paises_visitados: number
   paises_total: number
   viajes_hechos: number
+  km_rutas: number
   continentes: { continente: string; visitados: number; total: number }[]
   paises: {
     codigo: string

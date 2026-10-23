@@ -17,6 +17,7 @@ export default function Estadisticas() {
         <Cifra valor={`${numero(data.porcentaje_mundo, 2)} %`} etiqueta="del mundo" />
         <Cifra valor={numero(data.km2_visitados)} etiqueta="km² recorridos" />
         <Cifra valor={`${data.paises_visitados}/${data.paises_total}`} etiqueta="países" />
+        <Cifra valor={numero(data.km_rutas)} etiqueta="km de rutas" />
       </div>
 
       <button className="desplegar" onClick={() => setAbierto(!abierto)}>
