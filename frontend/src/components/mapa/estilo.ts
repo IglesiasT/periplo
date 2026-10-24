@@ -7,11 +7,35 @@ import { colorEntidad } from '../../historia'
 import type { Tema } from '../../tema'
 import type { Epoca } from '../../types'
 
-// Zoom semántico, como el mapa de estados de Victoria 3:
-// países -> provincias alrededor de ZOOM_PROVINCIAS, y provincias argentinas -> departamentos alrededor de ZOOM_DEPARTAMENTOS.
-export const ZOOM_PROVINCIAS = 4
-export const ZOOM_DEPARTAMENTOS = 7
+/**
+ * Lentes del mapa, como los modos de mapa de Victoria 3. La automática es el zoom semántico: países de
+ * lejos, provincias al acercarse y, en Argentina, departamentos más cerca. Las otras fijan un nivel
+ * aunque se acerque o se aleje.
+ */
+export type Lente = 'automatica' | 'paises' | 'provincias' | 'departamentos'
+
+/** Zoom alrededor del cual cada nivel reemplaza al de arriba: países → provincias → departamentos. */
+interface Umbrales {
+  provincias: number
+  departamentos: number
+}
+
+// El mapa va del zoom 0 al 24: un umbral fuera de ese rango fija el nivel. `departamentos` tiene que
+// quedar más de 2 × FUNDIDO por encima de `provincias`, para que los fundidos no se pisen.
+export const UMBRALES: Record<Lente, Umbrales> = {
+  automatica: { provincias: 4, departamentos: 7 },
+  paises: { provincias: 30, departamentos: 32 },
+  provincias: { provincias: -2, departamentos: 30 },
+  departamentos: { provincias: -2, departamentos: -0.5 },
+}
+
 const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
+
+// Por debajo de este zoom no se rotulan provincias, aunque la lente las muestre: serían miles de nombres.
+const ZOOM_MINIMO_ROTULOS_PROVINCIAS = 2
+
+/** minzoom y maxzoom de una capa: MapLibre solo acepta de 0 a 24. */
+const acotar = (zoom: number) => Math.min(24, Math.max(0, zoom))
 
 export const SOURCES = ['paises', 'provincias', 'departamentos'] as const
 type Source = (typeof SOURCES)[number]
@@ -64,16 +88,6 @@ function opacidadPorZoom(...paradas: [number, Valor][]): ExpressionSpecification
   return ['interpolate', ['linear'], ['zoom'], ...paradas.flat()] as unknown as ExpressionSpecification
 }
 
-// Paradas [zoom, opacidad] del relleno de cada nivel.
-const PARADAS_PAISES: [number, Valor][] = [[ZOOM_PROVINCIAS - FUNDIDO, 1], [ZOOM_PROVINCIAS + FUNDIDO, 0]]
-const PARADAS_PROVINCIAS: [number, Valor][] = [
-  [ZOOM_PROVINCIAS - FUNDIDO, 0],
-  [ZOOM_PROVINCIAS + FUNDIDO, 1],
-  [ZOOM_DEPARTAMENTOS - FUNDIDO, 1],
-  [ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1]],
-]
-const PARADAS_DEPARTAMENTOS: [number, Valor][] = [[ZOOM_DEPARTAMENTOS - FUNDIDO, 0], [ZOOM_DEPARTAMENTOS + FUNDIDO, 1]]
-
 // --- Rótulos ---
 // MapLibre dibuja el texto con las mismas fuentes del panel: `font-faces` le pasa los archivos y
 // las rasteriza en el navegador, sin un servidor de glyphs. Los nombres de acá son los de `text-font`,
@@ -94,9 +108,11 @@ const visiblesPorArea = (...umbrales: [number, number][]): ExpressionSpecificati
   ['step', ['zoom'], false, ...umbrales.flatMap(([zoom, area]) => [zoom, ['>=', AREA, area]])] as
     unknown as ExpressionSpecification
 
-function capasRotulos(tema: Tema): LayerSpecification[] {
+function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecification[] {
   // Contorno de papel alrededor de las letras: se leen igual sobre la tinta carmín.
   const halo = { 'text-halo-color': tema.mapa.haloRotulo, 'text-halo-width': 1.6, 'text-halo-blur': 0.5 }
+  // Las provincias se rotulan desde que aparecen, pero nunca a un zoom tan lejano que serían miles.
+  const inicio = Math.max(p, ZOOM_MINIMO_ROTULOS_PROVINCIAS)
   return [
     {
       id: 'rotulos-oceanos', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'oceano'],
@@ -124,8 +140,8 @@ function capasRotulos(tema: Tema): LayerSpecification[] {
       paint: { 'text-color': tema.mapa.rotuloAgua },
     },
     {
-      id: 'rotulos-provincias', type: 'symbol', source: 'rotulos', minzoom: ZOOM_PROVINCIAS,
-      filter: ['all', ['==', NIVEL_ROTULO, 'provincia'], visiblesPorArea([4, 30000], [5, 5000], [6, 0])],
+      id: 'rotulos-provincias', type: 'symbol', source: 'rotulos', minzoom: acotar(inicio),
+      filter: ['all', ['==', NIVEL_ROTULO, 'provincia'], visiblesPorArea([inicio, 30000], [inicio + 1, 5000], [inicio + 2, 0])],
       layout: {
         'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 7,
         'text-letter-spacing': 0.08, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
@@ -133,12 +149,13 @@ function capasRotulos(tema: Tema): LayerSpecification[] {
       },
       paint: {
         'text-color': tema.mapa.rotuloProvincia, ...halo,
-        'text-opacity': ['interpolate', ['linear'], ['zoom'], ZOOM_PROVINCIAS, 0, ZOOM_PROVINCIAS + FUNDIDO, 1],
+        'text-opacity': ['interpolate', ['linear'], ['zoom'], inicio, 0, inicio + FUNDIDO, 1],
       },
     },
-    // Países al final: se ubican primero y, si chocan con una provincia, gana el país.
+    // Países al final: se ubican primero y, si chocan con una provincia, gana el país. Se apagan cuando
+    // aparecen las provincias: en las lentes de provincias y departamentos, no se ven.
     {
-      id: 'rotulos-paises', type: 'symbol', source: 'rotulos', maxzoom: ZOOM_PROVINCIAS + 1.5,
+      id: 'rotulos-paises', type: 'symbol', source: 'rotulos', maxzoom: acotar(p + 1.5),
       filter: ['all', ['==', NIVEL_ROTULO, 'pais'], visiblesPorArea([0, 250000], [2, 60000], [3, 10000], [4, 0])],
       layout: {
         'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 7,
@@ -147,7 +164,7 @@ function capasRotulos(tema: Tema): LayerSpecification[] {
       },
       paint: {
         'text-color': tema.mapa.rotuloPais, ...halo,
-        'text-opacity': ['interpolate', ['linear'], ['zoom'], ZOOM_PROVINCIAS + 0.8, 1, ZOOM_PROVINCIAS + 1.5, 0],
+        'text-opacity': ['interpolate', ['linear'], ['zoom'], p + 0.8, 1, p + 1.5, 0],
       },
     },
   ]
@@ -171,10 +188,11 @@ function capasResaltado(source: Source, opacidad: (f: number) => Valor, tema: Te
 
 export const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
 
-/** Capas donde buscar la región bajo el mouse, de la más detallada a la menos, según el zoom. */
-export function capasConsultables(zoom: number): string[] {
-  if (zoom < ZOOM_PROVINCIAS) return ['paises-relleno']
-  if (zoom < ZOOM_DEPARTAMENTOS) return ['provincias-relleno']
+/** Capas donde buscar la región bajo el mouse, de la más detallada a la menos, según el zoom y la lente. */
+export function capasConsultables(zoom: number, lente: Lente): string[] {
+  const { provincias, departamentos } = UMBRALES[lente]
+  if (zoom < provincias) return ['paises-relleno']
+  if (zoom < departamentos) return ['provincias-relleno']
   return ['departamentos-relleno', 'provincias-relleno']
 }
 
@@ -184,11 +202,23 @@ const ATRIBUCION_IGN =
   'FUENTE: <a href="https://www.ign.gob.ar/">Instituto Geográfico Nacional de la República Argentina</a> (límites al 11/11/2019)'
 
 /** Style escrito a mano: sin tiles de terceros, solo fondo + países + provincias + departamentos.
- *  `base` resuelve las URLs relativas de las fuentes (MapLibre las pide desde su Web Worker). */
-export function crearEstilo(tema: Tema, base: string): StyleSpecification {
+ *  `base` resuelve las URLs relativas de las fuentes (MapLibre las pide desde su Web Worker).
+ *  Todas las lentes tienen las mismas capas con las mismas propiedades: solo cambian los valores. */
+export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica'): StyleSpecification {
+  const umbrales = UMBRALES[lente]
+  const { provincias: p, departamentos: d } = umbrales
   const relleno = colorRelleno(tema)
   // Contorno solo para las regiones de la lista de deseos: es todo lo que las marca en el mapa.
   const contornoDeseo = { 'line-color': tema.estados.deseo, 'line-width': 1.2, 'line-opacity': ES_DESEO }
+  // Paradas [zoom, opacidad] del relleno de cada nivel.
+  const paradasPaises: [number, Valor][] = [[p - FUNDIDO, 1], [p + FUNDIDO, 0]]
+  const paradasProvincias: [number, Valor][] = [
+    [p - FUNDIDO, 0],
+    [p + FUNDIDO, 1],
+    [d - FUNDIDO, 1],
+    [d + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1]],
+  ]
+  const paradasDepartamentos: [number, Valor][] = [[d - FUNDIDO, 0], [d + FUNDIDO, 1]]
   return {
     version: 8,
     'font-faces': {
@@ -215,52 +245,52 @@ export function crearEstilo(tema: Tema, base: string): StyleSpecification {
       // Provincias: aparecen al acercarse; las argentinas se vuelven a desvanecer cuando llegan los departamentos.
       {
         id: 'provincias-relleno', type: 'fill', source: 'provincias',
-        minzoom: ZOOM_PROVINCIAS - FUNDIDO,
-        paint: { 'fill-color': relleno, 'fill-opacity': opacidadPorZoom(...PARADAS_PROVINCIAS) },
+        minzoom: acotar(p - FUNDIDO),
+        paint: { 'fill-color': relleno, 'fill-opacity': opacidadPorZoom(...paradasProvincias) },
       },
 
       // Departamentos (solo Argentina): aparecen al acercarse más.
       {
         id: 'departamentos-relleno', type: 'fill', source: 'departamentos',
-        minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
-        paint: { 'fill-color': relleno, 'fill-opacity': opacidadPorZoom(...PARADAS_DEPARTAMENTOS) },
+        minzoom: acotar(d - FUNDIDO),
+        paint: { 'fill-color': relleno, 'fill-opacity': opacidadPorZoom(...paradasDepartamentos) },
       },
       {
         id: 'departamentos-frontera', type: 'line', source: 'departamentos',
-        minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+        minzoom: acotar(d - FUNDIDO),
         paint: { 'line-color': tema.mapa.fronteraProvincia, 'line-width': 0.75 },
       },
       {
         id: 'departamentos-deseo', type: 'line', source: 'departamentos',
-        minzoom: ZOOM_DEPARTAMENTOS - FUNDIDO,
+        minzoom: acotar(d - FUNDIDO),
         paint: contornoDeseo,
       },
 
       {
         id: 'provincias-frontera', type: 'line', source: 'provincias',
-        minzoom: ZOOM_PROVINCIAS - FUNDIDO,
+        minzoom: acotar(p - FUNDIDO),
         paint: {
           'line-color': tema.mapa.fronteraProvincia,
           'line-width': 0.75,
           // Las fronteras de Natural Earth no coinciden exacto con las del IGN: con departamentos se ocultan.
           'line-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            ZOOM_DEPARTAMENTOS - FUNDIDO, 1,
-            ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1],
+            d - FUNDIDO, 1,
+            d + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1],
           ],
         },
       },
       {
         id: 'provincias-deseo', type: 'line', source: 'provincias',
-        minzoom: ZOOM_PROVINCIAS - FUNDIDO,
+        minzoom: acotar(p - FUNDIDO),
         paint: contornoDeseo,
       },
 
       // Países: se ven de lejos y se desvanecen al acercarse. La frontera queda siempre visible.
       {
         id: 'paises-relleno', type: 'fill', source: 'paises',
-        maxzoom: ZOOM_PROVINCIAS + FUNDIDO,
-        paint: { 'fill-color': relleno, 'fill-opacity': opacidadPorZoom(...PARADAS_PAISES) },
+        maxzoom: acotar(p + FUNDIDO),
+        paint: { 'fill-color': relleno, 'fill-opacity': opacidadPorZoom(...paradasPaises) },
       },
       // Sin maxzoom: un país deseado entero (Japón) mantiene su contorno aunque se vean las provincias.
       { id: 'paises-deseo', type: 'line', source: 'paises', paint: contornoDeseo },
@@ -273,7 +303,7 @@ export function crearEstilo(tema: Tema, base: string): StyleSpecification {
       },
 
       // Nombres arriba de los rellenos y las fronteras; las fotos y los resaltados van encima.
-      ...capasRotulos(tema),
+      ...capasRotulos(tema, umbrales),
 
       // Fotos: grupos (más grandes cuantas más fotos) y fotos sueltas.
       {
@@ -298,16 +328,16 @@ export function crearEstilo(tema: Tema, base: string): StyleSpecification {
       ...capasResaltado('departamentos', (f) => ['case', DIRECTA, f, 0], tema),
       ...capasResaltado('provincias', (f) => [
         'interpolate', ['linear'], ['zoom'],
-        ZOOM_PROVINCIAS - FUNDIDO, ['case', DIRECTA, f, 0],
-        ZOOM_PROVINCIAS + FUNDIDO, ['case', ALGUNA, f, 0],
-        ZOOM_DEPARTAMENTOS - FUNDIDO, ['case', ALGUNA, f, 0],
+        p - FUNDIDO, ['case', DIRECTA, f, 0],
+        p + FUNDIDO, ['case', ALGUNA, f, 0],
+        d - FUNDIDO, ['case', ALGUNA, f, 0],
         // Con departamentos, la provincia que los contiene deja el contorno a ellos.
-        ZOOM_DEPARTAMENTOS + FUNDIDO, ['case', DIRECTA, f, ALGUNA, ['case', TIENE_DEPARTAMENTOS, 0, f], 0],
+        d + FUNDIDO, ['case', DIRECTA, f, ALGUNA, ['case', TIENE_DEPARTAMENTOS, 0, f], 0],
       ], tema),
       ...capasResaltado('paises', (f) => [
         'interpolate', ['linear'], ['zoom'],
-        ZOOM_PROVINCIAS - FUNDIDO, ['case', ALGUNA, f, 0],
-        ZOOM_PROVINCIAS + FUNDIDO, ['case', DIRECTA, f, 0],
+        p - FUNDIDO, ['case', ALGUNA, f, 0],
+        p + FUNDIDO, ['case', DIRECTA, f, 0],
       ], tema),
     ],
   }

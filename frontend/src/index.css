@@ -729,18 +729,94 @@ textarea {
   background: var(--tierra) !important;
 }
 
-/* --- Época: slider de años arriba y panel de entidades pisadas en el lugar de la leyenda --- */
+/* --- Controles del mapa: la época (slider de años) y la vista (lentes), en una tarjeta arriba --- */
 
-.epoca-selector {
+.controles-mapa {
   position: absolute;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
   width: min(420px, calc(100% - 140px));
-  padding: 8px 16px 6px;
+  padding: 8px 16px 8px;
   box-sizing: border-box;
   border: 1px solid var(--tinta);
   background: var(--papel);
+}
+
+.epoca-selector {
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.epoca-periodo {
+  margin: -2px 0 0;
+  text-align: right;
+  font-family: var(--cursiva);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--tenue);
+}
+
+.epoca-panel-periodo {
+  font-family: var(--cursiva);
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+/* Las lentes son radios de verdad (se recorren con las flechas) con aspecto de botones. */
+.lentes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.lentes legend {
+  float: left;
+  padding: 0;
+}
+
+.lentes-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lentes label {
+  padding: 1px 7px;
+  border: 1px solid var(--borde);
+  font-family: var(--titulo);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.lentes label:hover {
+  border-color: var(--tinta);
+}
+
+.lentes label.activa {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--papel);
+}
+
+.lentes label:has(input:focus-visible) {
+  outline: 2px solid var(--carmin);
+  outline-offset: 1px;
+}
+
+/* Fuera de la vista pero en el orden del teclado y para los lectores de pantalla. */
+.lentes input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .epoca-cabecera {

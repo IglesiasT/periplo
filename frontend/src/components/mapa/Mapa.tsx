@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
-import type { GeoJSONSource } from 'maplibre-gl'
+import type { GeoJSONSource, LayerSpecification } from 'maplibre-gl'
 import type { Point } from 'geojson'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import { ETIQUETAS_ESTADO } from '../../etiquetas'
@@ -8,7 +8,9 @@ import { nombreEntidad } from '../../historia'
 import type { Resaltadas } from '../../resaltado'
 import type { Tema } from '../../tema'
 import type { Epoca, EstadoRegion, EstadosRegiones, Foto } from '../../types'
-import { CAPAS_FOTOS, capasConsultables, colorRelleno, crearEstilo, rellenoHistorico, SOURCES } from './estilo'
+import {
+  CAPAS_FOTOS, capasConsultables, colorRelleno, crearEstilo, type Lente, rellenoHistorico, SOURCES,
+} from './estilo'
 import { escapar, fotosComoGeoJSON } from './fotos'
 import Leyenda from './Leyenda'
 import RosaDeLosVientos from './RosaDeLosVientos'
@@ -16,6 +18,7 @@ import {
   type Encuadre, guardarVistaEnHash, margenEncuadre, VISTA_INICIAL, vistaDesdeHash, ZOOM_MAXIMO_ENCUADRE,
 } from './vista'
 
+export type { Lente } from './estilo'
 export type { Encuadre } from './vista'
 
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
@@ -27,9 +30,31 @@ function aplicarFeatureState(map: maplibregl.Map, codigo: string, estado: Record
   for (const source of SOURCES) map.setFeatureState({ source, id: codigo }, estado)
 }
 
+// Lleva las capas del mapa a las de otro estilo con las mismas capas (otra lente). MapLibre ignora los
+// valores que no cambiaron, así que alcanza con pasarle todo: solo se tocan los zooms y las opacidades.
+type PropiedadPaint = Parameters<maplibregl.Map['setPaintProperty']>[1]
+type PropiedadLayout = Parameters<maplibregl.Map['setLayoutProperty']>[1]
+
+function aplicarCapas(map: maplibregl.Map, capas: LayerSpecification[]) {
+  for (const capa of capas) {
+    map.setLayerZoomRange(capa.id, capa.minzoom ?? 0, capa.maxzoom ?? 24)
+    for (const [propiedad, valor] of Object.entries(capa.paint ?? {})) {
+      map.setPaintProperty(capa.id, propiedad as PropiedadPaint, valor)
+    }
+    if ('layout' in capa) {
+      for (const [propiedad, valor] of Object.entries(capa.layout ?? {})) {
+        map.setLayoutProperty(capa.id, propiedad as PropiedadLayout, valor)
+      }
+    }
+    if ('filter' in capa) map.setFilter(capa.id, capa.filter)
+  }
+}
+
 interface Props {
   /** El estilo se arma con este tema al crear el mapa; otro tema crea otro mapa. */
   tema: Tema
+  /** Qué nivel se ve: el que corresponde al zoom (automática) o uno fijo. Cambiarla no recrea el mapa. */
+  lente: Lente
   /** Estado de cada región visitada o deseada (de /api/estados/). */
   estados: EstadosRegiones | undefined
   /** Regiones a destacar con un contorno (las del viaje, el logro o la ficha elegidos) y cómo (ver resaltado.ts). */
@@ -48,7 +73,7 @@ interface Props {
 }
 
 export default function Mapa({
-  tema, estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fotos, epoca, children,
+  tema, lente, estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fotos, epoca, children,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -57,10 +82,12 @@ export default function Mapa({
   const alClickearRef = useRef(alClickearRegion)
   const alElegirRegionRef = useRef(alElegirRegion)
   const epocaRef = useRef(epoca)
+  const lenteRef = useRef(lente)
   useEffect(() => {
     alClickearRef.current = alClickearRegion
     alElegirRegionRef.current = alElegirRegion
     epocaRef.current = epoca
+    lenteRef.current = lente
   })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
@@ -74,7 +101,7 @@ export default function Mapa({
     resaltadasAplicadas.current = new Map()
     const map = new maplibregl.Map({
       container: contenedor.current!,
-      style: crearEstilo(tema, window.location.href),
+      style: crearEstilo(tema, window.location.href, lenteRef.current),
       ...(vistaDesdeHash() ?? VISTA_INICIAL),
       renderWorldCopies: false,
     })
@@ -85,7 +112,7 @@ export default function Mapa({
     map.on('load', () => setListo(true))
     // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
     const regionEn = (punto: maplibregl.PointLike) =>
-      map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom()) })[0]
+      map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom(), lenteRef.current) })[0]
 
     // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
@@ -188,12 +215,20 @@ export default function Mapa({
     })
   }, [encuadre, listo])
 
+  // Cambiar de lente reescribe las capas del mapa que ya está cargado, sin volver a bajar los GeoJSON.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!listo || !map) return
+    aplicarCapas(map, crearEstilo(tema, window.location.href, lente).layers)
+  }, [lente, listo, tema])
+
+  // Después de la lente, que devuelve los rellenos a los colores del presente.
   useEffect(() => {
     const map = mapRef.current
     if (!listo || !map) return
     const relleno = epoca ? rellenoHistorico(epoca, tema) : colorRelleno(tema)
     for (const source of SOURCES) map.setPaintProperty(`${source}-relleno`, 'fill-color', relleno)
-  }, [epoca, listo, tema])
+  }, [epoca, lente, listo, tema])
 
   useEffect(() => {
     const map = mapRef.current

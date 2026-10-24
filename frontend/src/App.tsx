@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { siguientePaso } from './ciclo'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
-import Mapa, { type Encuadre } from './components/mapa/Mapa'
+import Mapa, { type Encuadre, type Lente } from './components/mapa/Mapa'
 import Panel, { type Modo, type Seleccion } from './components/Panel'
+import SelectorLente from './components/SelectorLente'
 import {
   useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEncuadre, useEpoca, useEstados,
   useFotos, useLogros, useViajes,
@@ -19,6 +20,7 @@ export default function App() {
   const anios = useAniosHistoricos()
   // null = el presente.
   const [anio, setAnio] = useState<number | null>(null)
+  const [lente, setLente] = useState<Lente>('automatica')
   const epocaConsulta = useEpoca(anio)
   // Al volver al presente la consulta queda deshabilitada pero conserva el último año como placeholder.
   const epoca = anio === null ? undefined : epocaConsulta.data
@@ -118,6 +120,7 @@ export default function App() {
       <Mapa
         key={tema.id}
         tema={tema}
+        lente={lente}
         estados={estados.data}
         resaltadas={resaltadas}
         encuadre={encuadre}
@@ -126,8 +129,11 @@ export default function App() {
         fotos={fotos.data}
         epoca={epoca}
       >
-        {/* Sin años cruzados (no se corrió cruzar_historia) no hay nada que elegir. */}
-        {anios.data && anios.data.length > 0 && <SelectorEpoca anios={anios.data} anio={anio} onCambiar={setAnio} />}
+        <div className="controles-mapa">
+          {/* Sin años cruzados (no se corrió cruzar_historia) no hay nada que elegir. */}
+          {anios.data && anios.data.length > 0 && <SelectorEpoca anios={anios.data} anio={anio} onCambiar={setAnio} />}
+          <SelectorLente lente={lente} onCambiar={setLente} />
+        </div>
         {epoca && <EntidadesPisadas epoca={epoca} />}
       </Mapa>
     </div>

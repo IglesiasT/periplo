@@ -1,4 +1,5 @@
 import { colorEntidad, formatearAnio, nombreEntidad } from '../historia'
+import { periodoDe } from '../periodos'
 import { useTema } from '../tema/contexto'
 import type { Epoca } from '../types'
 
@@ -11,18 +12,21 @@ interface SelectorProps {
 }
 
 /** Slider de años sobre el mapa. Los snapshots no están equiespaciados (123000 a. C., 10000 a. C., …,
- *  1994, 2000), así que cada paso es un snapshot y no un año. La última parada es el presente. */
+ *  1994, 2000), así que cada paso es un snapshot y no un año. La última parada es el presente.
+ *  Debajo del año, el nombre de la época (ver periodos.ts). */
 export function SelectorEpoca({ anios, anio, onCambiar }: SelectorProps) {
   const posicion = anio === null ? anios.length : anios.indexOf(anio)
+  const periodo = anio === null ? 'El mapa de hoy' : periodoDe(anio)
   return (
     <div className="epoca-selector">
       <div className="epoca-cabecera">
         <span className="epoca-titulo">Época</span>
         <span className="epoca-anio">{anio === null ? 'Hoy' : formatearAnio(anio)}</span>
       </div>
+      <p className="epoca-periodo">{periodo}</p>
       <input
         type="range" min={0} max={anios.length} step={1} value={posicion}
-        aria-label="Año del mapa" aria-valuetext={anio === null ? 'Hoy' : formatearAnio(anio)}
+        aria-label="Año del mapa" aria-valuetext={anio === null ? 'Hoy' : `${formatearAnio(anio)}, ${periodo}`}
         onChange={(e) => {
           const i = Number(e.target.value)
           onCambiar(i === anios.length ? null : anios[i])
@@ -44,7 +48,9 @@ export function EntidadesPisadas({ epoca }: { epoca: Epoca }) {
   const { tema } = useTema()
   return (
     <div className="epoca-panel">
-      <p className="leyenda-titulo">En {formatearAnio(epoca.anio)}</p>
+      <p className="leyenda-titulo">
+        En {formatearAnio(epoca.anio)}<span className="epoca-panel-periodo"> · {periodoDe(epoca.anio)}</span>
+      </p>
       <p className="cursiva">
         {pisadas.length === 0 ? 'no pisaste territorio de ninguna entidad del mapa.'
           : `pisaste territorio de ${pisadas.length} ${pisadas.length === 1 ? 'entidad' : 'entidades'}:`}

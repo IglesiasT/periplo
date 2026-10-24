@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec'
 import type { LayerSpecification } from 'maplibre-gl'
 import type { Tema } from '../../tema'
 import { atlas } from '../../tema/atlas'
 import type { Epoca } from '../../types'
-import { crearEstilo, rellenoHistorico, SOURCES } from './estilo'
+import { capasConsultables, crearEstilo, type Lente, rellenoHistorico, SOURCES, UMBRALES } from './estilo'
 
 const BASE = 'http://localhost:5173/'
 
@@ -77,5 +78,87 @@ describe('colores', () => {
     expect(coloresDe(relleno).filter((c) => !delTema.has(c))).toEqual([])
     expect(coloresDe(relleno)).toContain(marcado.mapa.noVisitado)
     expect(rellenoHistorico({ ...epoca, regiones: {} }, marcado)).toBe(marcado.mapa.noVisitado)
+  })
+})
+
+const LENTES = Object.keys(UMBRALES) as Lente[]
+
+/** Lo que tiene que coincidir entre lentes para que cambiar de una a otra no deje nada de la anterior. */
+const forma = (capas: LayerSpecification[]) =>
+  capas.map((c) => [c.id, Object.keys(c.paint ?? {}).sort(), Object.keys(('layout' in c && c.layout) || {}).sort(), 'filter' in c])
+
+describe.each(LENTES)('lente %s', (lente) => {
+  const estiloLente = crearEstilo(atlas, BASE, lente)
+
+  it('es un estilo válido para MapLibre', () => {
+    expect(validateStyleMin(estiloLente).map((error) => error.message)).toEqual([])
+  })
+
+  it('tiene las mismas capas y propiedades que las demás: solo cambian los valores', () => {
+    expect(forma(estiloLente.layers)).toEqual(forma(estilo.layers))
+  })
+
+  it('el resaltado se ve en cualquier zoom', () => {
+    for (const c of estiloLente.layers.filter((c) => c.id.includes('-resaltada'))) {
+      expect([c.id, c.minzoom, c.maxzoom]).toEqual([c.id, undefined, undefined])
+    }
+  })
+
+  it('los fundidos entre niveles no se pisan', () => {
+    const { provincias, departamentos } = UMBRALES[lente]
+    expect(departamentos - provincias).toBeGreaterThan(1)
+  })
+
+  it('no tiene colores fuera del tema', () => {
+    const marcado: Tema = marcarColores(atlas)
+    const delTema = new Set(coloresDe(marcado))
+    expect(coloresDe(crearEstilo(marcado, BASE, lente)).filter((c) => !delTema.has(c))).toEqual([])
+  })
+})
+
+describe('qué nivel muestra cada lente', () => {
+  const zooms = (lente: Lente, id: string) => {
+    const c = crearEstilo(atlas, BASE, lente).layers.find((c) => c.id === id)!
+    return [c.minzoom ?? 0, c.maxzoom ?? 24]
+  }
+
+  it('automática: el zoom semántico de siempre', () => {
+    expect(zooms('automatica', 'paises-relleno')).toEqual([0, 4.5])
+    expect(zooms('automatica', 'provincias-relleno')).toEqual([3.5, 24])
+    expect(zooms('automatica', 'departamentos-relleno')).toEqual([6.5, 24])
+    expect(zooms('automatica', 'rotulos-provincias')).toEqual([4, 24])
+    expect(zooms('automatica', 'rotulos-paises')).toEqual([0, 5.5])
+  })
+
+  it('países: nunca provincias ni departamentos', () => {
+    expect(zooms('paises', 'paises-relleno')).toEqual([0, 24])
+    expect(zooms('paises', 'provincias-relleno')[0]).toBe(24)
+    expect(zooms('paises', 'departamentos-relleno')[0]).toBe(24)
+    expect(zooms('paises', 'rotulos-provincias')[0]).toBe(24)
+  })
+
+  it('provincias: desde el zoom 0, sin países ni departamentos', () => {
+    expect(zooms('provincias', 'provincias-relleno')).toEqual([0, 24])
+    expect(zooms('provincias', 'paises-relleno')[1]).toBe(0)
+    expect(zooms('provincias', 'departamentos-relleno')[0]).toBe(24)
+    expect(zooms('provincias', 'rotulos-paises')[1]).toBe(0)
+  })
+
+  it('departamentos: desde el zoom 0, con provincias donde no hay departamentos', () => {
+    expect(zooms('departamentos', 'departamentos-relleno')).toEqual([0, 24])
+    expect(zooms('departamentos', 'provincias-relleno')).toEqual([0, 24])
+  })
+
+  it('las provincias no se rotulan lejos de todo, ni con la lente de provincias: serían miles', () => {
+    expect(zooms('provincias', 'rotulos-provincias')[0]).toBe(2)
+  })
+
+  it('el hover y el click buscan la región del nivel que se ve', () => {
+    expect(capasConsultables(2, 'automatica')).toEqual(['paises-relleno'])
+    expect(capasConsultables(5, 'automatica')).toEqual(['provincias-relleno'])
+    expect(capasConsultables(8, 'automatica')).toEqual(['departamentos-relleno', 'provincias-relleno'])
+    expect(capasConsultables(10, 'paises')).toEqual(['paises-relleno'])
+    expect(capasConsultables(1, 'provincias')).toEqual(['provincias-relleno'])
+    expect(capasConsultables(1, 'departamentos')).toEqual(['departamentos-relleno', 'provincias-relleno'])
   })
 })

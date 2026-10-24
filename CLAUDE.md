@@ -82,6 +82,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
    - Contorno o semitransparente: lista de deseos.
    - Color con intensidad según `tipo_presencia`: visitado.
 4. Agregar zoom semántico: con zoom lejano se ven países y al acercarse aparecen las provincias, como el mapa de estados de Victoria 3.
+   - Lentes, como los modos de mapa de Victoria 3: la automática es el zoom semántico; las de países, provincias y departamentos fijan el nivel con cualquier zoom. Cada lente es un par de umbrales de zoom (`UMBRALES` en `estilo.ts`) y cambiarla no recarga el mapa.
 5. Sincronizar con Notion: un management command lee la base **Destinations** y crea viajes y deseos.
    - Propiedades de la base: `Name` (title), `Status` (status: Not started / Investigando / In progress / Done!), `Place` (place, con lat/lon), `Tags` (multi-select por continente, Argentina o Concert), `Lugares` (relación con la base Lugares).
    - La API pública sí expone `Place` con `lat`/`lon`. La base **Lugares** también tiene `Place` y un `Estado` (Visitado / Planeado), que es el que decide si una visita está realizada. "In progress" significa "planificando", no "viajando".
@@ -104,6 +105,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 2. Escribir un management command que cruce cada `Region` con cada snapshot y guarde el resultado en `EntidadPoliticaHistorica` y `RegionEpoca`.
    - Para regiones grandes, usar centroide o porcentaje de superficie, porque una región puede caer entre dos entidades.
 3. Agregar un slider de años sobre mi mapa y un panel del tipo "en 1800 pisaste territorio de X entidades".
+   - Junto al año va el nombre de la época ("1815 · Era de las revoluciones"), de la tabla editable `frontend/src/periodos.ts`.
 4. Fichas de región: texto en markdown escrito a mano al visitar cada lugar. No automatizarlo de entrada.
 5. Rutas históricas y logros: se definen en código como conjuntos de regiones requeridas, y el progreso se calcula contra mis `Visita`.
    - Ejemplos de logros: "las 24 jurisdicciones argentinas", "todos los sucesores de la URSS", "las dos orillas del Bósforo".

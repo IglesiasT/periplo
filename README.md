@@ -9,6 +9,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 **El mapa (Fase 1)**
 - Mapa mundial en MapLibre con países y provincias de Natural Earth, y departamentos argentinos del IGN.
 - Zoom semántico: de lejos se ven países, al acercarse aparecen las provincias y, en Argentina, desde el zoom 7 los departamentos.
+- **Vista** (lentes, como en Victoria 3): Automática sigue el zoom; Países, Provincias y Departamentos fijan el nivel con cualquier zoom. Departamentos existe solo en Argentina; en el resto del mundo muestra provincias.
 - Colores por estado:
   - papel sin pintar para sin visitar;
   - solo un contorno índigo para la lista de deseos;
@@ -30,7 +31,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - **Logros:** colecciones de regiones definidas en `mapa/logros.py` ("Las 24 jurisdicciones", "Los seis continentes"). Las rutas históricas también son logros, con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil.
 
 **La historia (Fase 3)**
-- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps. Cada región toma el color de la entidad que la ocupaba, y un panel cuenta las entidades cuyo territorio pisaste ese año.
+- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps, con el nombre de la época junto al año ("1815 · Era de las revoluciones", editable en `frontend/src/periodos.ts`). Cada región toma el color de la entidad que la ocupaba, y un panel cuenta las entidades cuyo territorio pisaste ese año.
 - **Fichas de región:** click en una región abre su ficha, con texto en markdown escrito a mano, sus visitas y a qué entidad perteneció en cada época.
 
 ## Estructura
