@@ -1,6 +1,7 @@
 """
 Cruza cada Region con cada snapshot de historical-basemaps y guarda a qué entidad pertenecía
-en EntidadPoliticaHistorica y RegionEpoca.
+en EntidadPoliticaHistorica y RegionEpoca. De cada entidad en cada año guarda además dónde va su
+nombre en el mapa y con qué aguada se pinta (EntidadEpoca).
 
 Lee las regiones de data/raw/{paises,provincias,departamentos}.geojson y los snapshots que
 deja `descargar_historia` en data/raw/historia/. Se puede correr varias veces: cada año
@@ -19,9 +20,9 @@ from django.db import transaction
 
 from mapa.epocas import aplicar_nombres_es
 from mapa.geodatos import RAW_DIR
-from mapa.historia import cruzar, preparar_regiones
+from mapa.historia import cruzar, describir_entidades, preparar_regiones
 from mapa.management.commands.descargar_historia import HISTORIA_DIR
-from mapa.models import EntidadPoliticaHistorica, Region, RegionEpoca
+from mapa.models import EntidadEpoca, EntidadPoliticaHistorica, Region, RegionEpoca
 
 CAPAS_REGIONES = ['paises', 'provincias', 'departamentos']
 PATRON_NORMALIZADO = re.compile(r'^(-?\d+)\.geojson$')
@@ -59,9 +60,9 @@ class Command(BaseCommand):
         self.stdout.write(f'{len(regiones)} regiones preparadas; cruzando {len(anios)} años.')
 
         for anio in anios:
-            cruce = cruzar(regiones, gpd.read_file(disponibles[anio]),
-                           umbral_pct=opts['umbral'], max_distancia_km=opts['max_distancia_km'])
-            self.guardar(anio, cruce, id_region)
+            snapshot = gpd.read_file(disponibles[anio])
+            cruce = cruzar(regiones, snapshot, umbral_pct=opts['umbral'], max_distancia_km=opts['max_distancia_km'])
+            self.guardar(anio, cruce, describir_entidades(snapshot), id_region)
             sin_entidad = len(regiones) - cruce['codigo'].nunique()
             self.stdout.write(
                 f'{anio}: {len(cruce)} filas, {cruce["entidad"].nunique()} entidades, '
@@ -83,16 +84,23 @@ class Command(BaseCommand):
         return preparar_regiones(regiones[regiones['codigo'].isin(codigos)])
 
     @transaction.atomic
-    def guardar(self, anio: int, cruce: pd.DataFrame, id_region: dict[str, int]):
-        EntidadPoliticaHistorica.objects.bulk_create(
-            [EntidadPoliticaHistorica(nombre=n) for n in cruce['entidad'].unique()],
-            ignore_conflicts=True)
-        id_entidad = dict(EntidadPoliticaHistorica.objects
-                          .filter(nombre__in=cruce['entidad'].unique()).values_list('nombre', 'id'))
+    def guardar(self, anio: int, cruce: pd.DataFrame, entidades: pd.DataFrame, id_region: dict[str, int]):
+        # Todas las del snapshot, aunque no ocupen ninguna región: igual llevan su nombre en el mapa.
+        nombres = set(entidades['nombre']) | set(cruce['entidad'])
+        EntidadPoliticaHistorica.objects.bulk_create([EntidadPoliticaHistorica(nombre=n) for n in nombres],
+                                                     ignore_conflicts=True)
+        id_entidad = dict(EntidadPoliticaHistorica.objects.filter(nombre__in=nombres).values_list('nombre', 'id'))
 
         RegionEpoca.objects.filter(anio=anio).delete()
         RegionEpoca.objects.bulk_create([
             RegionEpoca(region_id=id_region[f.codigo], anio=anio, entidad_id=id_entidad[f.entidad],
                         porcentaje_superficie=None if pd.isna(f.porcentaje) else f.porcentaje)
             for f in cruce.itertuples()
+        ], batch_size=1000)
+
+        EntidadEpoca.objects.filter(anio=anio).delete()
+        EntidadEpoca.objects.bulk_create([
+            EntidadEpoca(anio=anio, entidad_id=id_entidad[f.nombre], lon=f.lon, lat=f.lat,
+                         area_km2=f.area_km2, tono=f.tono)
+            for f in entidades.itertuples()
         ], batch_size=1000)

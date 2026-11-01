@@ -5,7 +5,7 @@ from pathlib import Path
 
 from django.conf import settings
 
-from .models import EntidadPoliticaHistorica, RegionEpoca, Visita
+from .models import EntidadEpoca, EntidadPoliticaHistorica, RegionEpoca, Visita
 
 # Nombres en castellano escritos a mano, por nombre original de historical-basemaps. Es la fuente
 # de verdad: sobrevive a regenerar la base y pisa lo que se haya cambiado desde el admin.
@@ -96,6 +96,8 @@ def calcular_epoca(anio: int) -> dict:
         colores: {entidad: color} solo las que tienen color propio,
         nombres: {entidad: nombre en castellano} solo las traducidas,
         pisadas: [{entidad, regiones: [{codigo, nombre}]}] de la que más regiones tiene a la que menos,
+        rotulos: [{entidad, lon, lat, area_km2}] dónde va el nombre de cada entidad, de la más grande a la más chica,
+        tonos: {entidad: tono} qué aguada del tema le toca: distinta de la de sus vecinas,
     }
     `entidad` es siempre el nombre original, que identifica a la entidad en todos los años.
     """
@@ -112,6 +114,16 @@ def calcular_epoca(anio: int) -> dict:
             nombres[entidad] = nombre_es
         if color:
             colores[entidad] = color
+
+    # También las entidades que no ocupan ninguna región: igual llevan su nombre en el mapa.
+    rotulos, tonos = [], {}
+    for entidad, nombre_es, lon, lat, area, tono in (
+            EntidadEpoca.objects.filter(anio=anio).order_by('-area_km2')
+            .values_list('entidad__nombre', 'entidad__nombre_es', 'lon', 'lat', 'area_km2', 'tono')):
+        rotulos.append({'entidad': entidad, 'lon': lon, 'lat': lat, 'area_km2': area})
+        tonos[entidad] = tono
+        if nombre_es:
+            nombres[entidad] = nombre_es
 
     pisadas: dict[str, dict[str, str]] = {}
     visitadas = (Visita.objects.filter(realizada=True)
@@ -131,4 +143,6 @@ def calcular_epoca(anio: int) -> dict:
              'regiones': [{'codigo': c, 'nombre': n} for c, n in sorted(regiones.items(), key=lambda r: r[1])]}
             for entidad, regiones in sorted(pisadas.items(), key=lambda p: (-len(p[1]), p[0]))
         ],
+        'rotulos': rotulos,
+        'tonos': tonos,
     }

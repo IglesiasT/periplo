@@ -3,7 +3,8 @@
  * No tiene colores propios: todos salen del tema que recibe `crearEstilo`.
  */
 import type { ExpressionSpecification, LayerSpecification, StyleSpecification } from 'maplibre-gl'
-import { colorEntidad } from '../../historia'
+import type { FeatureCollection } from 'geojson'
+import { colorEntidad, nombreEntidad } from '../../historia'
 import type { Tema } from '../../tema'
 import type { Epoca } from '../../types'
 
@@ -167,7 +168,39 @@ function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecificati
         'text-opacity': ['interpolate', ['linear'], ['zoom'], p + 0.8, 1, p + 1.5, 0],
       },
     },
+    // Las entidades del año elegido, en lugar de los países y provincias de hoy (ver visibilidadRotulos).
+    // No dependen de la lente: una entidad no es un país ni una provincia de hoy.
+    {
+      id: 'rotulos-epoca', type: 'symbol', source: 'rotulos-epoca',
+      filter: visiblesPorArea([0, 1_500_000], [1, 600_000], [2, 150_000], [3, 40_000], [4, 8_000], [5, 0]),
+      layout: {
+        visibility: 'none',
+        'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 8,
+        'text-letter-spacing': 0.1, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 1, porArea(9, 15), 5, porArea(12, 22)],
+      },
+      paint: { 'text-color': tema.mapa.rotuloPais, ...halo },
+    },
   ]
+}
+
+/** Qué rótulos se ven: con un año elegido, los nombres de hoy (países y provincias) dejan lugar a los
+ *  de las entidades de esa época. Los de océanos y mares siguen siempre. */
+export function visibilidadRotulos(enEpoca: boolean): Record<string, 'visible' | 'none'> {
+  const hoy = enEpoca ? 'none' : 'visible'
+  return { 'rotulos-paises': hoy, 'rotulos-provincias': hoy, 'rotulos-epoca': enEpoca ? 'visible' : 'none' }
+}
+
+/** Un punto por entidad del año, con su nombre en castellano si está traducido. */
+export function rotulosComoGeoJSON(epoca: Epoca | undefined): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: (epoca?.rotulos ?? []).map(({ entidad, lon, lat, area_km2 }) => ({
+      type: 'Feature',
+      properties: { nombre: nombreEntidad(entidad, epoca!), area_km2 },
+      geometry: { type: 'Point', coordinates: [lon, lat] },
+    })),
+  }
 }
 
 // Resaltado de una source: un halo de papel debajo y el trazo de tinta encima, para que se lea sobre
@@ -228,6 +261,8 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
     sources: {
       // Un punto por región (y por océano o mar) donde va su nombre: lo genera `manage.py generar_rotulos`.
       rotulos: { type: 'geojson', data: '/geo/rotulos.geojson' },
+      // Los de las entidades del año elegido llegan de la API: arranca vacía y se completa con setData().
+      'rotulos-epoca': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       // promoteId: usa la propiedad "codigo" como id de cada feature, para poder darle estado.
       paises: { type: 'geojson', data: '/geo/paises.geojson', promoteId: 'codigo', attribution: ATRIBUCION_NE },
       provincias: { type: 'geojson', data: '/geo/provincias.geojson', promoteId: 'codigo', attribution: ATRIBUCION_NE },

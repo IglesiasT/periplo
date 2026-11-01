@@ -15,8 +15,8 @@ describe.each(Object.values(TEMAS))('tema $id', (tema) => {
     expect(TEMAS[tema.id]).toBe(tema)
   })
 
-  it('tiene aguadas para pintar las épocas', () => {
-    expect(tema.aguadas.length).toBeGreaterThan(0)
+  it('tiene al menos las 10 aguadas que reparte el backend entre vecinas (historia.CANTIDAD_TONOS)', () => {
+    expect(tema.aguadas.length).toBeGreaterThanOrEqual(10)
   })
 })
 

@@ -11,7 +11,8 @@ export function nombreEntidad(entidad: string, epoca: Epoca): string {
   return epoca.nombres[entidad] ?? entidad
 }
 
-// Hash de texto estable (FNV-1a): la misma entidad tiene el mismo tono en todos los años.
+// Hash de texto estable (FNV-1a): el color de siempre de una entidad, si la API no manda su tono.
+// El backend usa el mismo (historia.hash_nombre) como preferencia al repartir los tonos.
 function hash(texto: string): number {
   let h = 0x811c9dc5
   for (let i = 0; i < texto.length; i++) {
@@ -21,11 +22,12 @@ function hash(texto: string): number {
   return h >>> 0
 }
 
-/** Tono de la entidad: su color propio si lo tiene, o una de las aguadas del tema elegida por su nombre.
+/** Color de la entidad: el propio si lo tiene, o la aguada de su tono (distinta de la de sus vecinas).
  *  `intenso` es la entintada (lo que pisé); si no, la diluida. */
 export function colorEntidad(entidad: string, epoca: Epoca, intenso: boolean, aguadas: Tema['aguadas']): string {
   const propio = epoca.colores[entidad]
   if (propio) return propio
-  const [entintada, diluida] = aguadas[hash(entidad) % aguadas.length]
+  const tono = epoca.tonos[entidad] ?? hash(entidad)
+  const [entintada, diluida] = aguadas[tono % aguadas.length]
   return intenso ? entintada : diluida
 }

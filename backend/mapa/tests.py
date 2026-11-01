@@ -13,7 +13,7 @@ from rest_framework.test import APITestCase
 from .estadisticas import calcular_estadisticas
 from .fotos import ErrorFoto, leer_foto
 from .logros import Logro, calcular_logros, continentes, grupos, provincias_de, regiones
-from .models import EntidadPoliticaHistorica, FichaRegion, Foto, Region, RegionEpoca, Viaje, Visita
+from .models import EntidadEpoca, EntidadPoliticaHistorica, FichaRegion, Foto, Region, RegionEpoca, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
 from .sincronizacion import planificar_visitas
 from .ubicacion import Ubicacion, area_bbox_km2, normalizar
@@ -310,6 +310,54 @@ class CruzarHistoriaTests(SimpleTestCase):
         self.assertTrue(pd.isna(resultado['porcentaje'][0]))
 
 
+class DescribirEntidadesTests(SimpleTestCase):
+    def describir(self, entidades: dict, **kwargs):
+        import geopandas as gpd
+
+        from .historia import describir_entidades
+
+        snapshot = gpd.GeoDataFrame({'nombre': list(entidades)}, geometry=list(entidades.values()), crs='EPSG:4326')
+        return describir_entidades(snapshot, **kwargs).set_index('nombre')
+
+    def test_el_hash_es_el_mismo_que_en_el_frontend(self):
+        from .historia import hash_nombre
+
+        # Valores de `hash` en frontend/src/historia.ts.
+        self.assertEqual(hash_nombre('Spain'), 3872515054)
+        self.assertEqual(hash_nombre('Viceroyalty of the Río de la Plata'), 2840156130)
+        self.assertEqual(hash_nombre('Anishinabewaki ᐊᓂᔑᓈᐯᐗᑭ'), 1926154443)
+
+    def test_el_rotulo_cae_adentro_de_la_parte_mas_grande(self):
+        from shapely.geometry import MultiPolygon, Point, box
+
+        entidades = self.describir({'Imperio': MultiPolygon([box(0, 0, 10, 4), box(20, 20, 21, 21)])})
+        fila = entidades.loc['Imperio']
+        self.assertTrue(box(0, 0, 10, 4).contains(Point(fila.lon, fila.lat)))
+        self.assertGreater(fila.area_km2, 0)
+
+    def test_vecinas_con_distinto_tono_y_sin_conflicto_se_conserva_el_de_siempre(self):
+        from shapely.geometry import box
+
+        from .historia import hash_nombre
+
+        # Con 2 tonos, tres entidades en fila: las vecinas no pueden repetir.
+        entidades = self.describir({
+            'A': box(0, 0, 10, 10), 'B': box(10, 0, 12, 10), 'C': box(12, 0, 14, 10), 'Lejos': box(50, 50, 51, 51),
+        }, cantidad_tonos=2)
+        self.assertNotEqual(entidades.at['A', 'tono'], entidades.at['B', 'tono'])
+        self.assertNotEqual(entidades.at['B', 'tono'], entidades.at['C', 'tono'])
+        # La más grande y la que no tiene vecinas se quedan con su color de siempre.
+        self.assertEqual(entidades.at['A', 'tono'], hash_nombre('A') % 2)
+        self.assertEqual(entidades.at['Lejos', 'tono'], hash_nombre('Lejos') % 2)
+
+    def test_casi_tocarse_tambien_es_ser_vecinas(self):
+        from shapely.geometry import box
+
+        # Un hueco de 0,05° entre dos fronteras aproximadas: siguen siendo vecinas.
+        entidades = self.describir({'A': box(0, 0, 10, 10), 'B': box(10.05, 0, 12, 10)}, cantidad_tonos=2)
+        self.assertNotEqual(entidades.at['A', 'tono'], entidades.at['B', 'tono'])
+
+
 class EpocasApiTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
@@ -358,6 +406,20 @@ class EpocasApiTests(APITestCase):
 
     def test_anio_sin_datos(self):
         self.assertEqual(self.client.get('/api/historia/1234/').status_code, 404)
+
+    def test_rotulos_y_tonos_de_cada_entidad(self):
+        rio = EntidadPoliticaHistorica.objects.get(nombre='Viceroyalty of the Río de la Plata')
+        isla = EntidadPoliticaHistorica.objects.create(nombre='Island tribes', nombre_es='Tribus isleñas')
+        EntidadEpoca.objects.create(anio=1800, entidad=rio, lon=-62, lat=-30, area_km2=4_000_000, tono=0)
+        # No ocupa ninguna región, pero igual se rotula y se traduce.
+        EntidadEpoca.objects.create(anio=1800, entidad=isla, lon=-40, lat=-20, area_km2=500, tono=3)
+
+        datos = self.client.get('/api/historia/1800/').data
+        self.assertEqual([r['entidad'] for r in datos['rotulos']], ['Viceroyalty of the Río de la Plata', 'Island tribes'])
+        self.assertEqual(datos['rotulos'][0], {'entidad': 'Viceroyalty of the Río de la Plata', 'lon': -62, 'lat': -30,
+                                               'area_km2': 4_000_000})
+        self.assertEqual(datos['tonos'], {'Viceroyalty of the Río de la Plata': 0, 'Island tribes': 3})
+        self.assertEqual(datos['nombres']['Island tribes'], 'Tribus isleñas')
 
     def test_nombres_en_castellano_desde_el_json(self):
         from .epocas import aplicar_nombres_es

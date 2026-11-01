@@ -4,7 +4,9 @@ import type { LayerSpecification } from 'maplibre-gl'
 import type { Tema } from '../../tema'
 import { atlas } from '../../tema/atlas'
 import type { Epoca } from '../../types'
-import { capasConsultables, crearEstilo, type Lente, rellenoHistorico, SOURCES, UMBRALES } from './estilo'
+import {
+  capasConsultables, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, visibilidadRotulos,
+} from './estilo'
 
 const BASE = 'http://localhost:5173/'
 
@@ -73,7 +75,10 @@ describe('colores', () => {
   })
 
   it('el relleno de una época usa la tierra y las aguadas del tema', () => {
-    const epoca: Epoca = { anio: 1800, regiones: { 'AR-A': 'Spain', 'PE-CUS': 'Peru' }, colores: {}, nombres: {}, pisadas: [] }
+    const epoca: Epoca = {
+      anio: 1800, regiones: { 'AR-A': 'Spain', 'PE-CUS': 'Peru' }, colores: {}, nombres: {}, pisadas: [], rotulos: [],
+      tonos: {},
+    }
     const relleno = rellenoHistorico(epoca, marcado)
     expect(coloresDe(relleno).filter((c) => !delTema.has(c))).toEqual([])
     expect(coloresDe(relleno)).toContain(marcado.mapa.noVisitado)
@@ -160,5 +165,37 @@ describe('qué nivel muestra cada lente', () => {
     expect(capasConsultables(10, 'paises')).toEqual(['paises-relleno'])
     expect(capasConsultables(1, 'provincias')).toEqual(['provincias-relleno'])
     expect(capasConsultables(1, 'departamentos')).toEqual(['departamentos-relleno', 'provincias-relleno'])
+  })
+})
+
+describe('rótulos de la época', () => {
+  const epoca: Epoca = {
+    anio: 1815, regiones: {}, colores: {}, nombres: { 'United Provinces of the Río de la Plata': 'Provincias Unidas del Río de la Plata' },
+    pisadas: [],
+    rotulos: [
+      { entidad: 'United Provinces of the Río de la Plata', lon: -62, lat: -30, area_km2: 3_000_000 },
+      { entidad: 'Mapuche', lon: -71, lat: -39, area_km2: 200_000 },
+    ],
+    tonos: {},
+  }
+
+  it('el estilo tiene su source vacía y su capa, oculta hasta que se elige un año', () => {
+    expect(estilo.sources['rotulos-epoca']).toBeDefined()
+    expect(capa('rotulos-epoca').layout).toMatchObject({ visibility: 'none' })
+  })
+
+  it('con un año elegido se ocultan los nombres de hoy y se muestran los de la época', () => {
+    expect(visibilidadRotulos(true)).toEqual({ 'rotulos-paises': 'none', 'rotulos-provincias': 'none', 'rotulos-epoca': 'visible' })
+    expect(visibilidadRotulos(false)).toEqual({ 'rotulos-paises': 'visible', 'rotulos-provincias': 'visible', 'rotulos-epoca': 'none' })
+  })
+
+  it('cada entidad es un punto con su nombre en castellano si está traducido', () => {
+    const { features } = rotulosComoGeoJSON(epoca)
+    expect(features.map((f) => f.properties)).toEqual([
+      { nombre: 'Provincias Unidas del Río de la Plata', area_km2: 3_000_000 },
+      { nombre: 'Mapuche', area_km2: 200_000 },
+    ])
+    expect(features[0].geometry).toEqual({ type: 'Point', coordinates: [-62, -30] })
+    expect(rotulosComoGeoJSON(undefined).features).toEqual([])
   })
 })

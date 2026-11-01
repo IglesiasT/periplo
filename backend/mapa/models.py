@@ -148,6 +148,30 @@ class EntidadPoliticaHistorica(models.Model):
         return self.nombre
 
 
+class EntidadEpoca(models.Model):
+    """Una entidad en un año con snapshot: dónde va su nombre en el mapa y con qué aguada se pinta.
+    Lo calcula cruzar_historia a partir de la geometría de historical-basemaps (GPL): queda en la base,
+    fuera del repo."""
+
+    anio = models.IntegerField(help_text='Año del snapshot; los a. C. van en negativo.')
+    entidad = models.ForeignKey(EntidadPoliticaHistorica, on_delete=models.CASCADE, related_name='epocas')
+    # Centro visual de su parte más grande: el punto más alejado del borde.
+    lon = models.FloatField()
+    lat = models.FloatField()
+    area_km2 = models.FloatField(help_text='En áreas iguales; decide desde qué zoom se rotula.')
+    tono = models.PositiveSmallIntegerField(
+        help_text='Qué aguada del tema le toca: distinta de la de sus vecinas (ver historia.describir_entidades).')
+
+    class Meta:
+        ordering = ['anio', '-area_km2']
+        verbose_name = 'entidad en una época'
+        verbose_name_plural = 'entidades en cada época'
+        constraints = [models.UniqueConstraint(fields=['anio', 'entidad'], name='entidad_epoca_unica')]
+
+    def __str__(self):
+        return f'{self.entidad} en {self.anio}'
+
+
 class RegionEpoca(models.Model):
     """A qué entidad pertenecía una región en un año con snapshot. Una región que cae entre
     varias entidades tiene una fila por cada una, con su porcentaje de superficie."""

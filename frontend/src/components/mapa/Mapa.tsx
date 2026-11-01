@@ -9,7 +9,8 @@ import type { Resaltadas } from '../../resaltado'
 import type { Tema } from '../../tema'
 import type { Epoca, EstadoRegion, EstadosRegiones, Foto } from '../../types'
 import {
-  CAPAS_FOTOS, capasConsultables, colorRelleno, crearEstilo, type Lente, rellenoHistorico, SOURCES,
+  CAPAS_FOTOS, capasConsultables, colorRelleno, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES,
+  visibilidadRotulos,
 } from './estilo'
 import { escapar, fotosComoGeoJSON } from './fotos'
 import Leyenda from './Leyenda'
@@ -32,6 +33,11 @@ function aplicarFeatureState(map: maplibregl.Map, codigo: string, estado: Record
 
 // Lleva las capas del mapa a las de otro estilo con las mismas capas (otra lente). MapLibre ignora los
 // valores que no cambiaron, así que alcanza con pasarle todo: solo se tocan los zooms y las opacidades.
+// El mapa sobre el que pueden trabajar los efectos: el actual, y solo después de que terminó de cargar.
+function mapaListo(listo: boolean, actual: maplibregl.Map | null, cargado: maplibregl.Map | null) {
+  return listo && actual && actual === cargado ? actual : null
+}
+
 type PropiedadPaint = Parameters<maplibregl.Map['setPaintProperty']>[1]
 type PropiedadLayout = Parameters<maplibregl.Map['setLayoutProperty']>[1]
 
@@ -91,6 +97,9 @@ export default function Mapa({
   })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
+  // El mapa que terminó de cargar. Si el tema cambia, el efecto que crea el mapa arma otro en el mismo
+  // ciclo en que corren los demás efectos: hasta su "load", ninguno tiene que tocarlo.
+  const cargado = useRef<maplibregl.Map | null>(null)
   // Lo que ya está aplicado en el mapa actual, para calcular la diferencia en cada cambio.
   const estadosAplicados = useRef<EstadosRegiones>({})
   const resaltadasAplicadas = useRef<Resaltadas>(new Map())
@@ -109,7 +118,10 @@ export default function Mapa({
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right')
     map.on('moveend', () => guardarVistaEnHash(map))
-    map.on('load', () => setListo(true))
+    map.on('load', () => {
+      cargado.current = map
+      setListo(true)
+    })
     // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
     const regionEn = (punto: maplibregl.PointLike) =>
       map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom(), lenteRef.current) })[0]
@@ -175,6 +187,7 @@ export default function Mapa({
     return () => {
       map.remove()
       mapRef.current = null
+      cargado.current = null
       setListo(false)
     }
     // El estilo se arma con el tema: si cambia, se crea otro mapa. (App además usa key={tema.id}.)
@@ -183,8 +196,8 @@ export default function Mapa({
   // React es declarativo ("el mapa tiene estos estados") y MapLibre imperativo ("pintá esta región"):
   // cada vez que cambian las props se aplica solo la diferencia con lo que ya está pintado.
   useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map || !estados) return
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map || !estados) return
     for (const codigo of Object.keys(estadosAplicados.current)) {
       if (!(codigo in estados)) aplicarFeatureState(map, codigo, { estado: null })
     }
@@ -195,8 +208,8 @@ export default function Mapa({
   }, [estados, listo])
 
   useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map) return
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map) return
     for (const codigo of resaltadasAplicadas.current.keys()) {
       if (!resaltadas.has(codigo)) aplicarFeatureState(map, codigo, { resaltada: null })
     }
@@ -207,8 +220,8 @@ export default function Mapa({
   }, [resaltadas, listo])
 
   useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map || !encuadre) return
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map || !encuadre) return
     const [oeste, sur, este, norte] = encuadre.limites
     map.fitBounds([[oeste, sur], [este, norte]], {
       padding: margenEncuadre(map), maxZoom: ZOOM_MAXIMO_ENCUADRE, duration: 1200,
@@ -217,22 +230,26 @@ export default function Mapa({
 
   // Cambiar de lente reescribe las capas del mapa que ya está cargado, sin volver a bajar los GeoJSON.
   useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map) return
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map) return
     aplicarCapas(map, crearEstilo(tema, window.location.href, lente).layers)
   }, [lente, listo, tema])
 
-  // Después de la lente, que devuelve los rellenos a los colores del presente.
+  // Después de la lente, que devuelve los rellenos y los rótulos a los del presente.
   useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map) return
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map) return
     const relleno = epoca ? rellenoHistorico(epoca, tema) : colorRelleno(tema)
     for (const source of SOURCES) map.setPaintProperty(`${source}-relleno`, 'fill-color', relleno)
+    map.getSource<GeoJSONSource>('rotulos-epoca')?.setData(rotulosComoGeoJSON(epoca))
+    for (const [capa, visibilidad] of Object.entries(visibilidadRotulos(Boolean(epoca)))) {
+      map.setLayoutProperty(capa, 'visibility', visibilidad)
+    }
   }, [epoca, lente, listo, tema])
 
   useEffect(() => {
-    const map = mapRef.current
-    if (!listo || !map) return
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map) return
     map.getSource<GeoJSONSource>('fotos')?.setData(fotosComoGeoJSON(fotos ?? []))
   }, [fotos, listo])
 

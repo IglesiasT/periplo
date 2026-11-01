@@ -72,6 +72,8 @@ export const atlas: Tema = {
     deseo: indigo,
   },
   // Las aguadas de un atlas coloreado a mano. Sin rojos puros, para no confundirse con el carmín de las visitas.
+  // Cada una de otra familia de color: el backend reparte los tonos para que dos vecinas no repitan número,
+  // y si dos aguadas se parecieran (un ocre y una mostaza), las vecinas igual se confundirían.
   aguadas: [
     ['#c49a4a', '#e6d3a8'], // ocre
     ['#8a9a5b', '#cfd6b4'], // salvia
@@ -82,6 +84,6 @@ export const atlas: Tema = {
     ['#9c7b56', '#d9c7b0'], // tierra de sombra
     ['#b58f8a', '#e4d0cc'], // rosa viejo
     ['#8c8f6a', '#d1d2bb'], // oliva
-    ['#c0a35c', '#e8dcb5'], // mostaza
+    ['#d1b84a', '#efe3a6'], // amarillo paja
   ],
 }

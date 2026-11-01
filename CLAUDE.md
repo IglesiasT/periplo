@@ -59,6 +59,11 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `nombre`: tal cual viene en historical-basemaps; identifica a la entidad en todos los años
   - `nombre_es`: opcional, sale de `backend/data/entidades_es.json`
   - `color`: opcional, para pintarla en el mapa
+- **`EntidadEpoca`**: cada entidad en cada año; lo calcula `cruzar_historia` desde la geometría de historical-basemaps (GPL), así que queda en la base y no en el repo.
+  - `anio`, `entidad`: FK
+  - `lon`, `lat`: dónde va su nombre en el mapa (centro visual de su parte más grande)
+  - `area_km2`: decide desde qué zoom se rotula
+  - `tono`: qué aguada del tema le toca, distinta de la de sus vecinas; cada entidad conserva su color de siempre salvo que choque con una vecina. Por eso cada tema tiene que tener al menos 10 aguadas.
 - **`RegionEpoca`**: a qué entidad pertenecía cada región en cada año disponible.
   - `region`: FK
   - `anio`

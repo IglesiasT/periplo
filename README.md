@@ -31,7 +31,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - **Logros:** colecciones de regiones definidas en `mapa/logros.py` ("Las 24 jurisdicciones", "Los seis continentes"). Las rutas históricas también son logros, con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil.
 
 **La historia (Fase 3)**
-- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps, con el nombre de la época junto al año ("1815 · Era de las revoluciones", editable en `frontend/src/periodos.ts`). Cada región toma el color de la entidad que la ocupaba, y un panel cuenta las entidades cuyo territorio pisaste ese año.
+- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps, con el nombre de la época junto al año ("1815 · Era de las revoluciones", editable en `frontend/src/periodos.ts`). Cada región toma el color de la entidad que la ocupaba, distinto del de sus vecinas, y los nombres de esas entidades reemplazan a los países y provincias de hoy (en castellano para las ~340 más grandes y conocidas). Un panel cuenta las entidades cuyo territorio pisaste ese año.
 - **Fichas de región:** click en una región abre su ficha, con texto en markdown escrito a mano, sus visitas y a qué entidad perteneció en cada época.
 
 ## Estructura
@@ -178,7 +178,8 @@ Incluye Antártida Argentina e Islas del Atlántico Sur tal como las publica el 
 
 1. `descargar_historia` baja los snapshots de historical-basemaps (54 años, del 123000 a. C. al 2010) y deja una fila por entidad en `data/raw/historia/<año>.geojson`. Acepta `--desde` y `--hasta`.
 2. `cruzar_historia` intersecta cada región con cada snapshot en Mollweide y guarda el porcentaje de superficie de cada entidad. Acepta `--anios`, `--umbral` (1% por defecto) y `--max-distancia-km`.
-3. Al terminar aplica los nombres de `data/entidades_es.json`. Después de editar ese archivo, `traducir_entidades` los vuelve a aplicar sin cruzar todo.
+3. De cada entidad en cada año guarda además dónde va su nombre y su tono: la aguada con la que se pinta, distinta de la de sus vecinas.
+4. Al terminar aplica los nombres de `data/entidades_es.json`. Después de editar ese archivo, `traducir_entidades` los vuelve a aplicar sin cruzar todo.
 
 Las fronteras de historical-basemaps son aproximadas y su licencia es GPL-3.0: los datos derivados quedan en la base y en `data/raw/`, fuera del repo.
 

@@ -123,12 +123,16 @@ export interface Epoca {
   anio: number
   /** Código de región → entidad que ocupaba la mayor parte. Las regiones sin entidad no aparecen. */
   regiones: Record<string, string>
-  /** Solo las entidades con color propio; el resto se colorea por su nombre. */
+  /** Solo las entidades con color propio; el resto toma la aguada de su tono. */
   colores: Record<string, string>
   /** Nombre en castellano, solo de las entidades traducidas. Las claves de todo lo demás son el nombre original. */
   nombres: Record<string, string>
   /** Entidades cuyo territorio pisé en alguna visita realizada, de la que más regiones tiene a la que menos. */
   pisadas: { entidad: string; regiones: { codigo: string; nombre: string }[] }[]
+  /** Dónde va el nombre de cada entidad del año en el mapa, de la más grande a la más chica. */
+  rotulos: { entidad: string; lon: number; lat: number; area_km2: number }[]
+  /** Qué aguada del tema le toca a cada entidad: distinta de la de sus vecinas (lo calcula el backend). */
+  tonos: Record<string, number>
 }
 
 export interface Foto {
