@@ -16,7 +16,7 @@ class Region(models.Model):
 
     nivel = models.CharField(max_length=12, choices=Nivel.choices)
     nombre = models.CharField(max_length=200)
-    codigo = models.CharField(max_length=20, unique=True, help_text='ADM0_A3, ISO 3166-2 o código GADM.')
+    codigo = models.CharField(max_length=20, unique=True, help_text='ADM0_A3, ISO 3166-2 o código INDEC.')
     padre = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='hijos')
     area_km2 = models.FloatField(null=True, blank=True, help_text='Calculada en una proyección de áreas iguales.')
     continente = models.CharField(max_length=40, blank=True, help_text='Solo en países (Natural Earth).')
@@ -94,7 +94,6 @@ class Foto(models.Model):
     """Foto subida desde la app. Si trae GPS en el EXIF, se ubica sola en el mapa."""
 
     viaje = models.ForeignKey(Viaje, null=True, blank=True, on_delete=models.CASCADE, related_name='fotos')
-    visita = models.ForeignKey(Visita, null=True, blank=True, on_delete=models.SET_NULL, related_name='fotos')
     archivo = models.ImageField(upload_to='fotos/%Y/%m/')
     miniatura = models.ImageField(upload_to='fotos/miniaturas/', blank=True)
     # Del EXIF, si están.
@@ -137,7 +136,6 @@ class EntidadPoliticaHistorica(models.Model):
     nombre = models.CharField(max_length=200, unique=True, help_text='Tal cual viene en historical-basemaps.')
     nombre_es = models.CharField(max_length=200, blank=True,
                                  help_text='Vacío si es igual al original. Sale de data/entidades_es.json.')
-    color = models.CharField(max_length=7, blank=True, help_text='Hex (#rrggbb) para pintarla en el mapa.')
 
     class Meta:
         ordering = ['nombre']

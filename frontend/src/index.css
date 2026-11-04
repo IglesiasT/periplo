@@ -970,3 +970,21 @@ textarea {
   font-family: var(--texto);
   font-style: italic;
 }
+
+/* Los datos del mapa no llegaron: encabeza los controles, sin taparlos. */
+.aviso-datos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--carmin);
+  color: var(--carmin-oscuro);
+  font-size: 14px;
+}
+
+/* La barrera de errores: reemplaza a toda la app. */
+.fallo {
+  max-width: 520px;
+  margin: 15vh auto 0;
+  padding: 0 16px;
+}

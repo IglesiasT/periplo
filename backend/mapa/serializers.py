@@ -56,9 +56,9 @@ class FotoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Foto
-        fields = ['id', 'viaje', 'visita', 'archivo', 'miniatura', 'lat', 'lon', 'tomada_en',
+        fields = ['id', 'viaje', 'archivo', 'miniatura', 'lat', 'lon', 'tomada_en',
                   'region', 'region_nombre', 'region_en_viaje', 'descripcion']
-        read_only_fields = ['viaje', 'visita', 'lat', 'lon', 'tomada_en']
+        read_only_fields = ['viaje', 'lat', 'lon', 'tomada_en']
 
     # URLs relativas (/media/...): el navegador las pide a Vite, que las reenvía a Django.
     def get_archivo(self, foto) -> str:
@@ -68,7 +68,7 @@ class FotoSerializer(serializers.ModelSerializer):
         return foto.miniatura.url if foto.miniatura else None
 
     def get_region_en_viaje(self, foto) -> bool | None:
-        """¿El viaje ya tiene una visita en la región de la foto (o en una que la contiene)? Si no, la app la sugiere."""
+        """¿El viaje ya tiene una visita en la región de la foto o en una que la contiene? Si no, la app la sugiere."""
         if foto.region is None or foto.viaje is None:
             return None
         return foto.viaje.visitas.filter(region__codigo__in=foto.region.codigos_hacia_arriba()).exists()

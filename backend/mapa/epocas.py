@@ -93,7 +93,6 @@ def calcular_epoca(anio: int) -> dict:
     {
         anio,
         regiones: {codigo: entidad principal},
-        colores: {entidad: color} solo las que tienen color propio,
         nombres: {entidad: nombre en castellano} solo las traducidas,
         pisadas: [{entidad, regiones: [{codigo, nombre}]}] de la que más regiones tiene a la que menos,
         rotulos: [{entidad, lon, lat, area_km2}] dónde va el nombre de cada entidad, de la más grande a la más chica,
@@ -102,18 +101,15 @@ def calcular_epoca(anio: int) -> dict:
     `entidad` es siempre el nombre original, que identifica a la entidad en todos los años.
     """
     filas = (RegionEpoca.objects.filter(anio=anio)
-             .values_list('region__codigo', 'entidad__nombre', 'entidad__nombre_es', 'entidad__color',
+             .values_list('region__codigo', 'entidad__nombre', 'entidad__nombre_es',
                           'porcentaje_superficie'))
 
     ocupacion: dict[str, Ocupacion] = defaultdict(list)
-    colores: dict[str, str] = {}
     nombres: dict[str, str] = {}
-    for codigo, entidad, nombre_es, color, porcentaje in filas:
+    for codigo, entidad, nombre_es, porcentaje in filas:
         ocupacion[codigo].append((entidad, peso(porcentaje)))
         if nombre_es:
             nombres[entidad] = nombre_es
-        if color:
-            colores[entidad] = color
 
     # También las entidades que no ocupan ninguna región: igual llevan su nombre en el mapa.
     rotulos, tonos = [], {}
@@ -136,7 +132,6 @@ def calcular_epoca(anio: int) -> dict:
     return {
         'anio': anio,
         'regiones': {codigo: principal(o) for codigo, o in ocupacion.items()},
-        'colores': colores,
         'nombres': nombres,
         'pisadas': [
             {'entidad': entidad,

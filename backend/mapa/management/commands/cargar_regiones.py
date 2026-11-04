@@ -11,15 +11,12 @@ Uso:
 from pathlib import Path
 
 import geopandas as gpd
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import ProtectedError
 
-from mapa.geodatos import CRS_AREAS_IGUALES, encuadre
+from mapa.geodatos import CRS_AREAS_IGUALES, RAW_DIR, encuadre
 from mapa.models import Region
-
-RAW_DIR = Path(settings.BASE_DIR) / 'data' / 'raw'
 
 
 def leer_capa(path: Path) -> gpd.GeoDataFrame:

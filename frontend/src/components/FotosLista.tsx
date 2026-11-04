@@ -72,7 +72,8 @@ export default function FotosLista({ viaje, fotos, onAviso }: Props) {
                     .filter(Boolean).join(' · ')}
                 </span>
                 <button type="button" className="icono" title="Borrar foto"
-                        onClick={() => window.confirm('¿Borrar esta foto?') && borrar.mutate(foto.id)}>×</button>
+                        onClick={() => window.confirm('¿Borrar esta foto?')
+                          && borrar.mutate(foto.id, { onError: (e) => onAviso(e.message) })}>×</button>
               </div>
               {foto.region_en_viaje === false && (
                 <button type="button" className="sugerencia" onClick={() => agregarRegion(foto)}>

@@ -76,7 +76,7 @@ describe('colores', () => {
 
   it('el relleno de una época usa la tierra y las aguadas del tema', () => {
     const epoca: Epoca = {
-      anio: 1800, regiones: { 'AR-A': 'Spain', 'PE-CUS': 'Peru' }, colores: {}, nombres: {}, pisadas: [], rotulos: [],
+      anio: 1800, regiones: { 'AR-A': 'Spain', 'PE-CUS': 'Peru' }, nombres: {}, pisadas: [], rotulos: [],
       tonos: {},
     }
     const relleno = rellenoHistorico(epoca, marcado)
@@ -170,7 +170,7 @@ describe('qué nivel muestra cada lente', () => {
 
 describe('rótulos de la época', () => {
   const epoca: Epoca = {
-    anio: 1815, regiones: {}, colores: {}, nombres: { 'United Provinces of the Río de la Plata': 'Provincias Unidas del Río de la Plata' },
+    anio: 1815, regiones: {}, nombres: { 'United Provinces of the Río de la Plata': 'Provincias Unidas del Río de la Plata' },
     pisadas: [],
     rotulos: [
       { entidad: 'United Provinces of the Río de la Plata', lon: -62, lat: -30, area_km2: 3_000_000 },

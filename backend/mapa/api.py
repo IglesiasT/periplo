@@ -12,6 +12,14 @@ from .serializers import AVISO_NOTION, FotoSerializer, ViajeSerializer, VisitaSe
 from .ubicacion import ubicador_compartido
 
 
+def id_de_viaje(valor: str) -> int:
+    """El id de un viaje que llega como texto: si no es un número, es un 400 y no un 500."""
+    try:
+        return int(valor)
+    except ValueError as e:
+        raise ValidationError({'viaje': ['Tiene que ser un número.']}) from e
+
+
 class ViajeViewSet(viewsets.ModelViewSet):
     """CRUD de viajes. Los de Notion no se borran (el sync los volvería a crear)."""
 
@@ -36,7 +44,7 @@ class VisitaViewSet(viewsets.ModelViewSet):
         if viaje == 'ninguno':
             return visitas.filter(viaje__isnull=True)
         if viaje:
-            return visitas.filter(viaje_id=viaje)
+            return visitas.filter(viaje_id=id_de_viaje(viaje))
         return visitas
 
     def perform_update(self, serializer):
@@ -61,7 +69,7 @@ class FotoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         fotos = Foto.objects.select_related('region__padre__padre', 'viaje')
         viaje = self.request.query_params.get('viaje')
-        return fotos.filter(viaje_id=viaje) if viaje else fotos
+        return fotos.filter(viaje_id=id_de_viaje(viaje)) if viaje else fotos
 
     def create(self, request):
         archivo = request.FILES.get('archivo')
@@ -69,7 +77,7 @@ class FotoViewSet(viewsets.ModelViewSet):
             raise ValidationError({'archivo': ['Falta el archivo.']})
         viaje = None
         if request.data.get('viaje'):
-            viaje = Viaje.objects.filter(id=request.data['viaje']).first()
+            viaje = Viaje.objects.filter(id=id_de_viaje(request.data['viaje'])).first()
             if viaje is None:
                 raise ValidationError({'viaje': ['No existe.']})
         try:
@@ -82,9 +90,6 @@ class FotoViewSet(viewsets.ModelViewSet):
         if datos.lat is not None:
             ubicacion = ubicador_compartido().por_coordenadas(datos.lat, datos.lon, detallar=True)
             foto.region = Region.objects.filter(codigo=ubicacion.codigo).first() if ubicacion else None
-        if viaje and foto.region:
-            # Si el viaje ya tiene esa región (o una que la contiene), la foto queda asociada a esa visita.
-            foto.visita = viaje.visitas.filter(region__codigo__in=foto.region.codigos_hacia_arriba()).first()
         foto.miniatura.save(f'{Path(archivo.name).stem}.jpg', ContentFile(datos.miniatura), save=False)
         foto.save()
         return Response(FotoSerializer(foto).data, status=status.HTTP_201_CREATED)

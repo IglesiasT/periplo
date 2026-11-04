@@ -26,21 +26,18 @@ interface Props {
   error: Error | null
   seleccion: Seleccion
   onSeleccionar: (seleccion: Seleccion) => void
-  /** Qué hacen los clicks en el mapa: abrir la ficha de la región o marcarla en el viaje elegido. */
-  modo: Modo
-  onCambiarModo: (modo: Modo) => void
+  /** Qué hacen los clicks en el mapa: marcar la región en el viaje elegido, o abrir su ficha. */
+  marcando: boolean
+  onCambiarMarcando: (marcando: boolean) => void
   /** Resultado o error de la última acción sobre el mapa. */
   aviso: string | null
   onAviso: (aviso: string | null) => void
 }
 
-export type Modo = 'ninguno' | 'marcar'
-
 export default function Panel({
   viajes, fotos, logros, cargando, error, seleccion, onSeleccionar,
-  modo, onCambiarModo, aviso, onAviso,
+  marcando, onCambiarMarcando, aviso, onAviso,
 }: Props) {
-  const alternar = (m: Modo) => onCambiarModo(modo === m ? 'ninguno' : m)
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const viaje = viajeElegido(seleccion, viajes)
 
@@ -94,17 +91,17 @@ export default function Panel({
 
         <div className="encabezado-seccion">
           <h3>Regiones</h3>
-          <button className={modo === 'marcar' ? 'activa' : ''} onClick={() => alternar('marcar')}>
-            {modo === 'marcar' ? 'Listo' : 'Marcar en el mapa'}
+          <button className={marcando ? 'activa' : ''} onClick={() => onCambiarMarcando(!marcando)}>
+            {marcando ? 'Listo' : 'Marcar en el mapa'}
           </button>
         </div>
-        {modo === 'marcar' && (
+        {marcando && (
           <p className="aviso">
             Hacé click en una región. Cada click avanza: estadía → de paso → tránsito → deseo → sin marcar.
             Marca el nivel que estás viendo: país, provincia o departamento.
           </p>
         )}
-        <VisitasLista visitas={viaje.visitas} />
+        <VisitasLista visitas={viaje.visitas} onAviso={onAviso} />
 
         <FotosLista viaje={viaje} fotos={fotos?.filter((f) => f.viaje === viaje.id) ?? []} onAviso={onAviso} />
       </aside>

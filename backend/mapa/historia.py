@@ -75,8 +75,8 @@ DISTANCIA_VECINAS_GRADOS = 0.1
 
 
 def hash_nombre(texto: str) -> int:
-    """FNV-1a sobre las unidades UTF-16 del texto: da lo mismo que `hash` en frontend/src/historia.ts,
-    así el color de siempre de una entidad es el mismo de los dos lados."""
+    """FNV-1a sobre las unidades UTF-16 del texto. A diferencia de hash(), no cambia de una corrida a otra:
+    es lo que le da a cada entidad su color de siempre."""
     h = 0x811C9DC5
     unidades = texto.encode('utf-16-le')
     for i in range(0, len(unidades), 2):

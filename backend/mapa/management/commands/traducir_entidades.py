@@ -19,4 +19,5 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         traducidas = aplicar_nombres_es()
         self.stdout.write(self.style.SUCCESS(
-            f'{traducidas} de {EntidadPoliticaHistorica.objects.count()} entidades traducidas desde {NOMBRES_ES.name}.'))
+            f'{traducidas} de {EntidadPoliticaHistorica.objects.count()} entidades traducidas '
+            f'desde {NOMBRES_ES.name}.'))

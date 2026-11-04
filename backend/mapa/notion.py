@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 API = 'https://api.notion.com/v1'
 VERSION = '2022-06-28'
+TIEMPO_MAXIMO_RED = 60  # segundos
 
 # Status de Destinations -> Viaje.Estado
 ESTADOS_DESTINO = {
@@ -67,7 +68,7 @@ class ClienteNotion:
             },
         )
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=TIEMPO_MAXIMO_RED) as resp:
                 return json.load(resp)
         except urllib.error.HTTPError as e:
             detalle = json.load(e)

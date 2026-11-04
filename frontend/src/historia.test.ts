@@ -4,7 +4,7 @@ import { atlas } from './tema/atlas'
 import type { Epoca } from './types'
 
 const epoca = (parcial: Partial<Epoca>): Epoca => ({
-  anio: 1815, regiones: {}, colores: {}, nombres: {}, pisadas: [], rotulos: [], tonos: {}, ...parcial,
+  anio: 1815, regiones: {}, nombres: {}, pisadas: [], rotulos: [], tonos: {}, ...parcial,
 })
 
 describe('colorEntidad', () => {
@@ -14,12 +14,8 @@ describe('colorEntidad', () => {
     expect(colorEntidad('Spain', conTono, false, atlas.aguadas)).toBe(atlas.aguadas[3][1])
   })
 
-  it('sin tono, el color de siempre: el del hash de su nombre (Spain da 4, igual que en el backend)', () => {
-    expect(colorEntidad('Spain', epoca({}), true, atlas.aguadas)).toBe(atlas.aguadas[4][0])
-  })
-
-  it('el color propio de la entidad gana siempre', () => {
-    expect(colorEntidad('Spain', epoca({ colores: { Spain: '#123456' }, tonos: { Spain: 3 } }), true, atlas.aguadas))
-      .toBe('#123456')
+  it('un tono más alto que las aguadas del tema da la vuelta', () => {
+    const conTono = epoca({ tonos: { Spain: atlas.aguadas.length + 2 } })
+    expect(colorEntidad('Spain', conTono, true, atlas.aguadas)).toBe(atlas.aguadas[2][0])
   })
 })

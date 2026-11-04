@@ -31,8 +31,6 @@ function aplicarFeatureState(map: maplibregl.Map, codigo: string, estado: Record
   for (const source of SOURCES) map.setFeatureState({ source, id: codigo }, estado)
 }
 
-// Lleva las capas del mapa a las de otro estilo con las mismas capas (otra lente). MapLibre ignora los
-// valores que no cambiaron, así que alcanza con pasarle todo: solo se tocan los zooms y las opacidades.
 // El mapa sobre el que pueden trabajar los efectos: el actual, y solo después de que terminó de cargar.
 function mapaListo(listo: boolean, actual: maplibregl.Map | null, cargado: maplibregl.Map | null) {
   return listo && actual && actual === cargado ? actual : null
@@ -41,6 +39,8 @@ function mapaListo(listo: boolean, actual: maplibregl.Map | null, cargado: mapli
 type PropiedadPaint = Parameters<maplibregl.Map['setPaintProperty']>[1]
 type PropiedadLayout = Parameters<maplibregl.Map['setLayoutProperty']>[1]
 
+// Lleva las capas del mapa a las de otro estilo con las mismas capas (otra lente). MapLibre ignora los
+// valores que no cambiaron, así que alcanza con pasarle todo: solo se tocan los zooms y las opacidades.
 function aplicarCapas(map: maplibregl.Map, capas: LayerSpecification[]) {
   for (const capa of capas) {
     map.setLayerZoomRange(capa.id, capa.minzoom ?? 0, capa.maxzoom ?? 24)
@@ -149,7 +149,7 @@ export default function Mapa({
       map.getCanvas().style.cursor = editando ? 'crosshair' : 'pointer'
       popup
         .setLngLat(e.lngLat)
-        .setHTML(`<strong>${feature.properties.nombre}</strong><br>${entidad}${detalle}`
+        .setHTML(`<strong>${escapar(String(feature.properties.nombre))}</strong><br>${entidad}${detalle}`
           + `${editando ? '<br><em>Click para marcar</em>' : ''}`)
         .addTo(map)
     })

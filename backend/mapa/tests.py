@@ -1,18 +1,23 @@
+import io
 import json
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 from unittest import mock
 
 import pandas as pd
-
+from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APITestCase
 
 from .estadisticas import calcular_estadisticas
 from .fotos import ErrorFoto, leer_foto
-from .logros import Logro, calcular_logros, continentes, grupos, provincias_de, regiones
+from .logros import LOGROS, Indice, Logro, calcular_logros, continentes, grupos, provincias_de, regiones
+from .management.commands.cargar_regiones import Command as ComandoCargarRegiones
 from .models import EntidadEpoca, EntidadPoliticaHistorica, FichaRegion, Foto, Region, RegionEpoca, Viaje, Visita
 from .notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
 from .sincronizacion import planificar_visitas
@@ -154,7 +159,8 @@ class AnexarTests(SimpleTestCase):
                 'NAME_ES': ['Argentina', 'Islas Malvinas', 'Georgias', 'Chile'],
                 'CONTINENT': ['South America'] * 4,
             },
-            geometry=[box(-70, -55, -55, -22), box(-61, -53, -57, -51), box(-38, -55, -26, -54), box(-75, -56, -70, -17)],
+            geometry=[box(-70, -55, -55, -22), box(-61, -53, -57, -51),
+                      box(-38, -55, -26, -54), box(-75, -56, -70, -17)],
             crs='EPSG:4326',
         )
         resultado = normalizar_paises(paises)
@@ -205,7 +211,8 @@ class EncuadreApiTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
         Region.objects.create(nivel='provincia', codigo='AR-M', nombre='Mendoza', encuadre=[-70.6, -37.6, -66.5, -32])
-        Region.objects.create(nivel='provincia', codigo='CL-RM', nombre='Santiago', encuadre=[-71.7, -34.3, -69.8, -32.9])
+        Region.objects.create(nivel='provincia', codigo='CL-RM', nombre='Santiago',
+                              encuadre=[-71.7, -34.3, -69.8, -32.9])
         Region.objects.create(nivel='provincia', codigo='AR-X', nombre='Sin calcular')
 
     def test_une_las_regiones_pedidas_e_ignora_las_desconocidas(self):
@@ -319,10 +326,9 @@ class DescribirEntidadesTests(SimpleTestCase):
         snapshot = gpd.GeoDataFrame({'nombre': list(entidades)}, geometry=list(entidades.values()), crs='EPSG:4326')
         return describir_entidades(snapshot, **kwargs).set_index('nombre')
 
-    def test_el_hash_es_el_mismo_que_en_el_frontend(self):
+    def test_el_hash_no_cambia_nunca_para_que_cada_entidad_conserve_su_color(self):
         from .historia import hash_nombre
 
-        # Valores de `hash` en frontend/src/historia.ts.
         self.assertEqual(hash_nombre('Spain'), 3872515054)
         self.assertEqual(hash_nombre('Viceroyalty of the Río de la Plata'), 2840156130)
         self.assertEqual(hash_nombre('Anishinabewaki ᐊᓂᔑᓈᐯᐗᑭ'), 1926154443)
@@ -365,7 +371,7 @@ class EpocasApiTests(APITestCase):
         salta = Region.objects.create(nivel='provincia', codigo='AR-A', nombre='Salta', padre=arg)
         jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=arg)
         cusco = Region.objects.create(nivel='provincia', codigo='PE-CUS', nombre='Cusco')
-        rio = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of the Río de la Plata', color='#c0a060')
+        rio = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of the Río de la Plata')
         peru = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of Peru')
         RegionEpoca.objects.create(region=salta, anio=1800, entidad=rio, porcentaje_superficie=96.6)
         RegionEpoca.objects.create(region=salta, anio=1800, entidad=peru, porcentaje_superficie=3.4)
@@ -386,7 +392,6 @@ class EpocasApiTests(APITestCase):
             'AR-Y': 'Viceroyalty of the Río de la Plata',
             'PE-CUS': 'Viceroyalty of Peru',
         })
-        self.assertEqual(datos['colores'], {'Viceroyalty of the Río de la Plata': '#c0a060'})
 
     def test_pisadas_ignoran_el_roce_de_frontera_y_los_deseos(self):
         # Salta toca Perú en un 3,4%: no cuenta. Cusco es solo un deseo.
@@ -415,7 +420,8 @@ class EpocasApiTests(APITestCase):
         EntidadEpoca.objects.create(anio=1800, entidad=isla, lon=-40, lat=-20, area_km2=500, tono=3)
 
         datos = self.client.get('/api/historia/1800/').data
-        self.assertEqual([r['entidad'] for r in datos['rotulos']], ['Viceroyalty of the Río de la Plata', 'Island tribes'])
+        self.assertEqual([r['entidad'] for r in datos['rotulos']],
+                         ['Viceroyalty of the Río de la Plata', 'Island tribes'])
         self.assertEqual(datos['rotulos'][0], {'entidad': 'Viceroyalty of the Río de la Plata', 'lon': -62, 'lat': -30,
                                                'area_km2': 4_000_000})
         self.assertEqual(datos['tonos'], {'Viceroyalty of the Río de la Plata': 0, 'Island tribes': 3})
@@ -496,7 +502,8 @@ class FichasApiTests(APITestCase):
 
     def test_region_inexistente(self):
         self.assertEqual(self.client.get('/api/regiones/XX-NADA/').status_code, 404)
-        self.assertEqual(self.client.put('/api/regiones/XX-NADA/ficha/', {'texto': 'a'}, format='json').status_code, 404)
+        respuesta = self.client.put('/api/regiones/XX-NADA/ficha/', {'texto': 'a'}, format='json')
+        self.assertEqual(respuesta.status_code, 404)
 
 
 class UtilidadesTests(SimpleTestCase):
@@ -617,7 +624,8 @@ class LogrosTests(TestCase):
                                          padre=cls.arg)
 
     def avance(self, *logros):
-        return {l['id']: (l['cumplidos'], l['total'], l['completo']) for l in calcular_logros(list(logros))}
+        return {logro['id']: (logro['cumplidos'], logro['total'], logro['completo'])
+                for logro in calcular_logros(list(logros))}
 
     def test_un_departamento_cumple_su_provincia_y_un_deseo_no_cuenta(self):
         Visita.objects.create(region=self.tilcara)
@@ -650,7 +658,7 @@ class LogrosTests(TestCase):
     def test_api(self):
         respuesta = self.client.get('/api/logros/')
         self.assertEqual(respuesta.status_code, 200)
-        jurisdicciones = next(l for l in respuesta.json() if l['id'] == 'jurisdicciones')
+        jurisdicciones = next(logro for logro in respuesta.json() if logro['id'] == 'jurisdicciones')
         self.assertEqual(jurisdicciones['total'], 3)
 
 
@@ -722,11 +730,9 @@ class FotosApiTests(APITestCase):
         self.assertFalse(respuesta.data['region_en_viaje'])
         self.assertTrue(respuesta.data['miniatura'].startswith('/media/fotos/miniaturas/'))
 
-    def test_si_el_viaje_tiene_la_provincia_la_foto_se_asocia_a_esa_visita(self):
-        visita = Visita.objects.create(viaje=self.viaje, region=self.jujuy)
-        respuesta = self.subir()
-        self.assertTrue(respuesta.data['region_en_viaje'])
-        self.assertEqual(respuesta.data['visita'], visita.id)
+    def test_si_el_viaje_tiene_la_provincia_no_sugiere_el_departamento(self):
+        Visita.objects.create(viaje=self.viaje, region=self.jujuy)
+        self.assertTrue(self.subir().data['region_en_viaje'])
 
     def test_borrar_borra_los_archivos(self):
         foto = Foto.objects.get(id=self.subir().data['id'])
@@ -742,8 +748,172 @@ class FotosApiTests(APITestCase):
         self.assertEqual(self.client.delete(f'/api/viajes/{viaje.id}/').status_code, 204)
         self.assertFalse(any(Path(r).exists() for r in rutas))
 
+    def test_un_viaje_que_no_es_un_numero_es_un_400(self):
+        self.assertEqual(self.client.get('/api/fotos/?viaje=abc').status_code, 400)
+        archivo = SimpleUploadedFile('tilcara.jpg', jpeg_con_gps(), content_type='image/jpeg')
+        respuesta = self.client.post('/api/fotos/', {'viaje': 'abc', 'archivo': archivo}, format='multipart')
+        self.assertEqual(respuesta.status_code, 400)
+
+    def test_una_foto_cortada_es_un_400(self):
+        archivo = SimpleUploadedFile('cortada.jpg', jpeg_con_gps()[:-100], content_type='image/jpeg')
+        respuesta = self.client.post('/api/fotos/', {'archivo': archivo}, format='multipart')
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn('dañado', respuesta.data['archivo'][0])
+
     def test_archivo_invalido(self):
         archivo = SimpleUploadedFile('foto.heic', b'no soy una imagen', content_type='image/heic')
         respuesta = self.client.post('/api/fotos/', {'archivo': archivo}, format='multipart')
         self.assertEqual(respuesta.status_code, 400)
         self.assertIn('HEIC', respuesta.data['archivo'][0])
+
+
+class VisitasFiltroTests(APITestCase):
+    def test_un_viaje_que_no_es_un_numero_es_un_400(self):
+        self.assertEqual(self.client.get('/api/visitas/?viaje=abc').status_code, 400)
+
+
+@override_settings(NOTION_DATABASE_ID='destinos', NOTION_TOKEN='x')
+class SincronizarNotionTests(TestCase):
+    """El comando entero contra una base real: borra y recrea visitas, así que no puede tocar las cargadas a mano."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.peru = Region.objects.create(nivel='pais', codigo='PER', nombre='Perú')
+        cls.arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina')
+        cls.tucuman = Region.objects.create(nivel='provincia', codigo='AR-T', nombre='Tucumán', padre=cls.arg)
+        cls.jujuy = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=cls.arg)
+
+    def sincronizar(self, destinos, **opciones):
+        salida = io.StringIO()
+        ruta = 'mapa.management.commands.sincronizar_notion'
+        with mock.patch(f'{ruta}.ClienteNotion') as cliente, \
+                mock.patch(f'{ruta}.Ubicador', return_value=UbicadorFalso()), \
+                mock.patch(f'{ruta}.parsear_destino', side_effect=lambda d: d), \
+                mock.patch(f'{ruta}.parsear_lugar', side_effect=lambda lugar: lugar):
+            base = {'properties': {'Lugares': {'relation': {'database_id': 'lugares'}}}}
+            cliente.return_value.base.return_value = base
+            cliente.return_value.filas.side_effect = lambda base: destinos if base == 'destinos' else []
+            call_command('sincronizar_notion', stdout=salida, **opciones)
+        return salida.getvalue()
+
+    def test_crea_los_viajes_y_sus_visitas(self):
+        self.sincronizar([Destino('d1', 'Peru', 'hecho', None), Destino('d2', 'Tucuman', 'deseo', None)])
+        peru = Visita.objects.get(viaje__notion_id='d1')
+        self.assertEqual((peru.region.codigo, peru.realizada, peru.desde_notion), ('PER', True, True))
+        tucuman = Visita.objects.get(viaje__notion_id='d2')
+        self.assertEqual((tucuman.region.codigo, tucuman.realizada), ('AR-T', False))
+
+    def test_regenera_sus_visitas_y_respeta_las_cargadas_a_mano(self):
+        self.sincronizar([Destino('d1', 'Peru', 'hecho', None)])
+        viaje = Viaje.objects.get(notion_id='d1')
+        a_mano = Visita.objects.create(viaje=viaje, region=self.jujuy, tipo_presencia='paso')
+        sin_viaje = Visita.objects.create(region=self.tucuman)
+
+        # El destino ahora cae en Jujuy: la visita a Perú se va y la de Jujuy sigue siendo la cargada a mano.
+        self.sincronizar([Destino('d1', 'Peru', 'hecho', Place(-23.5, -65.4, 'Tilcara'))])
+
+        self.assertFalse(Visita.objects.filter(region=self.peru).exists())
+        a_mano.refresh_from_db()
+        self.assertEqual((a_mano.tipo_presencia, a_mano.desde_notion), ('paso', False))
+        self.assertEqual(Visita.objects.filter(viaje=viaje).count(), 1)
+        self.assertTrue(Visita.objects.filter(id=sin_viaje.id).exists())
+
+    def test_actualiza_nombre_y_estado_y_conserva_las_notas(self):
+        self.sincronizar([Destino('d1', 'Peru', 'deseo', None)])
+        Viaje.objects.filter(notion_id='d1').update(notas='Llevar abrigo')
+        self.sincronizar([Destino('d1', 'Peru', 'hecho', None)])
+        viaje = Viaje.objects.get(notion_id='d1')
+        self.assertEqual((viaje.estado, viaje.notas), ('hecho', 'Llevar abrigo'))
+
+    def test_un_destino_que_desaparece_de_notion_no_se_borra(self):
+        self.sincronizar([Destino('d1', 'Peru', 'hecho', None)])
+        salida = self.sincronizar([])
+        self.assertTrue(Viaje.objects.filter(notion_id='d1').exists())
+        self.assertIn('ya no está en Notion', salida)
+
+    def test_dry_run_no_guarda_nada(self):
+        self.sincronizar([Destino('d1', 'Peru', 'hecho', None)], dry_run=True)
+        self.assertFalse(Viaje.objects.exists())
+        self.assertFalse(Visita.objects.exists())
+
+
+class CargarRegionesBorradoTests(TestCase):
+    def borrar_obsoletas(self, nivel, vigentes):
+        salida = io.StringIO()
+        ComandoCargarRegiones(stdout=salida).borrar_obsoletas(nivel, vigentes)
+        return salida.getvalue()
+
+    def test_borra_las_que_ya_no_estan_con_sus_subregiones(self):
+        vieja = Region.objects.create(nivel='pais', codigo='FLK', nombre='Vieja')
+        Region.objects.create(nivel='provincia', codigo='FLK-1', nombre='Hija', padre=vieja)
+        Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina')
+        self.borrar_obsoletas('pais', {'ARG'})
+        self.assertEqual(list(Region.objects.values_list('codigo', flat=True)), ['ARG'])
+
+    def test_no_borra_una_region_con_visitas_ni_con_ficha(self):
+        con_visita = Region.objects.create(nivel='pais', codigo='AAA', nombre='Con visita')
+        Visita.objects.create(region=con_visita)
+        con_ficha = Region.objects.create(nivel='pais', codigo='BBB', nombre='Con ficha')
+        FichaRegion.objects.create(region=con_ficha, texto='Algo que escribí')
+        salida = self.borrar_obsoletas('pais', set())
+        self.assertEqual(Region.objects.count(), 2)
+        self.assertIn('no se borró', salida)
+
+
+class _TodosLosCodigos(dict):
+    """Un índice que dice tener cualquier código: para ver qué pide cada logro antes de que se filtre."""
+
+    def __contains__(self, codigo):
+        return True
+
+    def __getitem__(self, codigo):
+        return codigo
+
+
+class CodigosDeLogrosTests(SimpleTestCase):
+    def test_todos_los_codigos_existen_en_el_mapa(self):
+        # calcular_logros ignora los códigos que no están en la base: uno mal escrito borraría un objetivo sin avisar.
+        geo = Path(settings.BASE_DIR).parent / 'frontend' / 'public' / 'geo'
+        existentes = set()
+        for capa in ('paises', 'provincias', 'departamentos'):
+            contenido = json.loads((geo / f'{capa}.geojson').read_text(encoding='utf-8'))
+            existentes |= {f['properties']['codigo'] for f in contenido['features']}
+
+        indice = Indice(_TodosLosCodigos(), {}, {})
+        pedidos = {c for logro in LOGROS for objetivo in logro.objetivos(indice) for c in objetivo.regiones}
+        self.assertTrue(pedidos)
+        self.assertEqual(sorted(pedidos - existentes), [])
+
+
+class RespaldarTests(TestCase):
+    def test_ida_y_vuelta(self):
+        with tempfile.TemporaryDirectory() as carpeta, override_settings(MEDIA_ROOT=Path(carpeta) / 'media'):
+            region = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy')
+            viaje = Viaje.objects.create(nombre='NOA', notas='Llevar abrigo')
+            Visita.objects.create(viaje=viaje, region=region, tipo_presencia='paso')
+            FichaRegion.objects.create(region=region, texto='# Tilcara\nÑandú y cardones.')
+            foto = Foto(viaje=viaje, region=region)
+            foto.archivo.save('tilcara.jpg', ContentFile(b'bytes de la foto'))
+            ruta_foto = foto.archivo.name
+
+            destino = Path(carpeta) / 'respaldos'
+            call_command('respaldar', destino=destino, stdout=io.StringIO())
+            respaldo = next(destino.glob('periplo-*.zip'))
+
+            # Se pierde todo menos las regiones, que se regeneran con cargar_regiones.
+            Viaje.objects.all().delete()
+            FichaRegion.objects.all().delete()
+            self.assertFalse(Foto.objects.exists())
+
+            restaurado = Path(carpeta) / 'restaurado'
+            with zipfile.ZipFile(respaldo) as z:
+                z.extractall(restaurado)
+            call_command('loaddata', restaurado / 'diario.json', stdout=io.StringIO())
+
+            viaje = Viaje.objects.get(nombre='NOA')
+            self.assertEqual(viaje.notas, 'Llevar abrigo')
+            self.assertEqual(viaje.visitas.get().tipo_presencia, 'paso')
+            self.assertEqual(viaje.visitas.get().region, region)
+            self.assertEqual(FichaRegion.objects.get().texto, '# Tilcara\nÑandú y cardones.')
+            self.assertEqual(Foto.objects.get().archivo.name, ruta_foto)
+            self.assertEqual((restaurado / 'media' / ruta_foto).read_bytes(), b'bytes de la foto')

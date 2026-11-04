@@ -47,7 +47,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `realizada`: si es falso, todavía no fui y se pinta como deseo
   - `desde_notion`: la creó el sync, que la regenera en cada corrida
 - **`Foto`**
-  - `viaje` y/o `visita`: FK
+  - `viaje`: FK
   - `archivo` y `miniatura`: van a `backend/media/`, que está fuera del repo
   - `lat`, `lon` y `tomada_en`: opcionales; se leen del EXIF si están
   - `region`: región donde cae la foto, calculada al subirla
@@ -58,7 +58,6 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 - **`EntidadPoliticaHistorica`**: imperio, reino, estado o cultura que aparece en los snapshots históricos.
   - `nombre`: tal cual viene en historical-basemaps; identifica a la entidad en todos los años
   - `nombre_es`: opcional, sale de `backend/data/entidades_es.json`
-  - `color`: opcional, para pintarla en el mapa
 - **`EntidadEpoca`**: cada entidad en cada año; lo calcula `cruzar_historia` desde la geometría de historical-basemaps (GPL), así que queda en la base y no en el repo.
   - `anio`, `entidad`: FK
   - `lon`, `lat`: dónde va su nombre en el mapa (centro visual de su parte más grande)
@@ -104,6 +103,9 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 2. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
 3. Estadísticas: países visitados, provincias argentinas, continentes y entidades históricas pisadas.
    - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.
+4. Lo escrito a mano no se pierde:
+   - Lo que no se guardó todavía (fichas, formularios de viaje) queda en el navegador: `hooks/useBorrador.ts`.
+   - `manage.py respaldar` guarda viajes, visitas, fichas y fotos en un `.zip`.
 
 ### Fase 3: la historia
 
@@ -128,6 +130,11 @@ Un MVP de un fin de semana:
 - Salta, Jujuy y Tucumán pintadas como visitadas, desde un JSON hardcodeado. Todavía sin sincronizar con Notion.
 
 Cuando eso se vea en pantalla, se suman las capas en el orden de las fases.
+
+## Verificar
+
+`python verificar.py` corre Ruff, el chequeo de migraciones, los tests de los dos lados, TypeScript, Oxlint y el build.
+Antes de dar algo por terminado, tiene que pasar entero.
 
 ## Fuentes de datos
 

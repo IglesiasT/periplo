@@ -15,6 +15,9 @@ RAW_DIR = Path(settings.BASE_DIR) / 'data' / 'raw'
 FRONTEND_DIR = Path(settings.BASE_DIR).parent / 'frontend'
 GEO_DIR = FRONTEND_DIR / 'public' / 'geo'
 
+# Sin límite, un servidor que no contesta deja el comando colgado para siempre.
+TIEMPO_MAXIMO_RED = 60  # segundos
+
 # Mollweide: proyección de áreas iguales válida para todo el planeta (incluida la Antártida).
 CRS_AREAS_IGUALES = 'ESRI:54009'
 
@@ -69,7 +72,7 @@ def descargar(url: str, destino: Path, forzar: bool = False) -> bool:
         return False
     destino.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={'User-Agent': 'periplo/0.1'})
-    with urllib.request.urlopen(req) as resp, destino.open('wb') as f:
+    with urllib.request.urlopen(req, timeout=TIEMPO_MAXIMO_RED) as resp, destino.open('wb') as f:
         shutil.copyfileobj(resp, f)
     return True
 

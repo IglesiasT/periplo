@@ -65,6 +65,12 @@ export const useFotos = () => useQuery({ queryKey: CLAVES.fotos, queryFn: api.li
 
 export const useViajes = () => useQuery({ queryKey: CLAVES.viajes, queryFn: api.listarViajes })
 
+/** Vuelve a pedir todo lo que falló, y solo eso: una consulta deshabilitada (la época, en el presente) no se toca. */
+export function useReintentarFallidas() {
+  const cliente = useQueryClient()
+  return () => void cliente.refetchQueries({ predicate: (consulta) => consulta.state.status === 'error' })
+}
+
 /** Cualquier cambio en viajes o visitas puede cambiar el color del mapa y las estadísticas:
  *  se invalidan todas las claves y TanStack Query las vuelve a pedir. */
 function useInvalidar() {

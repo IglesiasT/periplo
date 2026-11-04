@@ -12,15 +12,12 @@ import unicodedata
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
 
 import geopandas as gpd
-from django.conf import settings
 from shapely.geometry import Point
 
+from .geodatos import RAW_DIR, TIEMPO_MAXIMO_RED
 from .models import Region
-
-RAW_DIR = Path(settings.BASE_DIR) / 'data' / 'raw'
 
 # Un punto en la costa puede caer apenas en el mar por la resolución de Natural Earth:
 # si no cae dentro de ningún polígono, se acepta la región más cercana hasta esta distancia (~11 km).
@@ -63,7 +60,7 @@ class Localizador:
     def _capa(self, nombre: str) -> gpd.GeoDataFrame:
         if nombre not in self._capas:
             gdf = gpd.read_file(RAW_DIR / f'{nombre}.geojson', columns=['codigo'])
-            gdf.sindex  # construye el índice espacial (R-tree) una sola vez
+            _ = gdf.sindex  # construye el índice espacial (R-tree) una sola vez
             self._capas[nombre] = gdf
         return self._capas[nombre]
 
@@ -90,7 +87,7 @@ class Nominatim:
             parametros = urllib.parse.urlencode({'q': nombre, 'format': 'jsonv2', 'limit': 1})
             req = urllib.request.Request(f'{NOMINATIM_URL}?{parametros}',
                                          headers={'User-Agent': 'periplo/0.1 (mapa de viajes personal)'})
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=TIEMPO_MAXIMO_RED) as resp:
                 resultados = json.load(resp)
             self._ultimo_pedido = time.monotonic()
             self.cache[nombre] = resultados[0] if resultados else None
@@ -142,7 +139,8 @@ class Ubicador:
             codigo = self.localizador.region_en(lat, lon, capa='paises')
         elif tipo in NOMINATIM_TIPOS_PROVINCIA:
             codigo = self.localizador.region_en(lat, lon)
-            if codigo and area_bbox_km2(resultado['boundingbox']) > FACTOR_MAS_GRANDE_QUE_PROVINCIA * self.areas[codigo]:
+            area = area_bbox_km2(resultado['boundingbox'])
+            if codigo and area > FACTOR_MAS_GRANDE_QUE_PROVINCIA * self.areas[codigo]:
                 codigo = self.localizador.region_en(lat, lon, capa='paises')
         else:
             return None

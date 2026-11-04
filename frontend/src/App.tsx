@@ -3,11 +3,11 @@ import { siguientePaso } from './ciclo'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
 import Mapa, { type Encuadre } from './components/mapa/Mapa'
 import { vistaDesdeHash } from './components/mapa/vista'
-import Panel, { type Modo } from './components/Panel'
+import Panel from './components/Panel'
 import SelectorLente from './components/SelectorLente'
 import {
   useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEncuadre, useEpoca, useEstados,
-  useFotos, useLogros, useViajes,
+  useFotos, useLogros, useReintentarFallidas, useViajes,
 } from './hooks/consultas'
 import { useEstadoUrl } from './hooks/useEstadoUrl'
 import { regionesDe, resaltadasDe, type Seleccion, viajeElegido } from './seleccion'
@@ -26,7 +26,7 @@ export default function App() {
   const epocaConsulta = useEpoca(anio)
   // Al volver al presente la consulta queda deshabilitada pero conserva el último año como placeholder.
   const epoca = anio === null ? undefined : epocaConsulta.data
-  const [modo, setModo] = useState<Modo>('ninguno')
+  const [marcando, setMarcando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const crear = useCrearVisita()
   const actualizar = useActualizarVisita()
@@ -68,16 +68,20 @@ export default function App() {
   const [seleccionPrevia, setSeleccionPrevia] = useState(seleccion)
   if (seleccion !== seleccionPrevia) {
     setSeleccionPrevia(seleccion)
-    setModo('ninguno')
+    setMarcando(false)
     setAviso(null)
   }
 
-  const cambiarModo = (nuevo: Modo) => {
-    setModo(nuevo)
+  const cambiarMarcando = (nuevo: boolean) => {
+    setMarcando(nuevo)
     setAviso(null)
   }
 
   const alFallar = (error: Error) => setAviso(error.message)
+
+  // Sin estos datos el mapa queda mudo, sin explicar por qué: se avisa encima de él.
+  const consultaFallida = [estados, fotos, logros, anios, epocaConsulta].find((consulta) => consulta.error)
+  const reintentarFallidas = useReintentarFallidas()
 
   const alClickearRegion = (codigo: string) => {
     if (!viaje) return
@@ -105,8 +109,8 @@ export default function App() {
         error={viajes.error}
         seleccion={seleccion}
         onSeleccionar={seleccionar}
-        modo={modo}
-        onCambiarModo={cambiarModo}
+        marcando={marcando}
+        onCambiarMarcando={cambiarMarcando}
         aviso={aviso}
         onAviso={setAviso}
       />
@@ -118,12 +122,18 @@ export default function App() {
         estados={estados.data}
         resaltadas={resaltadas}
         encuadre={encuadre}
-        alClickearRegion={modo === 'marcar' && viaje ? alClickearRegion : undefined}
+        alClickearRegion={marcando && viaje ? alClickearRegion : undefined}
         alElegirRegion={(codigo) => seleccionar({ tipo: 'region', codigo }, { acercar: false })}
         fotos={fotos.data}
         epoca={epoca}
       >
         <div className="controles-mapa">
+          {consultaFallida?.error && (
+            <div className="aviso-datos" role="alert">
+              <span>No se pudieron cargar los datos del mapa: {consultaFallida.error.message}</span>
+              <button onClick={reintentarFallidas}>Reintentar</button>
+            </div>
+          )}
           {/* Sin años cruzados (no se corrió cruzar_historia) no hay nada que elegir. */}
           {anios.data && anios.data.length > 0 && <SelectorEpoca anios={anios.data} anio={anio} onCambiar={(nuevo) => cambiar({ anio: nuevo }, 'reemplazar')} />}
           <SelectorLente lente={lente} onCambiar={(nueva) => cambiar({ lente: nueva }, 'reemplazar')} />

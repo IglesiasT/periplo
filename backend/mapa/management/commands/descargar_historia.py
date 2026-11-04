@@ -21,7 +21,7 @@ import urllib.request
 import geopandas as gpd
 from django.core.management.base import BaseCommand, CommandError
 
-from mapa.geodatos import RAW_DIR, descargar
+from mapa.geodatos import RAW_DIR, TIEMPO_MAXIMO_RED, descargar
 
 REPO = 'aourednik/historical-basemaps'
 URL_LISTADO = f'https://api.github.com/repos/{REPO}/contents/geojson'
@@ -42,7 +42,7 @@ def anio_de(nombre_archivo: str) -> int | None:
 def listar_snapshots() -> dict[int, str]:
     """Año -> nombre de archivo, según lo que hay hoy en el repo."""
     req = urllib.request.Request(URL_LISTADO, headers={'User-Agent': 'periplo/0.1'})
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=TIEMPO_MAXIMO_RED) as resp:
         archivos = [item['name'] for item in json.load(resp)]
     return {anio: nombre for nombre in archivos if (anio := anio_de(nombre)) is not None}
 

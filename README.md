@@ -138,7 +138,32 @@ Vite reenvía las llamadas a `/api` hacia Django (ver `frontend/vite.config.ts`)
 
 > Si preferís activar el entorno con `.venv\Scripts\Activate.ps1` y PowerShell lo bloquea, corré una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. Los comandos de arriba no lo necesitan.
 
+## Respaldos
+
+Las fichas, las fotos y las visitas cargadas a mano viven solo en `db.sqlite3` y `media/`, que no están en git.
+Este comando las guarda en un `.zip`. Las regiones y la capa histórica no van: salen de los comandos de datos.
+
+```powershell
+python manage.py respaldar                       # queda en backend/respaldos/
+python manage.py respaldar --destino D:/respaldos # mejor: en otro disco o en una carpeta sincronizada
+```
+
+Para restaurar, con las regiones ya cargadas: descomprimir el `.zip`, copiar su carpeta `media/` a `backend/media/`
+y correr `python manage.py loaddata <carpeta>/diario.json`.
+
+Lo que estás escribiendo y todavía no guardaste (una ficha, un viaje) queda en el navegador hasta que lo guardes
+o lo descartes, pero no entra en estos respaldos.
+
 ## Tests
+
+Para correr todas las verificaciones de una vez (Ruff, migraciones, tests, TypeScript, Oxlint y build):
+
+```powershell
+python verificar.py
+```
+
+`backend/requirements.lock.txt` fija las versiones exactas con las que se probó, Ruff incluido;
+`requirements.txt` tiene solo las dependencias directas.
 
 ```powershell
 cd backend

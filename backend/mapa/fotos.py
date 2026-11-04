@@ -57,6 +57,9 @@ def leer_foto(contenido: bytes) -> DatosFoto:
     except UnidentifiedImageError as e:
         raise ErrorFoto('Formato no soportado. Se aceptan JPG, PNG y WebP '
                         '(las HEIC del iPhone todavía no: exportalas como JPG).') from e
+    except (OSError, SyntaxError, Image.DecompressionBombError) as e:
+        # Pillow avisa de un archivo cortado o roto con cualquiera de estas, según el formato.
+        raise ErrorFoto('El archivo está dañado o es demasiado grande para leerlo.') from e
 
     exif = imagen.getexif()
     lat, lon = leer_gps(exif)

@@ -1,0 +1,2 @@
+# Todo el texto con LF, en cualquier sistema: evita diffs de finales de línea y los avisos de CRLF en Windows.
+* text=auto eol=lf

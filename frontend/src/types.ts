@@ -123,8 +123,6 @@ export interface Epoca {
   anio: number
   /** Código de región → entidad que ocupaba la mayor parte. Las regiones sin entidad no aparecen. */
   regiones: Record<string, string>
-  /** Solo las entidades con color propio; el resto toma la aguada de su tono. */
-  colores: Record<string, string>
   /** Nombre en castellano, solo de las entidades traducidas. Las claves de todo lo demás son el nombre original. */
   nombres: Record<string, string>
   /** Entidades cuyo territorio pisé en alguna visita realizada, de la que más regiones tiene a la que menos. */
@@ -138,7 +136,6 @@ export interface Epoca {
 export interface Foto {
   id: number
   viaje: number | null
-  visita: number | null
   /** URLs relativas (/media/...): las sirve Django a través del proxy de Vite. */
   archivo: string
   miniatura: string | null

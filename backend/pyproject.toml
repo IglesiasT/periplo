@@ -1,0 +1,11 @@
+[tool.ruff]
+line-length = 120
+extend-exclude = ["mapa/migrations"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# zip() sin strict: los pares salen de las mismas filas, y el aviso no agrega nada.
+ignore = ["B905"]

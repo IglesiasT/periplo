@@ -2,7 +2,13 @@ import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA } from '../etiquetas'
 import { useActualizarVisita, useBorrarVisita } from '../hooks/consultas'
 import type { TipoPresencia, Visita } from '../types'
 
-export default function VisitasLista({ visitas }: { visitas: Visita[] }) {
+interface Props {
+  visitas: Visita[]
+  onAviso: (aviso: string | null) => void
+}
+
+export default function VisitasLista({ visitas, onAviso }: Props) {
+  const alFallar = { onError: (error: Error) => onAviso(error.message) }
   const actualizar = useActualizarVisita()
   const borrar = useBorrarVisita()
 
@@ -28,7 +34,7 @@ export default function VisitasLista({ visitas }: { visitas: Visita[] }) {
               <select
                 value={visita.tipo_presencia}
                 onChange={(e) =>
-                  actualizar.mutate({ id: visita.id, datos: { tipo_presencia: e.target.value as TipoPresencia } })}
+                  actualizar.mutate({ id: visita.id, datos: { tipo_presencia: e.target.value as TipoPresencia } }, alFallar)}
               >
                 {Object.entries(ETIQUETAS_PRESENCIA).map(([valor, etiqueta]) => (
                   <option key={valor} value={valor}>{etiqueta}</option>
@@ -38,11 +44,11 @@ export default function VisitasLista({ visitas }: { visitas: Visita[] }) {
                 <input
                   type="checkbox"
                   checked={visita.realizada}
-                  onChange={(e) => actualizar.mutate({ id: visita.id, datos: { realizada: e.target.checked } })}
+                  onChange={(e) => actualizar.mutate({ id: visita.id, datos: { realizada: e.target.checked } }, alFallar)}
                 />
                 fui
               </label>
-              <button type="button" className="icono" title="Quitar" onClick={() => borrar.mutate(visita.id)}>×</button>
+              <button type="button" className="icono" title="Quitar" onClick={() => borrar.mutate(visita.id, alFallar)}>×</button>
             </div>
           )}
         </li>

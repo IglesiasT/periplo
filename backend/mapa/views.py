@@ -42,7 +42,7 @@ def estados(request):
 
 @api_view(['GET'])
 def estadisticas(request):
-    """Superficie recorrida, países por continente y avance por país (ver mapa/estadisticas.py)."""
+    """Países, provincias argentinas, continentes y entidades pisadas (ver mapa/estadisticas.py)."""
     return Response(calcular_estadisticas())
 
 

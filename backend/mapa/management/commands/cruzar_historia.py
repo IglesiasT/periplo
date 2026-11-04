@@ -48,7 +48,8 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         disponibles = snapshots_disponibles()
         if not disponibles:
-            raise CommandError(f'No hay snapshots en {HISTORIA_DIR}. Corré antes `python manage.py descargar_historia`.')
+            raise CommandError(
+                f'No hay snapshots en {HISTORIA_DIR}. Corré antes `python manage.py descargar_historia`.')
         anios = sorted(opts['anios'] or disponibles)
         if faltantes := [a for a in anios if a not in disponibles]:
             raise CommandError(f'No hay snapshot para: {", ".join(map(str, faltantes))}.')

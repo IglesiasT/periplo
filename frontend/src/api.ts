@@ -19,6 +19,11 @@ export class ErrorApi extends Error {
   }
 }
 
+/** Reintentar sirve con la red y el servidor; lo que el servidor rechazó (un 404, un 400) va a volver a fallar. */
+export function reintentar(fallos: number, error: Error): boolean {
+  return fallos < 3 && !(error instanceof ErrorApi && error.status < 500)
+}
+
 async function pedir<T>(metodo: string, url: string, cuerpo?: unknown): Promise<T> {
   // FormData (subida de archivos) va tal cual: el navegador arma el multipart y su Content-Type.
   const esFormulario = cuerpo instanceof FormData

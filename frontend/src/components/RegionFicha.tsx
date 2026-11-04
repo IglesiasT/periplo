@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import Markdown from 'react-markdown'
 import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, formatearFecha } from '../etiquetas'
 import { formatearAnio } from '../historia'
 import { useGuardarFicha, useRegion } from '../hooks/consultas'
+import { useBorrador } from '../hooks/useBorrador'
 import type { RegionDetalle } from '../types'
 
 interface Props {
@@ -39,9 +39,10 @@ function capitalizar(texto: string): string {
 }
 
 function Texto({ region }: { region: RegionDetalle }) {
-  const [borrador, setBorrador] = useState<string | null>(null)
+  const [borrador, setBorrador] = useBorrador<string>(`ficha.${region.codigo}`)
   const guardar = useGuardarFicha()
   const { ficha } = region
+  const sinGuardar = borrador !== null && borrador !== (ficha?.texto ?? '')
 
   const enviar = () =>
     guardar.mutate({ codigo: region.codigo, texto: borrador ?? '' }, { onSuccess: () => setBorrador(null) })
@@ -59,6 +60,7 @@ function Texto({ region }: { region: RegionDetalle }) {
         <div className="formulario">
           <textarea rows={12} value={borrador} autoFocus onChange={(e) => setBorrador(e.target.value)}
                     placeholder={`Qué viste en ${region.nombre}, qué comiste, qué te contaron… Admite markdown.`} />
+          {sinGuardar && <span className="tenue cursiva">Sin guardar: si te vas, sigue acá cuando vuelvas.</span>}
           {guardar.error && <span className="error">{guardar.error.message}</span>}
           <div className="acciones">
             <button type="submit" onClick={enviar} disabled={guardar.isPending}>

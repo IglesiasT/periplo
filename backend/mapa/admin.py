@@ -1,7 +1,12 @@
 from django.contrib import admin
 
 from .models import (
-    EntidadPoliticaHistorica, FichaRegion, Region, RegionEpoca, Viaje, Visita,
+    EntidadPoliticaHistorica,
+    FichaRegion,
+    Region,
+    RegionEpoca,
+    Viaje,
+    Visita,
 )
 
 
@@ -47,7 +52,7 @@ class FichaRegionAdmin(admin.ModelAdmin):
 
 @admin.register(EntidadPoliticaHistorica)
 class EntidadPoliticaHistoricaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'nombre_es', 'color']
+    list_display = ['nombre', 'nombre_es']
     search_fields = ['nombre', 'nombre_es']
     readonly_fields = ['nombre_es']  # sale de data/entidades_es.json
 
