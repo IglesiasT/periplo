@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
 import { useFichas } from '../hooks/consultas'
+import { viajeElegido, type Seleccion } from '../seleccion'
 import type { Foto, Logro, Viaje } from '../types'
 import Estadisticas from './Estadisticas'
 import FotosLista from './FotosLista'
@@ -8,9 +9,6 @@ import { LogrosLista, LogrosResumen } from './Logros'
 import RegionFicha from './RegionFicha'
 import ViajeForm from './ViajeForm'
 import VisitasLista from './VisitasLista'
-
-/** Qué muestra el panel: un viaje (por id), el formulario de uno nuevo, los logros o la ficha de una región. */
-export type Seleccion = number | 'nuevo' | 'logros' | { region: string } | null
 
 type Filtro = 'todos' | 'hechos' | 'planes'
 
@@ -28,9 +26,6 @@ interface Props {
   error: Error | null
   seleccion: Seleccion
   onSeleccionar: (seleccion: Seleccion) => void
-  /** Logro desplegado en la vista de logros: sus regiones se resaltan en el mapa. */
-  logroElegido: string | null
-  onElegirLogro: (id: string | null) => void
   /** Qué hacen los clicks en el mapa: abrir la ficha de la región o marcarla en el viaje elegido. */
   modo: Modo
   onCambiarModo: (modo: Modo) => void
@@ -42,33 +37,33 @@ interface Props {
 export type Modo = 'ninguno' | 'marcar'
 
 export default function Panel({
-  viajes, fotos, logros, cargando, error, seleccion, onSeleccionar, logroElegido, onElegirLogro,
+  viajes, fotos, logros, cargando, error, seleccion, onSeleccionar,
   modo, onCambiarModo, aviso, onAviso,
 }: Props) {
   const alternar = (m: Modo) => onCambiarModo(modo === m ? 'ninguno' : m)
   const [filtro, setFiltro] = useState<Filtro>('todos')
-  const viaje = typeof seleccion === 'number' ? viajes?.find((v) => v.id === seleccion) : undefined
+  const viaje = viajeElegido(seleccion, viajes)
 
-  if (seleccion === 'nuevo') {
+  if (seleccion?.tipo === 'nuevo') {
     return (
       <aside className="panel">
         <button className="volver" onClick={() => onSeleccionar(null)}>← Viajes</button>
         <h2>Nuevo viaje</h2>
-        <ViajeForm onGuardado={(nuevo) => onSeleccionar(nuevo.id)} />
+        <ViajeForm onGuardado={(nuevo) => onSeleccionar({ tipo: 'viaje', id: nuevo.id })} />
       </aside>
     )
   }
 
-  if (typeof seleccion === 'object' && seleccion !== null) {
+  if (seleccion?.tipo === 'region') {
     return (
       <aside className="panel">
         <button className="volver" onClick={() => onSeleccionar(null)}>← Viajes</button>
-        <RegionFicha codigo={seleccion.region} onElegirViaje={onSeleccionar} />
+        <RegionFicha codigo={seleccion.codigo} onElegirViaje={(id) => onSeleccionar({ tipo: 'viaje', id })} />
       </aside>
     )
   }
 
-  if (seleccion === 'logros') {
+  if (seleccion?.tipo === 'logros') {
     const completos = logros?.filter((l) => l.completo).length ?? 0
     return (
       <aside className="panel">
@@ -77,7 +72,12 @@ export default function Panel({
         <p className="cursiva">
           {completos} de {logros?.length ?? 0} sellados. Elegí uno para ver sus regiones en el mapa.
         </p>
-        {logros ? <LogrosLista logros={logros} elegido={logroElegido} onElegir={onElegirLogro} />
+        {logros ? (
+          <LogrosLista
+            logros={logros} elegido={seleccion.logro}
+            onElegir={(logro) => onSeleccionar({ tipo: 'logros', logro })}
+          />
+        )
           : <p className="vacio">Cargando…</p>}
       </aside>
     )
@@ -119,14 +119,14 @@ export default function Panel({
           <h1>Periplo</h1>
           <p className="lema">Atlas y diario de viajes</p>
         </div>
-        <button onClick={() => onSeleccionar('nuevo')}>+ Viaje</button>
+        <button onClick={() => onSeleccionar({ tipo: 'nuevo' })}>+ Viaje</button>
       </header>
 
       <Estadisticas />
 
-      {logros && <LogrosResumen logros={logros} onVerTodos={() => onSeleccionar('logros')} />}
+      {logros && <LogrosResumen logros={logros} onVerTodos={() => onSeleccionar({ tipo: 'logros', logro: null })} />}
 
-      <FichasResumen onElegir={(codigo) => onSeleccionar({ region: codigo })} />
+      <FichasResumen onElegir={(codigo) => onSeleccionar({ tipo: 'region', codigo })} />
 
       <div className="encabezado-seccion">
         <h3>Viajes</h3>
@@ -145,7 +145,7 @@ export default function Panel({
       <ul className="viajes">
         {visibles.map((v) => (
           <li key={v.id}>
-            <button onClick={() => onSeleccionar(v.id)}>
+            <button onClick={() => onSeleccionar({ tipo: 'viaje', id: v.id })}>
               <span className={v.estado === 'hecho' ? 'marca marca-hecho' : 'marca marca-plan'} aria-hidden="true" />
               <span className="viaje-texto">
                 <strong>{v.nombre}</strong>
