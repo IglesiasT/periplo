@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { siguientePaso } from './ciclo'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
-import Mapa, { type Encuadre, type Lente } from './components/mapa/Mapa'
+import Mapa, { type Encuadre } from './components/mapa/Mapa'
+import { vistaDesdeHash } from './components/mapa/vista'
 import Panel, { type Modo } from './components/Panel'
 import SelectorLente from './components/SelectorLente'
 import {
   useActualizarVisita, useAniosHistoricos, useBorrarVisita, useCrearVisita, useEncuadre, useEpoca, useEstados,
   useFotos, useLogros, useViajes,
 } from './hooks/consultas'
-import { regionesDe, resaltadasDe, viajeElegido, type Seleccion } from './seleccion'
+import { useEstadoUrl } from './hooks/useEstadoUrl'
+import { regionesDe, resaltadasDe, type Seleccion, viajeElegido } from './seleccion'
 import { useTema } from './tema/contexto'
 
 export default function App() {
@@ -18,13 +20,12 @@ export default function App() {
   const fotos = useFotos()
   const logros = useLogros()
   const anios = useAniosHistoricos()
-  // null = el presente.
-  const [anio, setAnio] = useState<number | null>(null)
-  const [lente, setLente] = useState<Lente>('automatica')
+  const { anio: anioUrl, lente, seleccion, cambiar } = useEstadoUrl()
+  // Un año que no tiene snapshot (un enlace viejo, una URL escrita a mano) es el presente.
+  const anio = anioUrl !== null && anios.data?.includes(anioUrl) ? anioUrl : null
   const epocaConsulta = useEpoca(anio)
   // Al volver al presente la consulta queda deshabilitada pero conserva el último año como placeholder.
   const epoca = anio === null ? undefined : epocaConsulta.data
-  const [seleccion, setSeleccion] = useState<Seleccion>(null)
   const [modo, setModo] = useState<Modo>('ninguno')
   const [aviso, setAviso] = useState<string | null>(null)
   const crear = useCrearVisita()
@@ -43,6 +44,14 @@ export default function App() {
   const irA = (codigos: string[]) => {
     if (codigos.length) setDestino({ codigos, vez: Date.now() })
   }
+  // Un enlace con algo elegido pero sin posición: se acerca a lo elegido en cuanto llegan los datos.
+  const porAcercar = useRef(vistaDesdeHash() === null)
+  useEffect(() => {
+    if (!porAcercar.current || !viajes.data || !logros.data) return
+    porAcercar.current = false
+    irA(regionesDe(seleccion, viajes.data, logros.data))
+  }, [seleccion, viajes.data, logros.data])
+
   const limites = useEncuadre(destino?.codigos ?? null).data?.limites
   const encuadre = useMemo<Encuadre | undefined>(
     () => (limites && destino ? { limites, vez: destino.vez } : undefined),
@@ -51,10 +60,16 @@ export default function App() {
 
   /** `acercar: false` para lo que se elige haciendo click en el mapa: ya se está mirando ahí. */
   const seleccionar = (nueva: Seleccion, { acercar = true } = {}) => {
-    setSeleccion(nueva)
+    cambiar({ seleccion: nueva }, 'agregar')
+    if (acercar) irA(regionesDe(nueva, viajes.data, logros.data))
+  }
+
+  // Cambiar de selección, también con Atrás, termina el modo de marcar: no se marca en otro viaje sin querer.
+  const [seleccionPrevia, setSeleccionPrevia] = useState(seleccion)
+  if (seleccion !== seleccionPrevia) {
+    setSeleccionPrevia(seleccion)
     setModo('ninguno')
     setAviso(null)
-    if (acercar) irA(regionesDe(nueva, viajes.data, logros.data))
   }
 
   const cambiarModo = (nuevo: Modo) => {
@@ -110,8 +125,8 @@ export default function App() {
       >
         <div className="controles-mapa">
           {/* Sin años cruzados (no se corrió cruzar_historia) no hay nada que elegir. */}
-          {anios.data && anios.data.length > 0 && <SelectorEpoca anios={anios.data} anio={anio} onCambiar={setAnio} />}
-          <SelectorLente lente={lente} onCambiar={setLente} />
+          {anios.data && anios.data.length > 0 && <SelectorEpoca anios={anios.data} anio={anio} onCambiar={(nuevo) => cambiar({ anio: nuevo }, 'reemplazar')} />}
+          <SelectorLente lente={lente} onCambiar={(nueva) => cambiar({ lente: nueva }, 'reemplazar')} />
         </div>
         {epoca && <EntidadesPisadas epoca={epoca} />}
       </Mapa>

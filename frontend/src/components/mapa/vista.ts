@@ -5,11 +5,16 @@ import type * as maplibregl from 'maplibre-gl'
 // a montar el componente en desarrollo: el segundo mapa arrancaba siempre en la vista inicial.
 export const VISTA_INICIAL = { center: [-20, 10] as [number, number], zoom: 1.5 }
 
-export function vistaDesdeHash(): typeof VISTA_INICIAL | null {
-  const [zoom, lat, lon] = window.location.hash.slice(1).split('/').map(Number)
-  if ([zoom, lat, lon].some((n) => n === undefined || Number.isNaN(n))) return null
+/** null si el hash no es una posición válida: con una latitud imposible MapLibre tira una excepción. */
+export function leerVista(hash: string): typeof VISTA_INICIAL | null {
+  const partes = hash.slice(1).split('/')
+  if (partes.length !== 3 || partes.some((parte) => parte === '')) return null
+  const [zoom, lat, lon] = partes.map(Number)
+  if (![zoom, lat, lon].every(Number.isFinite) || zoom < 0 || Math.abs(lat) > 90) return null
   return { center: [lon, lat], zoom }
 }
+
+export const vistaDesdeHash = () => leerVista(window.location.hash)
 
 export function guardarVistaEnHash(map: maplibregl.Map) {
   const { lat, lng } = map.getCenter()

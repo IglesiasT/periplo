@@ -118,6 +118,9 @@ export default function Mapa({
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right')
     map.on('moveend', () => guardarVistaEnHash(map))
+    // Atrás y Adelante también vuelven a la posición que tenía esa entrada del historial.
+    const alNavegar = () => map.jumpTo(vistaDesdeHash() ?? VISTA_INICIAL)
+    window.addEventListener('popstate', alNavegar)
     map.on('load', () => {
       cargado.current = map
       setListo(true)
@@ -185,6 +188,7 @@ export default function Mapa({
     }
 
     return () => {
+      window.removeEventListener('popstate', alNavegar)
       map.remove()
       mapRef.current = null
       cargado.current = null
