@@ -1,38 +1,57 @@
 import { regionesAEncuadrar, resaltarRegiones, resaltarViaje, type Resaltadas } from './resaltado'
 import type { Logro, Viaje } from './types'
 
-/** Qué muestra el panel: un viaje, el formulario de uno nuevo, los logros (con uno desplegado o ninguno)
- *  o la ficha de una región. null = la lista de viajes. */
-export type Seleccion =
-  | { tipo: 'viaje'; id: number }
-  | { tipo: 'nuevo' }
-  | { tipo: 'logros'; logro: string | null }
-  | { tipo: 'region'; codigo: string }
-  | null
+export const PESTANIAS = ['viajes', 'logros', 'fichas', 'numeros'] as const
+export type Pestania = (typeof PESTANIAS)[number]
+
+/**
+ * Qué está elegido. Son cosas independientes porque conviven: un viaje sigue elegido y resaltado mientras
+ * se mira otra pestaña o se lee la ficha de una región, y al volver está donde estaba.
+ */
+export interface Seleccion {
+  pestania: Pestania
+  /** 'nuevo' = el formulario de un viaje nuevo. */
+  viaje: number | 'nuevo' | null
+  /** El logro desplegado. Se resalta solo mientras se mira la pestaña de logros. */
+  logro: string | null
+  /** La ficha abierta: se ve encima de la pestaña. */
+  region: string | null
+}
+
+export const SIN_SELECCION: Seleccion = { pestania: 'viajes', viaje: null, logro: null, region: null }
+
+export const irAPestania = (actual: Seleccion, pestania: Pestania): Seleccion => ({ ...actual, pestania, region: null })
+
+export const elegirViaje = (actual: Seleccion, viaje: Seleccion['viaje']): Seleccion =>
+  ({ ...actual, pestania: 'viajes', viaje, region: null })
+
+export const elegirLogro = (actual: Seleccion, logro: string | null): Seleccion =>
+  ({ ...actual, pestania: 'logros', logro, region: null })
+
+export const abrirFicha = (actual: Seleccion, region: string): Seleccion => ({ ...actual, region })
+
+export const cerrarFicha = (actual: Seleccion): Seleccion => ({ ...actual, region: null })
 
 export function viajeElegido(seleccion: Seleccion, viajes: Viaje[] = []): Viaje | undefined {
-  return seleccion?.tipo === 'viaje' ? viajes.find((v) => v.id === seleccion.id) : undefined
+  return viajes.find((v) => v.id === seleccion.viaje)
 }
 
-/** Qué se resalta en el mapa: las regiones del viaje elegido (y las que las contienen, para verlo de lejos);
- *  con un logro desplegado, las de todos sus objetivos, cumplidos o no; con una ficha abierta, su región. */
+// Lo que se resalta debajo de la ficha: un logro desplegado, o si no el viaje elegido.
+function resaltadasBase(seleccion: Seleccion, viajes: Viaje[], logros: Logro[]): Resaltadas {
+  const logro = seleccion.pestania === 'logros' ? logros.find((l) => l.id === seleccion.logro) : undefined
+  if (logro) return resaltarRegiones(logro.objetivos.flatMap((o) => o.regiones))
+  return resaltarViaje(viajeElegido(seleccion, viajes)?.visitas ?? [])
+}
+
+/** Qué se resalta en el mapa: las regiones del viaje elegido (y las que las contienen, para verlo de lejos) o,
+ *  con un logro desplegado, las de todos sus objetivos, cumplidos o no. La ficha abierta se suma a eso. */
 export function resaltadasDe(seleccion: Seleccion, viajes: Viaje[] = [], logros: Logro[] = []): Resaltadas {
-  if (!seleccion) return new Map()
-  switch (seleccion.tipo) {
-    case 'viaje':
-      return resaltarViaje(viajeElegido(seleccion, viajes)?.visitas ?? [])
-    case 'logros': {
-      const logro = logros.find((l) => l.id === seleccion.logro)
-      return resaltarRegiones(logro?.objetivos.flatMap((o) => o.regiones) ?? [])
-    }
-    case 'region':
-      return resaltarRegiones([seleccion.codigo])
-    case 'nuevo':
-      return new Map()
-  }
+  const resaltadas = resaltadasBase(seleccion, viajes, logros)
+  return seleccion.region ? resaltadas.set(seleccion.region, 'directa') : resaltadas
 }
 
-/** A qué regiones acercar el mapa al elegir algo: a lo resaltado de forma directa. Vacío = no moverse. */
+/** A qué regiones acercar el mapa al elegir algo: a la ficha si hay una abierta; si no, a lo resaltado de forma
+ *  directa. Vacío = no moverse. */
 export function regionesDe(seleccion: Seleccion, viajes: Viaje[] = [], logros: Logro[] = []): string[] {
-  return regionesAEncuadrar(resaltadasDe(seleccion, viajes, logros))
+  return seleccion.region ? [seleccion.region] : regionesAEncuadrar(resaltadasBase(seleccion, viajes, logros))
 }

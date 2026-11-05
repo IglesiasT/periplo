@@ -114,7 +114,6 @@ textarea {
 
 /* Botones que se leen como texto: volver, desplegar, filas de listas. */
 .panel .volver,
-.panel .desplegar,
 .panel .enlace {
   min-height: 0;
   padding: 0;
@@ -132,7 +131,6 @@ textarea {
 }
 
 .panel .volver:hover,
-.panel .desplegar:hover,
 .panel .enlace:hover {
   background: none !important;
   color: var(--tinta);
@@ -245,11 +243,6 @@ textarea {
 }
 
 /* --- Logros --- */
-
-.logros-resumen {
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--borde);
-}
 
 .logros {
   list-style: none;
@@ -367,13 +360,13 @@ textarea {
 
 /* --- Lista de viajes --- */
 
-.pestanias {
+.filtros {
   display: flex;
   gap: 18px;
   margin-bottom: 6px;
 }
 
-.panel .pestanias button {
+.panel .filtros button {
   min-height: 0;
   padding: 4px 0;
   border: none;
@@ -382,7 +375,7 @@ textarea {
   font-size: 16px;
 }
 
-.panel .pestanias button.activa {
+.panel .filtros button.activa {
   background: none;
   color: var(--tinta);
   text-decoration: underline;
@@ -588,11 +581,6 @@ textarea {
 .ficha-texto ul,
 .ficha-texto ol {
   padding-left: 22px;
-}
-
-.fichas-lista {
-  margin: 0;
-  line-height: 1.6;
 }
 
 .linea-historica {
@@ -987,4 +975,42 @@ textarea {
   max-width: 520px;
   margin: 15vh auto 0;
   padding: 0 16px;
+}
+
+/* La cifra de países, siempre a la vista junto al título. */
+.cifra-encabezado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 2px 0 0;
+  text-align: right;
+}
+
+/* Las pestañas del panel: una fila de versalitas sobre una línea doble, como las secciones de un atlas. */
+.pestanias {
+  display: flex;
+  margin-bottom: 16px;
+  border-top: 3px double var(--sepia);
+  border-bottom: 1px solid var(--borde);
+}
+
+.panel .pestanias button {
+  flex: 1;
+  min-height: 34px;
+  padding: 4px 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 14px;
+  color: var(--tenue);
+}
+
+.panel .pestanias button.activa {
+  background: none;
+  border-bottom-color: var(--tinta);
+  color: var(--tinta);
+}
+
+.panel .volver {
+  display: block;
 }

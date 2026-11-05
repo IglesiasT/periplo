@@ -7,33 +7,6 @@ function ordenarLogros(logros: Logro[]): Logro[] {
     || a.nombre.localeCompare(b.nombre, 'es'))
 }
 
-/** Para la portada del panel: los tres logros más cerca de sellarse. */
-export function LogrosResumen({ logros, onVerTodos }: { logros: Logro[]; onVerTodos: () => void }) {
-  const completos = logros.filter((l) => l.completo).length
-  return (
-    <section className="logros-resumen">
-      <div className="encabezado-seccion">
-        <h3>Logros</h3>
-        <span className="tenue">{completos} de {logros.length} sellados</span>
-      </div>
-      <ul className="logros">
-        {ordenarLogros(logros).slice(0, 3).map((logro) => (
-          <li key={logro.id}>
-            <button className="logro-cabecera" onClick={onVerTodos}>
-              <Sello cumplidos={logro.cumplidos} total={logro.total} />
-              <span className="logro-texto">
-                <strong>{logro.nombre}</strong>
-                <span className="tenue">{logro.cumplidos} de {logro.total}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p><button className="enlace" onClick={onVerTodos}>Ver los {logros.length} logros →</button></p>
-    </section>
-  )
-}
-
 interface ListaProps {
   logros: Logro[]
   /** El logro desplegado: sus regiones se resaltan en el mapa. */

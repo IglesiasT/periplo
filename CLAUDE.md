@@ -100,6 +100,8 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 ### Fase 2: el diario
 
 1. CRUD de viajes y visitas desde el frontend, idealmente haciendo click en el mapa para marcar regiones.
+   - El panel tiene cuatro pestañas: Viajes, Logros, Fichas y Números.
+   - Un viaje elegido sigue resaltado mientras se mira otra pestaña o se lee una ficha: se deselecciona solo con "← Viajes". Una ficha se abre encima de lo que haya, con un enlace para volver.
 2. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
 3. Estadísticas: países visitados, provincias argentinas, continentes y entidades históricas pisadas.
    - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.

@@ -1,18 +1,15 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource, LayerSpecification } from 'maplibre-gl'
-import type { Point } from 'geojson'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import { ETIQUETAS_ESTADO } from '../../etiquetas'
-import { nombreEntidad } from '../../historia'
 import type { Resaltadas } from '../../resaltado'
 import type { Tema } from '../../tema'
-import type { Epoca, EstadoRegion, EstadosRegiones, Foto } from '../../types'
+import type { Epoca, EstadosRegiones, Foto } from '../../types'
 import {
-  CAPAS_FOTOS, capasConsultables, colorRelleno, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES,
-  visibilidadRotulos,
+  colorRelleno, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES, visibilidadRotulos,
 } from './estilo'
-import { escapar, fotosComoGeoJSON } from './fotos'
+import { fotosComoGeoJSON } from './fotos'
+import { conectarInteracciones, type EstadoInteracciones } from './interacciones'
 import Leyenda from './Leyenda'
 import RosaDeLosVientos from './RosaDeLosVientos'
 import {
@@ -67,11 +64,13 @@ interface Props {
   resaltadas: Resaltadas
   /** Adónde acercar el mapa. Cada valor nuevo lo mueve una vez, aunque los límites sean los mismos. */
   encuadre?: Encuadre
-  /** Si está, el mapa está en modo edición: cada click en una región la manda acá. */
+  /** Si está, el mapa está en modo de marcar: cada click en una región la manda acá. */
   alClickearRegion?: (codigo: string) => void
   fotos: Foto[] | undefined
   /** Click en una región fuera del modo de marcar (y que no cae en una foto): abre su ficha. */
   alElegirRegion?: (codigo: string) => void
+  /** Códigos de las regiones con ficha escrita: el popup lo avisa. */
+  fichas?: ReadonlySet<string>
   /** Si está, el mapa se pinta como era ese año: cada región con el color de su entidad. */
   epoca?: Epoca
   /** Controles superpuestos al mapa (el selector de época y su panel). */
@@ -79,21 +78,14 @@ interface Props {
 }
 
 export default function Mapa({
-  tema, lente, estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fotos, epoca, children,
+  tema, lente, estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fichas, fotos, epoca, children,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
-  // Los handlers de MapLibre se registran una sola vez al crear el mapa: si usaran la prop directamente,
-  // verían siempre la versión de ese momento (un closure viejo). Leen la última desde este ref.
-  const alClickearRef = useRef(alClickearRegion)
-  const alElegirRegionRef = useRef(alElegirRegion)
-  const epocaRef = useRef(epoca)
-  const lenteRef = useRef(lente)
+  // Lo último que llegó por props, para los handlers de MapLibre (ver interacciones.ts).
+  const interacciones = useRef<EstadoInteracciones>({ lente, epoca, fichas, alClickearRegion, alElegirRegion })
   useEffect(() => {
-    alClickearRef.current = alClickearRegion
-    alElegirRegionRef.current = alElegirRegion
-    epocaRef.current = epoca
-    lenteRef.current = lente
+    interacciones.current = { lente, epoca, fichas, alClickearRegion, alElegirRegion }
   })
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
@@ -110,7 +102,7 @@ export default function Mapa({
     resaltadasAplicadas.current = new Map()
     const map = new maplibregl.Map({
       container: contenedor.current!,
-      style: crearEstilo(tema, window.location.href, lenteRef.current),
+      style: crearEstilo(tema, window.location.href, interacciones.current.lente),
       ...(vistaDesdeHash() ?? VISTA_INICIAL),
       renderWorldCopies: false,
     })
@@ -125,67 +117,7 @@ export default function Mapa({
       cargado.current = map
       setListo(true)
     })
-    // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
-    const regionEn = (punto: maplibregl.PointLike) =>
-      map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom(), lenteRef.current) })[0]
-
-    // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
-    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
-    map.on('mousemove', (e) => {
-      const feature = regionEn(e.point)
-      const editando = Boolean(alClickearRef.current)
-      if (!feature) {
-        map.getCanvas().style.cursor = ''
-        popup.remove()
-        return
-      }
-      const estado = feature.state.estado as EstadoRegion | undefined
-      const detalle = estado ? ETIQUETAS_ESTADO[estado] : 'Sin visitar'
-      const epocaActual = epocaRef.current
-      const original = epocaActual?.regiones[feature.properties.codigo]
-      const entidad = epocaActual
-        ? `<em>${escapar(original ? nombreEntidad(original, epocaActual) : 'Sin entidad en este mapa')}</em><br>`
-        : ''
-      map.getCanvas().style.cursor = editando ? 'crosshair' : 'pointer'
-      popup
-        .setLngLat(e.lngLat)
-        .setHTML(`<strong>${escapar(String(feature.properties.nombre))}</strong><br>${entidad}${detalle}`
-          + `${editando ? '<br><em>Click para marcar</em>' : ''}`)
-        .addTo(map)
-    })
-    map.getCanvas().addEventListener('mouseleave', () => popup.remove())
-
-    map.on('click', async (e) => {
-      if (alClickearRef.current) {
-        const feature = regionEn(e.point)
-        if (feature) alClickearRef.current(String(feature.properties.codigo))
-        return
-      }
-
-      const [foto] = map.queryRenderedFeatures(e.point, { layers: CAPAS_FOTOS })
-      if (!foto) {
-        const region = regionEn(e.point)
-        if (region) alElegirRegionRef.current?.(String(region.properties.codigo))
-        return
-      }
-      const punto = (foto.geometry as Point).coordinates as [number, number]
-      if (foto.properties.cluster_id !== undefined) {
-        // Un grupo: acercar hasta el zoom en el que se separa.
-        const zoom = await map.getSource<GeoJSONSource>('fotos')!.getClusterExpansionZoom(foto.properties.cluster_id)
-        map.easeTo({ center: punto, zoom })
-        return
-      }
-      const { archivo, miniatura, detalle } = foto.properties as Record<string, string>
-      new maplibregl.Popup({ offset: 8, maxWidth: '240px' })
-        .setLngLat(punto)
-        .setHTML(`<div class="popup-foto"><a href="${escapar(archivo)}" target="_blank" rel="noreferrer">`
-          + `<img src="${escapar(miniatura)}" alt=""></a>${escapar(detalle)}</div>`)
-        .addTo(map)
-    })
-    // Cursor de "mano" sobre las fotos.
-    for (const capa of CAPAS_FOTOS) {
-      map.on('mouseenter', capa, () => { map.getCanvas().style.cursor = 'pointer' })
-    }
+    conectarInteracciones(map, () => interacciones.current)
 
     return () => {
       window.removeEventListener('popstate', alNavegar)

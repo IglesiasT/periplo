@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import { useEstadisticas } from '../hooks/consultas'
 
 const proporcion = (visitados: number, total: number) => (total ? (100 * visitados) / total : 0)
 
 export default function Estadisticas() {
   const { data, error } = useEstadisticas()
-  const [abierto, setAbierto] = useState(false)
 
   if (error) return <p className="error">No se pudieron cargar las estadísticas.</p>
   if (!data) return null
@@ -24,39 +22,31 @@ export default function Estadisticas() {
         <Cifra valor={String(data.entidades_historicas_pisadas)} etiqueta="entidades históricas" />
       </div>
 
-      <button className="desplegar" onClick={() => setAbierto(!abierto)}>
-        {abierto ? '▾' : '▸'} Detalle por país y continente
-      </button>
+      <h3>Países</h3>
+      <ul className="barras">
+        {data.paises.map((p) => (
+          <li key={p.codigo}>
+            <div className="barra-titulo">
+              <span>{p.nombre}</span>
+              <span className="tenue">{p.provincias_visitadas}/{p.provincias_total} provincias</span>
+            </div>
+            <Barra porcentaje={proporcion(p.provincias_visitadas, p.provincias_total)} />
+          </li>
+        ))}
+      </ul>
 
-      {abierto && (
-        <>
-          <h3>Países</h3>
-          <ul className="barras">
-            {data.paises.map((p) => (
-              <li key={p.codigo}>
-                <div className="barra-titulo">
-                  <span>{p.nombre}</span>
-                  <span className="tenue">{p.provincias_visitadas}/{p.provincias_total} provincias</span>
-                </div>
-                <Barra porcentaje={proporcion(p.provincias_visitadas, p.provincias_total)} />
-              </li>
-            ))}
-          </ul>
-
-          <h3>Continentes</h3>
-          <ul className="barras">
-            {data.continentes.map((c) => (
-              <li key={c.continente}>
-                <div className="barra-titulo">
-                  <span>{c.continente}</span>
-                  <span className="tenue">{c.visitados}/{c.total} países</span>
-                </div>
-                <Barra porcentaje={proporcion(c.visitados, c.total)} />
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <h3>Continentes</h3>
+      <ul className="barras">
+        {data.continentes.map((c) => (
+          <li key={c.continente}>
+            <div className="barra-titulo">
+              <span>{c.continente}</span>
+              <span className="tenue">{c.visitados}/{c.total} países</span>
+            </div>
+            <Barra porcentaje={proporcion(c.visitados, c.total)} />
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
