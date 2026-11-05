@@ -102,7 +102,7 @@ export default function Mapa({
     resaltadasAplicadas.current = new Map()
     const map = new maplibregl.Map({
       container: contenedor.current!,
-      style: crearEstilo(tema, window.location.href, interacciones.current.lente),
+      style: crearEstilo(tema, window.location.href, interacciones.current.lente, Boolean(interacciones.current.epoca)),
       ...(vistaDesdeHash() ?? VISTA_INICIAL),
       renderWorldCopies: false,
     })
@@ -164,14 +164,16 @@ export default function Mapa({
     })
   }, [encuadre, listo])
 
-  // Cambiar de lente reescribe las capas del mapa que ya está cargado, sin volver a bajar los GeoJSON.
+  // Cambiar de lente, o entrar a un año o salir de él, reescribe las capas del mapa que ya está cargado, sin
+  // volver a bajar los GeoJSON.
+  const enEpoca = Boolean(epoca)
   useEffect(() => {
     const map = mapaListo(listo, mapRef.current, cargado.current)
     if (!map) return
-    aplicarCapas(map, crearEstilo(tema, window.location.href, lente).layers)
-  }, [lente, listo, tema])
+    aplicarCapas(map, crearEstilo(tema, window.location.href, lente, enEpoca).layers)
+  }, [enEpoca, lente, listo, tema])
 
-  // Después de la lente, que devuelve los rellenos y los rótulos a los del presente.
+  // Después de las capas, que devuelven los rellenos y los rótulos a los del presente.
   useEffect(() => {
     const map = mapaListo(listo, mapRef.current, cargado.current)
     if (!map) return

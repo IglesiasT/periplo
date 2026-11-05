@@ -87,6 +87,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
    - Color con intensidad según `tipo_presencia`: visitado.
 4. Agregar zoom semántico: con zoom lejano se ven países y al acercarse aparecen las provincias, como el mapa de estados de Victoria 3.
    - Lentes, como los modos de mapa de Victoria 3: la automática es el zoom semántico; las de países, provincias y departamentos fijan el nivel con cualquier zoom. Cada lente es un par de umbrales de zoom (`UMBRALES` en `estilo.ts`) y cambiarla no recarga el mapa.
+   - Mirando un año, la automática pasa antes a provincias: a nivel de país, cada país de hoy toma una sola entidad (Alemania en 1815 sería toda Prusia).
    - El año, la lente y lo elegido viven en la URL (`url.ts`) y la posición en el hash (`vista.ts`): recargar o abrir un enlace vuelve a lo mismo. Elegir algo agrega una entrada al historial; mover el slider o cambiar la lente, no.
 5. Sincronizar con Notion: un management command lee la base **Destinations** y crea viajes y deseos.
    - Propiedades de la base: `Name` (title), `Status` (status: Not started / Investigando / In progress / Done!), `Place` (place, con lat/lon), `Tags` (multi-select por continente, Argentina o Concert), `Lugares` (relación con la base Lugares).

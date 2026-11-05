@@ -27,7 +27,7 @@ export interface EstadoInteracciones {
 export function conectarInteracciones(map: maplibregl.Map, estado: () => EstadoInteracciones) {
   // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
   const regionEn = (punto: maplibregl.PointLike) =>
-    map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom(), estado().lente) })[0]
+    map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom(), estado().lente, Boolean(estado().epoca)) })[0]
 
   // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
   const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 })

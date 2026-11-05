@@ -30,6 +30,14 @@ export const UMBRALES: Record<Lente, Umbrales> = {
   departamentos: { provincias: -2, departamentos: -0.5 },
 }
 
+// En un año histórico la lente automática pasa antes a provincias. A nivel de país, cada país de hoy toma una
+// sola entidad: Alemania en 1815 se pintaría entera como Prusia, tapando a Hanover o Baviera.
+const AUTOMATICA_EN_EPOCA: Umbrales = { ...UMBRALES.automatica, provincias: 2.5 }
+
+export function umbralesDe(lente: Lente, enEpoca: boolean): Umbrales {
+  return lente === 'automatica' && enEpoca ? AUTOMATICA_EN_EPOCA : UMBRALES[lente]
+}
+
 const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
 
 // Por debajo de este zoom no se rotulan provincias, aunque la lente las muestre: serían miles de nombres.
@@ -222,8 +230,8 @@ function capasResaltado(source: Source, opacidad: (f: number) => Valor, tema: Te
 export const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
 
 /** Capas donde buscar la región bajo el mouse, de la más detallada a la menos, según el zoom y la lente. */
-export function capasConsultables(zoom: number, lente: Lente): string[] {
-  const { provincias, departamentos } = UMBRALES[lente]
+export function capasConsultables(zoom: number, lente: Lente, enEpoca = false): string[] {
+  const { provincias, departamentos } = umbralesDe(lente, enEpoca)
   if (zoom < provincias) return ['paises-relleno']
   if (zoom < departamentos) return ['provincias-relleno']
   return ['departamentos-relleno', 'provincias-relleno']
@@ -237,8 +245,8 @@ const ATRIBUCION_IGN =
 /** Style escrito a mano: sin tiles de terceros, solo fondo + países + provincias + departamentos.
  *  `base` resuelve las URLs relativas de las fuentes (MapLibre las pide desde su Web Worker).
  *  Todas las lentes tienen las mismas capas con las mismas propiedades: solo cambian los valores. */
-export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica'): StyleSpecification {
-  const umbrales = UMBRALES[lente]
+export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica', enEpoca = false): StyleSpecification {
+  const umbrales = umbralesDe(lente, enEpoca)
   const { provincias: p, departamentos: d } = umbrales
   const relleno = colorRelleno(tema)
   // Contorno solo para las regiones de la lista de deseos: es todo lo que las marca en el mapa.

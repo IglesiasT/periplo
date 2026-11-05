@@ -5,7 +5,8 @@ import type { Tema } from '../../tema'
 import { atlas } from '../../tema/atlas'
 import type { Epoca } from '../../types'
 import {
-  capasConsultables, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, visibilidadRotulos,
+  capasConsultables, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
+  visibilidadRotulos,
 } from './estilo'
 
 const BASE = 'http://localhost:5173/'
@@ -165,6 +166,30 @@ describe('qué nivel muestra cada lente', () => {
     expect(capasConsultables(10, 'paises')).toEqual(['paises-relleno'])
     expect(capasConsultables(1, 'provincias')).toEqual(['provincias-relleno'])
     expect(capasConsultables(1, 'departamentos')).toEqual(['departamentos-relleno', 'provincias-relleno'])
+  })
+})
+
+describe('en un año histórico', () => {
+  it('la lente automática pasa antes a provincias', () => {
+    expect(umbralesDe('automatica', true).provincias).toBeLessThan(UMBRALES.automatica.provincias)
+    expect(capasConsultables(3, 'automatica', true)).toEqual(['provincias-relleno'])
+    expect(capasConsultables(3, 'automatica', false)).toEqual(['paises-relleno'])
+  })
+
+  it('de lejos sigue mostrando países, y los departamentos llegan al mismo zoom', () => {
+    expect(capasConsultables(1.5, 'automatica', true)).toEqual(['paises-relleno'])
+    expect(umbralesDe('automatica', true).departamentos).toBe(UMBRALES.automatica.departamentos)
+  })
+
+  it('una lente fija sigue fija: la eligió el que está mirando', () => {
+    for (const lente of ['paises', 'provincias', 'departamentos'] as const) {
+      expect(umbralesDe(lente, true)).toBe(UMBRALES[lente])
+    }
+  })
+
+  it('el estilo tiene las mismas capas: cambiar de año no recarga el mapa', () => {
+    const ids = (enEpoca: boolean) => crearEstilo(atlas, BASE, 'automatica', enEpoca).layers.map((c) => c.id)
+    expect(ids(true)).toEqual(ids(false))
   })
 })
 
