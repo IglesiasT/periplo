@@ -87,6 +87,7 @@ export default function Mapa({
   useEffect(() => {
     interacciones.current = { lente, epoca, fichas, alClickearRegion, alElegirRegion }
   })
+  const cerrarPopup = useRef<() => void>(null)
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
   // El mapa que terminó de cargar. Si el tema cambia, el efecto que crea el mapa arma otro en el mismo
@@ -117,7 +118,7 @@ export default function Mapa({
       cargado.current = map
       setListo(true)
     })
-    conectarInteracciones(map, () => interacciones.current)
+    cerrarPopup.current = conectarInteracciones(map, () => interacciones.current)
 
     return () => {
       window.removeEventListener('popstate', alNavegar)
@@ -177,6 +178,8 @@ export default function Mapa({
   useEffect(() => {
     const map = mapaListo(listo, mapRef.current, cargado.current)
     if (!map) return
+    // El popup solo se actualiza al mover el mouse: con otro año (el botón de reproducir) mentiría.
+    cerrarPopup.current?.()
     const relleno = epoca ? rellenoHistorico(epoca, tema) : colorRelleno(tema)
     for (const source of SOURCES) map.setPaintProperty(`${source}-relleno`, 'fill-color', relleno)
     map.getSource<GeoJSONSource>('rotulos-epoca')?.setData(rotulosComoGeoJSON(epoca))

@@ -22,7 +22,7 @@ export interface EstadoInteracciones {
 /**
  * Popup al pasar el mouse y clicks. Los handlers de MapLibre se registran una sola vez al crear el mapa: si
  * recibieran las props directamente verían siempre las de ese momento, así que las piden en cada evento.
- * No hace falta desconectarlos: mueren con el mapa.
+ * No hace falta desconectarlos: mueren con el mapa. Devuelve cómo cerrar el popup.
  */
 export function conectarInteracciones(map: maplibregl.Map, estado: () => EstadoInteracciones) {
   // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
@@ -87,4 +87,6 @@ export function conectarInteracciones(map: maplibregl.Map, estado: () => EstadoI
   for (const capa of CAPAS_FOTOS) {
     map.on('mouseenter', capa, () => { map.getCanvas().style.cursor = 'pointer' })
   }
+
+  return () => popup.remove()
 }

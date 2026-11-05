@@ -38,6 +38,10 @@ export function umbralesDe(lente: Lente, enEpoca: boolean): Umbrales {
   return lente === 'automatica' && enEpoca ? AUTOMATICA_EN_EPOCA : UMBRALES[lente]
 }
 
+// Las fronteras internas de hoy no existían en un mapa histórico: quedan apenas como referencia, para que
+// manden los colores de las entidades.
+const OPACIDAD_FRONTERA_INTERNA_EN_EPOCA = 0.25
+
 const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
 
 // Por debajo de este zoom no se rotulan provincias, aunque la lente las muestre: serían miles de nombres.
@@ -249,6 +253,7 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
   const umbrales = umbralesDe(lente, enEpoca)
   const { provincias: p, departamentos: d } = umbrales
   const relleno = colorRelleno(tema)
+  const fronteraInterna = enEpoca ? OPACIDAD_FRONTERA_INTERNA_EN_EPOCA : 1
   // Contorno solo para las regiones de la lista de deseos: es todo lo que las marca en el mapa.
   const contornoDeseo = { 'line-color': tema.estados.deseo, 'line-width': 1.2, 'line-opacity': ES_DESEO }
   // Paradas [zoom, opacidad] del relleno de cada nivel.
@@ -301,7 +306,7 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
       {
         id: 'departamentos-frontera', type: 'line', source: 'departamentos',
         minzoom: acotar(d - FUNDIDO),
-        paint: { 'line-color': tema.mapa.fronteraProvincia, 'line-width': 0.75 },
+        paint: { 'line-color': tema.mapa.fronteraProvincia, 'line-width': 0.75, 'line-opacity': fronteraInterna },
       },
       {
         id: 'departamentos-deseo', type: 'line', source: 'departamentos',
@@ -318,8 +323,8 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
           // Las fronteras de Natural Earth no coinciden exacto con las del IGN: con departamentos se ocultan.
           'line-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            d - FUNDIDO, 1,
-            d + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1],
+            d - FUNDIDO, fronteraInterna,
+            d + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, fronteraInterna],
           ],
         },
       },

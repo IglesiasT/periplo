@@ -187,6 +187,26 @@ describe('en un año histórico', () => {
     }
   })
 
+  it('las fronteras internas de hoy se atenúan, y las de los países y los deseos no', () => {
+    const opacidad = (id: string, enEpoca: boolean) => {
+      const capa = crearEstilo(atlas, BASE, 'automatica', enEpoca).layers.find((c) => c.id === id)!
+      return (capa.paint as Record<string, unknown> | undefined)?.['line-opacity']
+    }
+    expect(opacidad('departamentos-frontera', false)).toBe(1)
+    expect(opacidad('departamentos-frontera', true)).toBeLessThan(1)
+    expect(JSON.stringify(opacidad('provincias-frontera', true))).not.toBe(JSON.stringify(opacidad('provincias-frontera', false)))
+    for (const id of ['paises-frontera', 'provincias-deseo', 'paises-deseo']) {
+      expect(opacidad(id, true)).toEqual(opacidad(id, false))
+    }
+  })
+
+  // aplicarCapas solo pisa lo que el estilo nuevo trae: una propiedad que esté de un solo lado quedaría pegada.
+  it('al entrar y salir de un año, cada capa define las mismas propiedades', () => {
+    const propiedades = (enEpoca: boolean) => crearEstilo(atlas, BASE, 'automatica', enEpoca).layers
+      .map((c) => [c.id, Object.keys(c.paint ?? {}), 'layout' in c ? Object.keys(c.layout ?? {}) : []])
+    expect(propiedades(true)).toEqual(propiedades(false))
+  })
+
   it('el estilo tiene las mismas capas: cambiar de año no recarga el mapa', () => {
     const ids = (enEpoca: boolean) => crearEstilo(atlas, BASE, 'automatica', enEpoca).layers.map((c) => c.id)
     expect(ids(true)).toEqual(ids(false))
