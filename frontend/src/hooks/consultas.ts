@@ -29,7 +29,18 @@ export const useEpoca = (anio: number | null) =>
     queryFn: () => api.obtenerEpoca(anio!),
     enabled: anio !== null,
     placeholderData: keepPreviousData,
+    // Solo cambia con las visitas, y cualquier cambio en ellas invalida esta clave (ver useInvalidar).
+    staleTime: Infinity,
   })
+
+export function usePedirEpocaPorAdelantado() {
+  const cliente = useQueryClient()
+  return (anio: number) => void cliente.prefetchQuery({
+    queryKey: [...CLAVES.historia, anio],
+    queryFn: () => api.obtenerEpoca(anio),
+    staleTime: Infinity,
+  })
+}
 
 export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
 

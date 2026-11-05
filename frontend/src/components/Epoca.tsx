@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { colorEntidad, formatearAnio, nombreEntidad } from '../historia'
+import { useReproduccion } from '../hooks/useReproduccion'
+import { esAntiguo, type Parada, paradaAnterior, paradasDe, paradaSiguiente } from '../paradas'
 import { periodoDe } from '../periodos'
 import { useTema } from '../tema/contexto'
 import type { Epoca } from '../types'
@@ -8,15 +11,38 @@ interface SelectorProps {
   anios: number[]
   /** null = el presente: el mapa de siempre, con los colores de las visitas. */
   anio: number | null
+  /** Todavía no llegó el mapa de `anio`: se sigue viendo el anterior. */
+  cargando: boolean
   onCambiar: (anio: number | null) => void
 }
 
-/** Slider de años sobre el mapa. Los snapshots no están equiespaciados (123000 a. C., 10000 a. C., …,
- *  1994, 2000), así que cada paso es un snapshot y no un año. La última parada es el presente.
- *  Debajo del año, el nombre de la época (ver periodos.ts). */
-export function SelectorEpoca({ anios, anio, onCambiar }: SelectorProps) {
-  const posicion = anio === null ? anios.length : anios.indexOf(anio)
+// \uFE0E: que Windows no los dibuje como un emoji.
+const REPRODUCIR = '\u25B6\uFE0E'
+const PAUSAR = '\u275A\u275A'
+
+/** Slider de años sobre el mapa. Los snapshots no están equiespaciados (…, 1800, 1815, 1878, …), así que cada
+ *  paso es un snapshot y no un año. La última parada es el presente. Debajo del año, el nombre de la época
+ *  (ver periodos.ts). Los años más antiguos van plegados (ver paradas.ts). */
+export function SelectorEpoca({ anios, anio, cargando, onCambiar }: SelectorProps) {
+  const [verAntiguos, setVerAntiguos] = useState(false)
+  const conAntiguos = verAntiguos || esAntiguo(anio)
+  const paradas = paradasDe(anios, conAntiguos)
+  const { reproduciendo, alternar, detener } = useReproduccion(paradas, anio, cargando, onCambiar)
+  const anterior = paradaAnterior(paradas, anio)
+  const siguiente = paradaSiguiente(paradas, anio)
   const periodo = anio === null ? 'El mapa de hoy' : periodoDe(anio)
+
+  // Tocar el mapa a mano frena la reproducción: el que manda es el que está mirando.
+  const ir = (parada: Parada) => {
+    detener()
+    onCambiar(parada)
+  }
+  const alternarAntiguos = () => {
+    detener()
+    setVerAntiguos(!conAntiguos)
+    if (conAntiguos && esAntiguo(anio)) onCambiar(paradasDe(anios, false)[0])
+  }
+
   return (
     <div className="epoca-selector">
       <div className="epoca-cabecera">
@@ -24,16 +50,39 @@ export function SelectorEpoca({ anios, anio, onCambiar }: SelectorProps) {
         <span className="epoca-anio">{anio === null ? 'Hoy' : formatearAnio(anio)}</span>
       </div>
       <p className="epoca-periodo">{periodo}</p>
-      <input
-        type="range" min={0} max={anios.length} step={1} value={posicion}
-        aria-label="Año del mapa" aria-valuetext={anio === null ? 'Hoy' : `${formatearAnio(anio)}, ${periodo}`}
-        onChange={(e) => {
-          const i = Number(e.target.value)
-          onCambiar(i === anios.length ? null : anios[i])
-        }}
-      />
+      <div className="epoca-mandos">
+        <button
+          aria-label={reproduciendo ? 'Pausar' : 'Recorrer los años'} title={reproduciendo ? 'Pausar' : 'Recorrer los años'}
+          onClick={alternar}
+        >
+          {reproduciendo ? PAUSAR : REPRODUCIR}
+        </button>
+        <button
+          aria-label="Año anterior" title="Año anterior" disabled={anterior === undefined}
+          onClick={() => ir(anterior!)}
+        >
+          ‹
+        </button>
+        <input
+          type="range" min={0} max={paradas.length - 1} step={1} value={paradas.indexOf(anio)}
+          aria-label="Año del mapa" aria-valuetext={anio === null ? 'Hoy' : `${formatearAnio(anio)}, ${periodo}`}
+          onChange={(e) => ir(paradas[Number(e.target.value)])}
+        />
+        <button
+          aria-label="Año siguiente" title="Año siguiente" disabled={siguiente === undefined}
+          onClick={() => ir(siguiente!)}
+        >
+          ›
+        </button>
+      </div>
       <div className="epoca-extremos tenue">
-        <span>{anios.length ? formatearAnio(anios[0]) : ''}</span>
+        <span>
+          {formatearAnio(paradas[0] ?? 0)}
+          {' · '}
+          <button className="epoca-plegar" aria-expanded={conAntiguos} onClick={alternarAntiguos}>
+            {conAntiguos ? 'ocultar los más antiguos' : 'ver los más antiguos'}
+          </button>
+        </span>
         <span>Hoy</span>
       </div>
     </div>

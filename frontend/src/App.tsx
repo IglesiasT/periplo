@@ -100,7 +100,10 @@ export default function App() {
           )}
           {/* Sin años cruzados (no se corrió cruzar_historia) no hay nada que elegir. */}
           {anios.data && anios.data.length > 0 && (
-            <SelectorEpoca anios={anios.data} anio={anio} onCambiar={(nuevo) => cambiar({ anio: nuevo }, 'reemplazar')} />
+            <SelectorEpoca
+              anios={anios.data} anio={anio} cargando={epocaConsulta.isPlaceholderData}
+              onCambiar={(nuevo) => cambiar({ anio: nuevo }, 'reemplazar')}
+            />
           )}
           <SelectorLente lente={lente} onCambiar={(nueva) => cambiar({ lente: nueva }, 'reemplazar')} />
         </div>

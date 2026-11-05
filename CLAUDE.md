@@ -116,6 +116,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
    - Para regiones grandes, usar centroide o porcentaje de superficie, porque una región puede caer entre dos entidades.
 3. Agregar un slider de años sobre mi mapa y un panel del tipo "en 1800 pisaste territorio de X entidades".
    - Junto al año va el nombre de la época ("1815 · Era de las revoluciones"), de la tabla editable `frontend/src/periodos.ts`.
+   - El slider arranca en el cambio de era, con los años anteriores plegados (`paradas.ts`). El botón de reproducir recorre los años hasta el presente.
 4. Fichas de región: texto en markdown escrito a mano al visitar cada lugar. No automatizarlo de entrada.
 5. Rutas históricas y logros: se definen en código como conjuntos de regiones requeridas, y el progreso se calcula contra mis `Visita`.
    - Ejemplos de logros: "las 24 jurisdicciones argentinas", "todos los sucesores de la URSS", "las dos orillas del Bósforo".

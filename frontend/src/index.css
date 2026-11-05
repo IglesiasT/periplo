@@ -825,6 +825,56 @@ textarea {
   color: var(--carmin-oscuro);
 }
 
+/* Reproducir, anterior, el slider y siguiente, en una sola línea. */
+.epoca-mandos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.epoca-mandos button {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--borde);
+  background: transparent;
+  color: var(--tinta);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.epoca-mandos button:hover:not(:disabled) {
+  border-color: var(--tinta);
+}
+
+.epoca-mandos button:disabled {
+  color: var(--borde);
+  cursor: default;
+}
+
+.epoca-mandos input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.epoca-plegar {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-style: italic;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.epoca-plegar:hover {
+  color: var(--tinta);
+}
+
 .epoca-selector input[type='range'] {
   width: 100%;
   margin: 4px 0 0;
