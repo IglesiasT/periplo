@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from django.db import models
 
 
@@ -35,13 +37,22 @@ class Region(models.Model):
     def natural_key(self):
         return (self.codigo,)
 
+    def hacia_arriba(self) -> Iterator['Region']:
+        """Ella y las regiones que la contienen, de la más chica a la más grande. Hace una consulta por nivel
+        salvo que se la haya cargado con select_related('padre__padre'). Para muchas, ver ArbolRegiones."""
+        region = self
+        while region is not None:
+            yield region
+            region = region.padre
+
     def codigos_hacia_arriba(self) -> list[str]:
         """Su código y los de las regiones que la contienen: ['AR-38094', 'AR-Y', 'ARG']."""
-        codigos, region = [], self
-        while region is not None:
-            codigos.append(region.codigo)
-            region = region.padre
-        return codigos
+        return [region.codigo for region in self.hacia_arriba()]
+
+    def visitas_incluidas(self) -> models.QuerySet['Visita']:
+        """Las visitas a ella o a algo que esté adentro."""
+        return Visita.objects.filter(
+            models.Q(region=self) | models.Q(region__padre=self) | models.Q(region__padre__padre=self))
 
 
 class Viaje(models.Model):

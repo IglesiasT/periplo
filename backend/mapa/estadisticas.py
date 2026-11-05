@@ -5,8 +5,8 @@ Solo cuentan las visitas realizadas (no los deseos). Una visita a un departament
 provincia y su país: Tilcara suma Jujuy y Argentina.
 """
 from collections import Counter, defaultdict
-from dataclasses import dataclass
 
+from .arbol import ArbolRegiones
 from .epocas import contar_entidades_pisadas
 from .models import Region, Visita
 
@@ -26,34 +26,17 @@ OCEANO_ABIERTO = 'Seven seas (open ocean)'
 ARGENTINA = 'ARG'
 
 
-@dataclass
-class R:
-    id: int
-    codigo: str
-    nombre: str
-    nivel: str
-    padre_id: int | None
-    continente: str
-
-
 def calcular_estadisticas() -> dict:
-    regiones = {
-        fila[0]: R(*fila)
-        for fila in Region.objects.values_list('id', 'codigo', 'nombre', 'nivel', 'padre_id', 'continente')
-    }
-
-    def subir_hasta(region: R, nivel: str) -> R | None:
-        while region is not None and region.nivel != nivel:
-            region = regiones.get(region.padre_id)
-        return region
+    arbol = ArbolRegiones()
+    regiones = arbol.nodos
 
     visitadas = [regiones[i] for i in set(Visita.objects.filter(realizada=True).values_list('region_id', flat=True))]
     paises = [r for r in regiones.values() if r.nivel == Region.Nivel.PAIS]
-    paises_visitados = {p.id for r in visitadas if (p := subir_hasta(r, Region.Nivel.PAIS))}
+    paises_visitados = {p.id for r in visitadas if (p := arbol.subir_hasta(r.id, Region.Nivel.PAIS))}
 
     provincias_visitadas_por_pais: dict[int, set[int]] = defaultdict(set)
     for region in visitadas:
-        if provincia := subir_hasta(region, Region.Nivel.PROVINCIA):
+        if provincia := arbol.subir_hasta(region.id, Region.Nivel.PROVINCIA):
             provincias_visitadas_por_pais[provincia.padre_id].add(provincia.id)
     provincias_por_pais = Counter(r.padre_id for r in regiones.values() if r.nivel == Region.Nivel.PROVINCIA)
 

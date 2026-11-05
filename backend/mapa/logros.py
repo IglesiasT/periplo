@@ -9,6 +9,7 @@ Se definen acá, en código; para sumar uno alcanza con agregarlo a LOGROS. Las 
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from .arbol import ArbolRegiones
 from .estadisticas import CONTINENTES
 from .models import Region, Visita
 
@@ -110,25 +111,23 @@ LOGROS = [
 
 
 def calcular_logros(logros: list[Logro] = LOGROS) -> list[dict]:
-    filas = list(Region.objects.values_list('id', 'codigo', 'nombre', 'nivel', 'padre_id', 'continente'))
-    codigo_por_id = {fila[0]: fila[1] for fila in filas}
-    padre_por_id = {fila[0]: fila[4] for fila in filas}
+    arbol = ArbolRegiones()
 
     paises_por_continente: dict[str, list[str]] = {}
     hijos: dict[str, list[str]] = {}
-    for _, codigo, _, nivel, padre_id, continente in filas:
-        if nivel == Region.Nivel.PAIS and continente:
-            paises_por_continente.setdefault(continente, []).append(codigo)
-        if padre_id is not None:
-            hijos.setdefault(codigo_por_id[padre_id], []).append(codigo)
-    indice = Indice({fila[1]: fila[2] for fila in filas}, paises_por_continente, hijos)
+    for nodo in arbol.nodos.values():
+        if nodo.nivel == Region.Nivel.PAIS and nodo.continente:
+            paises_por_continente.setdefault(nodo.continente, []).append(nodo.codigo)
+        if nodo.padre_id is not None:
+            hijos.setdefault(arbol.nodos[nodo.padre_id].codigo, []).append(nodo.codigo)
+    indice = Indice({nodo.codigo: nodo.nombre for nodo in arbol.nodos.values()}, paises_por_continente, hijos)
 
     # Cada región visitada y todas las que la contienen.
-    alcanzadas: set[str] = set()
-    for region_id in Visita.objects.filter(realizada=True).values_list('region_id', flat=True):
-        while region_id is not None:
-            alcanzadas.add(codigo_por_id[region_id])
-            region_id = padre_por_id[region_id]
+    alcanzadas = {
+        nodo.codigo
+        for region_id in Visita.objects.filter(realizada=True).values_list('region_id', flat=True)
+        for nodo in arbol.hacia_arriba(region_id)
+    }
 
     resultado = []
     for logro in logros:

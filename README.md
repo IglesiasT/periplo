@@ -39,8 +39,9 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 ```
 backend/     Django + Django REST Framework + SQLite
   config/    proyecto Django (settings, urls)
-  mapa/      app: modelos, API (/api/viajes, visitas, fotos, estados, estadisticas, logros,
-             historia, regiones, fichas) y management commands geográficos
+  mapa/      app: modelos, reglas de cada dominio (epocas, estadisticas, logros…) y management commands
+  mapa/vistas/  la API, un archivo por dominio: viajes, regiones, fichas, historia y numeros
+  mapa/tests/   los tests, también por dominio
   data/entidades_es.json  nombres en castellano de las entidades históricas (escritos a mano)
   data/raw/  descargas y GeoJSON completos (ignorado por git, se regenera)
   media/     fotos subidas y miniaturas (ignorado por git)

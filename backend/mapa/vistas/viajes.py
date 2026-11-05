@@ -6,10 +6,10 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from .fotos import ErrorFoto, leer_foto
-from .models import Foto, Region, Viaje, Visita
-from .serializers import AVISO_NOTION, FotoSerializer, ViajeSerializer, VisitaSerializer
-from .ubicacion import ubicador_compartido
+from ..fotos import ErrorFoto, leer_foto
+from ..models import Foto, Region, Viaje, Visita
+from ..serializers import AVISO_NOTION, FotoSerializer, ViajeSerializer, VisitaSerializer
+from ..ubicacion import ubicador_compartido
 
 
 def id_de_viaje(valor: str) -> int:

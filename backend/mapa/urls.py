@@ -1,24 +1,24 @@
 from django.urls import path, re_path
 from rest_framework.routers import DefaultRouter
 
-from . import api, views
+from .vistas import fichas, historia, numeros, regiones, viajes
 
 # El router genera /viajes/, /viajes/<id>/, /visitas/... a partir de los ViewSets.
 router = DefaultRouter()
-router.register('viajes', api.ViajeViewSet, basename='viaje')
-router.register('visitas', api.VisitaViewSet, basename='visita')
-router.register('fotos', api.FotoViewSet, basename='foto')
+router.register('viajes', viajes.ViajeViewSet, basename='viaje')
+router.register('visitas', viajes.VisitaViewSet, basename='visita')
+router.register('fotos', viajes.FotoViewSet, basename='foto')
 
 urlpatterns = [
-    path('estados/', views.estados, name='estados'),
-    path('estadisticas/', views.estadisticas, name='estadisticas'),
-    path('logros/', views.logros, name='logros'),
-    path('historia/', views.historia, name='historia'),
+    path('estados/', regiones.estados, name='estados'),
+    path('estadisticas/', numeros.estadisticas, name='estadisticas'),
+    path('logros/', numeros.logros, name='logros'),
+    path('historia/', historia.historia, name='historia'),
     # re_path y no <int:anio>: los años a. C. son negativos.
-    re_path(r'^historia/(?P<anio>-?\d+)/$', views.epoca, name='epoca'),
-    path('fichas/', views.fichas, name='fichas'),
-    path('encuadre/', views.encuadre, name='encuadre'),
-    path('regiones/<str:codigo>/', views.region, name='region'),
-    path('regiones/<str:codigo>/ficha/', views.ficha, name='ficha'),
+    re_path(r'^historia/(?P<anio>-?\d+)/$', historia.epoca, name='epoca'),
+    path('fichas/', fichas.fichas, name='fichas'),
+    path('encuadre/', regiones.encuadre, name='encuadre'),
+    path('regiones/<str:codigo>/', regiones.region, name='region'),
+    path('regiones/<str:codigo>/ficha/', fichas.ficha, name='ficha'),
     *router.urls,
 ]
