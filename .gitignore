@@ -31,3 +31,6 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# --- Worktrees de las sesiones de Claude Code ---
+.claude/worktrees/
