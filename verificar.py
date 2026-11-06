@@ -43,9 +43,12 @@ def correr(nombre: str, carpeta: Path, comando: list[str]) -> bool:
 
 
 def esta_prendido(puerto: int) -> bool:
-    with socket.socket() as s:
-        s.settimeout(0.5)
-        return s.connect_ex(('127.0.0.1', puerto)) == 0
+    # Por localhost, que prueba IPv4 e IPv6: Django escucha en 127.0.0.1 y Vite solo en ::1.
+    try:
+        with socket.create_connection(('localhost', puerto), timeout=0.5):
+            return True
+    except OSError:
+        return False
 
 
 def apagar(proceso: subprocess.Popen):
