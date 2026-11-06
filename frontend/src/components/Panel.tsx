@@ -103,6 +103,7 @@ export default function Panel({
             viajes={viajes} cargando={cargando} error={error}
             onElegir={(id) => onSeleccionar(elegirViaje(seleccion, id))}
             onNuevo={() => onSeleccionar(elegirViaje(seleccion, 'nuevo'))}
+            onElegirRegion={(codigo) => onSeleccionar(abrirFicha(seleccion, codigo))}
           />
         )
       ) : pestania === 'logros' ? (

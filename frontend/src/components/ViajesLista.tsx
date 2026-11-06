@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ETIQUETAS_ESTADO_VIAJE, rangoFechas } from '../etiquetas'
+import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, rangoFechas } from '../etiquetas'
+import { useVisitasSueltas } from '../hooks/consultas'
 import type { Viaje } from '../types'
 
 type Filtro = 'todos' | 'hechos' | 'planes'
@@ -16,9 +17,11 @@ interface Props {
   error: Error | null
   onElegir: (id: number) => void
   onNuevo: () => void
+  /** Abre la ficha de una región. */
+  onElegirRegion: (codigo: string) => void
 }
 
-export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo }: Props) {
+export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo, onElegirRegion }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const visibles = viajes?.filter(FILTROS[filtro].incluye) ?? []
   return (
@@ -55,6 +58,35 @@ export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo
           </li>
         ))}
       </ul>
+
+      <LugaresSueltos onElegir={onElegirRegion} />
     </>
+  )
+}
+
+/** Lo visitado que no cuelga de ningún viaje (los Lugares de Notion sin destino): pinta el mapa igual. */
+function LugaresSueltos({ onElegir }: { onElegir: (codigo: string) => void }) {
+  const { data } = useVisitasSueltas()
+  if (!data?.length) return null
+  const ordenadas = [...data].sort((a, b) => a.region_nombre.localeCompare(b.region_nombre, 'es'))
+  return (
+    <section>
+      <h3>Lugares sueltos</h3>
+      <ul className="viajes">
+        {ordenadas.map((visita) => (
+          <li key={visita.id}>
+            <button onClick={() => onElegir(visita.region)}>
+              <span className={visita.realizada ? 'marca marca-hecho' : 'marca marca-plan'} aria-hidden="true" />
+              <span className="viaje-texto">
+                <strong>{visita.region_nombre}</strong>
+                <span className="tenue">
+                  {ETIQUETAS_NIVEL[visita.region_nivel]} · {visita.realizada ? ETIQUETAS_PRESENCIA[visita.tipo_presencia] : 'Deseo'}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

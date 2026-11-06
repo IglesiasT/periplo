@@ -1064,3 +1064,7 @@ textarea {
 .panel .volver {
   display: block;
 }
+
+.epoca-panel summary {
+  cursor: pointer;
+}

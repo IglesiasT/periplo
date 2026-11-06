@@ -51,6 +51,10 @@ def normalizar(texto: str) -> str:
     return ' '.join(sin_tildes.lower().split())
 
 
+class SinDatosGeograficos(Exception):
+    """Faltan los GeoJSON completos de data/raw/: están fuera del repo y salen de los comandos de descarga."""
+
+
 class Localizador:
     """Point-in-polygon sobre países, provincias y departamentos. Carga los GeoJSON la primera vez que se usa."""
 
@@ -59,7 +63,10 @@ class Localizador:
 
     def _capa(self, nombre: str) -> gpd.GeoDataFrame:
         if nombre not in self._capas:
-            gdf = gpd.read_file(RAW_DIR / f'{nombre}.geojson', columns=['codigo'])
+            ruta = RAW_DIR / f'{nombre}.geojson'
+            if not ruta.exists():
+                raise SinDatosGeograficos(ruta)
+            gdf = gpd.read_file(ruta, columns=['codigo'])
             _ = gdf.sindex  # construye el índice espacial (R-tree) una sola vez
             self._capas[nombre] = gdf
         return self._capas[nombre]

@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase
 
 from ..fotos import ErrorFoto, leer_foto
 from ..models import Foto, Region, Viaje, Visita
-from ..ubicacion import Ubicacion
+from ..ubicacion import Localizador, SinDatosGeograficos, Ubicacion
 
 
 def jpeg_con_gps(lat_ref='S', lat=(23, 34, 39.6), lon_ref='W', lon=(65, 23, 46.8), fecha='2025:01:10 14:30:00'):
@@ -94,6 +94,22 @@ class FotosApiTests(APITestCase):
         Foto.objects.filter(id=foto.id).update(viaje=viaje)
         self.assertEqual(self.client.delete(f'/api/viajes/{viaje.id}/').status_code, 204)
         self.assertFalse(any(Path(r).exists() for r in rutas))
+
+    def test_sin_los_datos_geograficos_la_foto_igual_se_sube(self):
+        # data/raw/ no está en el repo: en un clon nuevo no hay polígonos para ubicarla.
+        archivo = SimpleUploadedFile('tilcara.jpg', jpeg_con_gps(), content_type='image/jpeg')
+        with mock.patch('mapa.vistas.viajes.ubicador_compartido') as ubicador:
+            ubicador.return_value.por_coordenadas.side_effect = SinDatosGeograficos('falta')
+            with self.assertLogs('mapa.vistas.viajes', 'WARNING'):
+                respuesta = self.client.post('/api/fotos/', {'archivo': archivo}, format='multipart')
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        self.assertIsNone(respuesta.data['region'])
+        self.assertAlmostEqual(respuesta.data['lat'], -23.5777, places=4)
+
+    def test_el_localizador_avisa_si_faltan_los_archivos(self):
+        sin_datos = Path(MEDIA_DE_PRUEBA) / 'no-existe'
+        with mock.patch('mapa.ubicacion.RAW_DIR', sin_datos), self.assertRaises(SinDatosGeograficos):
+            Localizador().region_en(-23.5, -65.4)
 
     def test_un_viaje_que_no_es_un_numero_es_un_400(self):
         self.assertEqual(self.client.get('/api/fotos/?viaje=abc').status_code, 400)

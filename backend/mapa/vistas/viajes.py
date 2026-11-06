@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from django.core.files.base import ContentFile
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from ..fotos import ErrorFoto, leer_foto
 from ..models import Foto, Region, Viaje, Visita
 from ..serializers import AVISO_NOTION, FotoSerializer, ViajeSerializer, VisitaSerializer
-from ..ubicacion import ubicador_compartido
+from ..ubicacion import SinDatosGeograficos, ubicador_compartido
 
 
 def id_de_viaje(valor: str) -> int:
@@ -18,6 +19,9 @@ def id_de_viaje(valor: str) -> int:
         return int(valor)
     except ValueError as e:
         raise ValidationError({'viaje': ['Tiene que ser un número.']}) from e
+
+
+logger = logging.getLogger(__name__)
 
 
 class ViajeViewSet(viewsets.ModelViewSet):
@@ -88,8 +92,12 @@ class FotoViewSet(viewsets.ModelViewSet):
 
         foto = Foto(viaje=viaje, archivo=archivo, lat=datos.lat, lon=datos.lon, tomada_en=datos.tomada_en)
         if datos.lat is not None:
-            ubicacion = ubicador_compartido().por_coordenadas(datos.lat, datos.lon, detallar=True)
-            foto.region = Region.objects.filter(codigo=ubicacion.codigo).first() if ubicacion else None
+            try:
+                ubicacion = ubicador_compartido().por_coordenadas(datos.lat, datos.lon, detallar=True)
+                foto.region = Region.objects.filter(codigo=ubicacion.codigo).first() if ubicacion else None
+            except SinDatosGeograficos:
+                # La foto igual aparece en el mapa, por sus coordenadas: solo queda sin región.
+                logger.warning('Foto sin región: faltan los datos de data/raw/.')
         foto.miniatura.save(f'{Path(archivo.name).stem}.jpg', ContentFile(datos.miniatura), save=False)
         foto.save()
         return Response(FotoSerializer(foto).data, status=status.HTTP_201_CREATED)

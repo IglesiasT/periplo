@@ -56,3 +56,26 @@ class ApiTests(APITestCase):
 class VisitasFiltroTests(APITestCase):
     def test_un_viaje_que_no_es_un_numero_es_un_400(self):
         self.assertEqual(self.client.get('/api/visitas/?viaje=abc').status_code, 400)
+
+
+class OrigenTests(APITestCase):
+    DATOS = {'nombre': 'NOA', 'estado': 'deseo'}
+
+    def test_una_pagina_de_otro_sitio_no_puede_escribir(self):
+        respuesta = self.client.post('/api/viajes/', self.DATOS, HTTP_ORIGIN='https://malo.example')
+        self.assertEqual(respuesta.status_code, 403)
+        self.assertFalse(Viaje.objects.exists())
+
+    def test_tampoco_un_iframe_sin_origen_conocido(self):
+        self.assertEqual(self.client.post('/api/viajes/', self.DATOS, HTTP_ORIGIN='null').status_code, 403)
+
+    def test_la_app_si(self):
+        for origen in ('http://localhost:5173', 'http://127.0.0.1:5173', 'http://[::1]:5173'):
+            respuesta = self.client.post('/api/viajes/', self.DATOS, HTTP_ORIGIN=origen)
+            self.assertEqual(respuesta.status_code, 201, origen)
+
+    def test_un_pedido_sin_origen_pasa(self):
+        self.assertEqual(self.client.post('/api/viajes/', self.DATOS).status_code, 201)
+
+    def test_leer_no_se_bloquea(self):
+        self.assertEqual(self.client.get('/api/viajes/', HTTP_ORIGIN='https://malo.example').status_code, 200)

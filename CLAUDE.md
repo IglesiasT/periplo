@@ -137,7 +137,7 @@ Cuando eso se vea en pantalla, se suman las capas en el orden de las fases.
 
 ## Verificar
 
-`python verificar.py` corre Ruff, el chequeo de migraciones, los tests de los dos lados, TypeScript, Oxlint y el build.
+`python verificar.py` corre Ruff, el chequeo de migraciones, los tests de los dos lados, TypeScript, Oxlint, el build y un recorrido de la app en un Chrome sin ventana (`frontend/e2e/recorrido.mjs`), que solo mira y no guarda nada.
 Antes de dar algo por terminado, tiene que pasar entero.
 
 ## Fuentes de datos

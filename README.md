@@ -4,7 +4,7 @@ Mapa y diario de viajes personal: un mapa que se pinta a medida que viajo, al es
 
 La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 
-## Estado actual: Fases 1 y 2, Fase 3 en curso
+## Estado actual: las tres fases
 
 **El mapa (Fase 1)**
 - Mapa mundial en MapLibre con países y provincias de Natural Earth, y departamentos argentinos del IGN.
@@ -15,11 +15,11 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
   - solo un contorno índigo para la lista de deseos;
   - color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
 - Viajes y visitas sincronizados desde Notion (bases Destinations y Lugares).
-- La vista queda en la URL (`#zoom/lat/lon`): al recargar se mantiene y se puede guardar un enlace a una zona.
+- Todo queda en la URL (año, lente, pestaña, lo elegido y la posición): al recargar se mantiene, se puede guardar un enlace y Atrás vuelve a lo anterior.
 
-**El diario (Fase 2)**, todo desde el panel lateral:
-- **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas.
-- **Elegir un viaje, un logro o una ficha** desde el panel resalta sus regiones en el mapa y lo acerca a ellas. Las regiones elegidas se ven en cualquier zoom; de lejos también se marca el país o la provincia que las contiene. Abrir una ficha haciendo click en el mapa no lo mueve.
+**El diario (Fase 2)**, desde el panel lateral, con cuatro pestañas (Viajes, Logros, Fichas y Números):
+- **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas. Lo que se visitó sin viaje aparece como "Lugares sueltos".
+- **Elegir un viaje, un logro o una ficha** desde el panel resalta sus regiones en el mapa y lo acerca a ellas. Las regiones elegidas se ven en cualquier zoom; de lejos también se marca el país o la provincia que las contiene. Abrir una ficha haciendo click en el mapa no lo mueve. Un viaje elegido sigue resaltado mientras se mira otra pestaña o se lee una ficha, hasta que se vuelve a la lista.
 - **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: estadía → de paso → tránsito → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
 - **Fotos:**
   - subir JPG, PNG o WebP;
@@ -31,7 +31,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - **Logros:** colecciones de regiones definidas en `mapa/logros.py` ("Las 24 jurisdicciones", "Los seis continentes"). Las rutas históricas también son logros, con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil.
 
 **La historia (Fase 3)**
-- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps, con el nombre de la época junto al año ("1815 · Era de las revoluciones", editable en `frontend/src/periodos.ts`). Cada región toma el color de la entidad que la ocupaba, distinto del de sus vecinas, y los nombres de esas entidades reemplazan a los países y provincias de hoy (en castellano para las ~340 más grandes y conocidas). Un panel cuenta las entidades cuyo territorio pisaste ese año.
+- **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps, con el nombre de la época junto al año ("1815 · Era de las revoluciones", editable en `frontend/src/periodos.ts`). Arranca en el cambio de era, con los años anteriores plegados, y un botón los recorre solo hasta el presente. Cada región toma el color de la entidad que la ocupaba, distinto del de sus vecinas, y los nombres de esas entidades reemplazan a los países y provincias de hoy (en castellano para las ~650 más grandes y conocidas). Un panel cuenta las entidades cuyo territorio pisaste ese año.
 - **Fichas de región:** click en una región abre su ficha, con texto en markdown escrito a mano, sus visitas y a qué entidad perteneció en cada época.
 
 ## Estructura
@@ -157,7 +157,7 @@ o lo descartes, pero no entra en estos respaldos.
 
 ## Tests
 
-Para correr todas las verificaciones de una vez (Ruff, migraciones, tests, TypeScript, Oxlint y build):
+Para correr todas las verificaciones de una vez (Ruff, migraciones, tests, TypeScript, Oxlint, build y un recorrido de la app en Chrome sin ventana, que solo mira y no guarda nada):
 
 ```powershell
 python verificar.py

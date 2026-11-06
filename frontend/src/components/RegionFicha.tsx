@@ -44,8 +44,12 @@ function Texto({ region }: { region: RegionDetalle }) {
   const { ficha } = region
   const sinGuardar = borrador !== null && borrador !== (ficha?.texto ?? '')
 
-  const enviar = () =>
-    guardar.mutate({ codigo: region.codigo, texto: borrador ?? '' }, { onSuccess: () => setBorrador(null) })
+  const enviar = () => {
+    const texto = borrador ?? ''
+    // Vaciar una ficha escrita la borra para siempre: que no pase por un descuido.
+    if (ficha && !texto.trim() && !window.confirm(`¿Borrar la ficha de ${region.nombre}? No se puede deshacer.`)) return
+    guardar.mutate({ codigo: region.codigo, texto }, { onSuccess: () => setBorrador(null) })
+  }
 
   return (
     <section>

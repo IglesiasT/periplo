@@ -96,10 +96,11 @@ export function EntidadesPisadas({ epoca }: { epoca: Epoca }) {
   const { pisadas } = epoca
   const { tema } = useTema()
   return (
-    <div className="epoca-panel">
-      <p className="leyenda-titulo">
+    // Se pliega para ver el mapa de abajo, y sigue plegado al cambiar de año.
+    <details className="epoca-panel" open>
+      <summary className="leyenda-titulo">
         En {formatearAnio(epoca.anio)}<span className="epoca-panel-periodo"> · {periodoDe(epoca.anio)}</span>
-      </p>
+      </summary>
       <p className="cursiva">
         {pisadas.length === 0 ? 'no pisaste territorio de ninguna entidad del mapa.'
           : `pisaste territorio de ${pisadas.length} ${pisadas.length === 1 ? 'entidad' : 'entidades'}:`}
@@ -127,6 +128,6 @@ export function EntidadesPisadas({ epoca }: { epoca: Epoca }) {
         Fronteras aproximadas de{' '}
         <a href="https://github.com/aourednik/historical-basemaps" target="_blank" rel="noreferrer">historical-basemaps</a>.
       </p>
-    </div>
+    </details>
   )
 }

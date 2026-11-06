@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
+    "e2e": "node e2e/recorrido.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

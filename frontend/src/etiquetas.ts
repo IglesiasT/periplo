@@ -36,3 +36,15 @@ export function rangoFechas(inicio: string | null, fin: string | null): string {
   if (inicio && fin) return inicio === fin ? formatearFecha(inicio) : `${formatearFecha(inicio)} – ${formatearFecha(fin)}`
   return formatearFecha(inicio ?? fin)
 }
+
+const contar = (cantidad: number, singular: string, plural: string) => `${cantidad} ${cantidad === 1 ? singular : plural}`
+
+/** Borrar un viaje se lleva sus visitas y sus fotos: las fotos salen también del disco y no hay cómo recuperarlas. */
+export function mensajeBorrarViaje(nombre: string, regiones: number, fotos: number): string {
+  const adentro = [
+    ...(regiones ? [contar(regiones, 'región', 'regiones')] : []),
+    ...(fotos ? [contar(fotos, 'foto', 'fotos')] : []),
+  ]
+  const pregunta = adentro.length ? `¿Borrar "${nombre}", con ${adentro.join(' y ')}?` : `¿Borrar "${nombre}"?`
+  return fotos ? `${pregunta} Las fotos se borran del disco y no se pueden recuperar.` : pregunta
+}

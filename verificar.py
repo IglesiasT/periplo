@@ -5,8 +5,11 @@ Uso (desde cualquier carpeta):
     python verificar.py
 """
 import shutil
+import socket
 import subprocess
 import sys
+import time
+from contextlib import contextmanager
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent
@@ -39,9 +42,47 @@ def correr(nombre: str, carpeta: Path, comando: list[str]) -> bool:
     return resultado.returncode == 0
 
 
+def esta_prendido(puerto: int) -> bool:
+    with socket.socket() as s:
+        s.settimeout(0.5)
+        return s.connect_ex(('127.0.0.1', puerto)) == 0
+
+
+def apagar(proceso: subprocess.Popen):
+    if sys.platform == 'win32':
+        # npx lanza hijos: hay que apagar el árbol entero.
+        subprocess.run(['taskkill', '/T', '/F', '/PID', str(proceso.pid)], capture_output=True)
+    else:
+        proceso.terminate()
+
+
+@contextmanager
+def servidores():
+    """Los dos servidores prendidos durante el bloque: usa los que ya estén y apaga solo los que prendió."""
+    propios = []
+    if not esta_prendido(8000):
+        propios.append(subprocess.Popen([PYTHON, 'manage.py', 'runserver', '8000', '--noreload'], cwd=BACKEND,
+                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+    if not esta_prendido(5173):
+        propios.append(subprocess.Popen([NPX, 'vite', '--strictPort'], cwd=FRONTEND,
+                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+    try:
+        for _ in range(120):
+            if esta_prendido(8000) and esta_prendido(5173):
+                break
+            time.sleep(0.5)
+        yield
+    finally:
+        for proceso in propios:
+            apagar(proceso)
+
+
 def main() -> int:
     # Una lista y no un any(): que se corran todas aunque falle la primera.
     resultados = [correr(*paso) for paso in PASOS]
+    # Último: es lo que más tarda. Solo mira, no guarda nada en la base.
+    with servidores():
+        resultados.append(correr('Recorrido en Chrome', FRONTEND, ['node', 'e2e/recorrido.mjs']))
     return 0 if all(resultados) else 1
 
 

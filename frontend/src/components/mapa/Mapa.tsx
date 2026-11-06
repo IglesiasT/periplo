@@ -19,6 +19,12 @@ import {
 export type { Lente } from './estilo'
 export type { Encuadre } from './vista'
 
+declare global {
+  interface Window {
+    __mapaPeriplo?: maplibregl.Map
+  }
+}
+
 // MapLibre procesa los datos en un Web Worker que carga desde un archivo aparte.
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
 maplibregl.setWorkerUrl(workerUrl)
@@ -114,6 +120,8 @@ export default function Mapa({
     // Atrás y Adelante también vuelven a la posición que tenía esa entrada del historial.
     const alNavegar = () => map.jumpTo(vistaDesdeHash() ?? VISTA_INICIAL)
     window.addEventListener('popstate', alNavegar)
+    // Para el recorrido automático (e2e/recorrido.mjs): en el build de producción no existe.
+    if (import.meta.env.DEV) window.__mapaPeriplo = map
     map.on('load', () => {
       cargado.current = map
       setListo(true)
@@ -187,6 +195,15 @@ export default function Mapa({
       map.setLayoutProperty(capa, 'visibility', visibilidad)
     }
   }, [epoca, lente, listo, tema])
+
+  // Marcando, dos clicks seguidos son dos pasos del ciclo: no un pedido de acercarse.
+  const marcando = Boolean(alClickearRegion)
+  useEffect(() => {
+    const map = mapaListo(listo, mapRef.current, cargado.current)
+    if (!map) return
+    if (marcando) map.doubleClickZoom.disable()
+    else map.doubleClickZoom.enable()
+  }, [marcando, listo])
 
   useEffect(() => {
     const map = mapaListo(listo, mapRef.current, cargado.current)

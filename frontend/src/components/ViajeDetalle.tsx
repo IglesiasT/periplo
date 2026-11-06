@@ -14,12 +14,13 @@ interface Props {
 }
 
 export default function ViajeDetalle({ viaje, fotos, onVolver, marcando, onCambiarMarcando, aviso, onAviso }: Props) {
+  const fotosDelViaje = fotos?.filter((f) => f.viaje === viaje.id) ?? []
   return (
     <>
       <button className="volver" onClick={onVolver}>← Viajes</button>
       <h2>{viaje.nombre}</h2>
       {/* key: si cambia el viaje elegido, el formulario se vuelve a montar con sus datos. */}
-      <ViajeForm key={viaje.id} viaje={viaje} onBorrado={onVolver} />
+      <ViajeForm key={viaje.id} viaje={viaje} cantidadFotos={fotosDelViaje.length} onBorrado={onVolver} />
       {aviso && <p className="aviso-accion">{aviso}</p>}
 
       <div className="encabezado-seccion">
@@ -36,7 +37,7 @@ export default function ViajeDetalle({ viaje, fotos, onVolver, marcando, onCambi
       )}
       <VisitasLista visitas={viaje.visitas} onAviso={onAviso} />
 
-      <FotosLista viaje={viaje} fotos={fotos?.filter((f) => f.viaje === viaje.id) ?? []} onAviso={onAviso} />
+      <FotosLista viaje={viaje} fotos={fotosDelViaje} onAviso={onAviso} />
     </>
   )
 }
