@@ -1,0 +1,113 @@
+/* "Consola": una sala de control. Grafito, una señal verde lima, todo en monoespaciada y con retícula. */
+import '@fontsource/jetbrains-mono/400.css'
+import '@fontsource/jetbrains-mono/500.css'
+import '@fontsource/jetbrains-mono/700.css'
+import fuenteRotulos from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-500-normal.woff2?url'
+import fuenteAgua from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-italic.woff2?url'
+import type { Tema } from './tipos'
+
+const papel = '#111311'
+const tinta = '#e6eae2'
+const lima = '#c8f135'
+const cian = '#35d6f5'
+const mar = '#0b0d0b'
+const tierra = '#1d211d'
+const borde = '#39413a'
+const mono = "'JetBrains Mono', ui-monospace, monospace"
+
+export const consola: Tema = {
+  id: 'consola',
+  nombre: 'Consola',
+  esquema: 'dark',
+  ui: {
+    papel,
+    panel: papel,
+    papelHondo: '#1a1d1a',
+    papelClaro: '#222622',
+    borde,
+    linea: '#2a2f2a',
+    marco: borde,
+    tinta,
+    tenue: '#95a08f',
+    sepia: '#7f8a79',
+    carmin: lima,
+    carminOscuro: lima,
+    indigo: cian,
+    activo: lima,
+    activoTexto: '#0f1208',
+    cifra: lima,
+    aguada: mar,
+    tierra,
+    ok: '#4be0a0',
+    campo: 'rgba(255, 255, 255, 0.04)',
+    sombra: 'none',
+    sombraTarjeta: 'none',
+    velo: 'rgba(17, 19, 17, 0.8)',
+  },
+  fuentes: {
+    texto: mono,
+    titulo: mono,
+    cursiva: mono,
+    etiqueta: mono,
+    cifra: mono,
+    mapa: { versalitas: fuenteRotulos, cursiva: fuenteAgua },
+  },
+  forma: {
+    tamBase: '13px',
+    tamLogo: '20px',
+    tamCifra: '38px',
+    pesoCifra: '700',
+    radio: '2px',
+    radioControl: '2px',
+    radioMarca: '0',
+    pesoTitulo: '700',
+    casoTitulo: 'uppercase',
+    espaciadoTitulo: '3',
+    espaciadoEtiqueta: '0.8',
+    casoEtiqueta: 'uppercase',
+    escalaEtiqueta: '0.85',
+    estiloCursiva: 'normal',
+    desenfoque: 'none',
+    filtroIconos: 'invert(1)',
+  },
+  rasgos: { panel: 'fijo', pestanias: 'caja', sello: 'disco', rosa: false },
+  voz: {
+    lema: 'Registro de campo',
+    cargando: 'Cargando capas…',
+    completos: 'completos',
+    completo: 'Completo',
+  },
+  mapa: {
+    mar,
+    noVisitado: tierra,
+    fronteraPais: '#566056',
+    fronteraProvincia: '#2e342e',
+    reticula: '#1f251f',
+    resaltado: '#ffffff',
+    halo: mar,
+    foto: cian,
+    rotuloPais: '#a7b0a2',
+    rotuloProvincia: '#d5dacf',
+    rotuloAgua: '#5f6e62',
+    haloRotulo: 'rgba(11, 13, 11, 0.85)',
+    rotulos: { mayusculas: true, mayusculasAgua: false, espaciado: 0.5, escala: 0.85 },
+  },
+  estados: {
+    estadia: lima,
+    paso: '#7c982a',
+    transito: '#485823',
+    deseo: cian,
+  },
+  aguadas: [
+    ['#c8f135', '#3e4a17'], // lima
+    ['#35d6f5', '#17444e'], // cian
+    ['#ff8a5c', '#4f2e20'], // naranja
+    ['#8c9eff', '#2d3353'], // lavanda
+    ['#e26ee5', '#472549'], // magenta
+    ['#4be0a0', '#184632'], // menta
+    ['#b9a98a', '#3b362b'], // arena
+    ['#ff6f91', '#50242f'], // frambuesa
+    ['#7d8f69', '#26331f'], // musgo
+    ['#ffd23f', '#50431a'], // ámbar
+  ],
+}

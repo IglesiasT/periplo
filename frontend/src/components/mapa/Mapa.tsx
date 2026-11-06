@@ -13,7 +13,8 @@ import { conectarInteracciones, type EstadoInteracciones } from './interacciones
 import Leyenda from './Leyenda'
 import RosaDeLosVientos from './RosaDeLosVientos'
 import {
-  type Encuadre, guardarVistaEnHash, margenEncuadre, VISTA_INICIAL, vistaDesdeHash, ZOOM_MAXIMO_ENCUADRE,
+  type Encuadre, guardarVistaEnHash, MARGEN_PANEL_FLOTANTE, margenEncuadre, VISTA_INICIAL, vistaDesdeHash,
+  ZOOM_MAXIMO_ENCUADRE,
 } from './vista'
 
 export type { Lente } from './estilo'
@@ -54,7 +55,7 @@ function aplicarCapas(map: maplibregl.Map, capas: LayerSpecification[]) {
 }
 
 interface Props {
-  /** El estilo se arma con este tema al crear el mapa; otro tema crea otro mapa. */
+  /** El estilo se arma con este tema al crear el mapa; otro tema crea otro mapa, en la misma posición. */
   tema: Tema
   /** Qué nivel se ve: el que corresponde al zoom (automática) o uno fijo. Cambiarla no recrea el mapa. */
   lente: Lente
@@ -96,6 +97,8 @@ export default function Mapa({
   // Lo que ya está aplicado en el mapa actual, para calcular la diferencia en cada cambio.
   const estadosAplicados = useRef<EstadosRegiones>({})
   const resaltadasAplicadas = useRef<Resaltadas>(new Map())
+  // Sobrevive al cambio de tema: el mapa nuevo no tiene que volver a acercarse a lo último que se eligió.
+  const encuadreAplicado = useRef<Encuadre | undefined>(undefined)
 
   useEffect(() => {
     // Mapa nuevo (StrictMode monta dos veces en desarrollo): todavía no tiene nada pintado.
@@ -108,6 +111,7 @@ export default function Mapa({
       renderWorldCopies: false,
     })
     mapRef.current = map
+    if (tema.rasgos.panel === 'flotante') map.setPadding({ left: MARGEN_PANEL_FLOTANTE, top: 0, right: 0, bottom: 0 })
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120 }), 'bottom-right')
     map.on('moveend', () => guardarVistaEnHash(map))
@@ -127,7 +131,7 @@ export default function Mapa({
       cargado.current = null
       setListo(false)
     }
-    // El estilo se arma con el tema: si cambia, se crea otro mapa. (App además usa key={tema.id}.)
+    // El estilo se arma con el tema: si cambia, se crea otro mapa.
   }, [tema])
 
   // React es declarativo ("el mapa tiene estos estados") y MapLibre imperativo ("pintá esta región"):
@@ -158,7 +162,8 @@ export default function Mapa({
 
   useEffect(() => {
     const map = mapaListo(listo, mapRef.current, cargado.current)
-    if (!map || !encuadre) return
+    if (!map || !encuadre || encuadre === encuadreAplicado.current) return
+    encuadreAplicado.current = encuadre
     const [oeste, sur, este, norte] = encuadre.limites
     map.fitBounds([[oeste, sur], [este, norte]], {
       padding: margenEncuadre(map), maxZoom: ZOOM_MAXIMO_ENCUADRE, duration: 1200,
@@ -198,10 +203,10 @@ export default function Mapa({
     <div className="mapa">
       <div ref={contenedor} style={{ width: '100%', height: '100%' }} />
       {/* Los GeoJSON pesan varios MB: mientras bajan, el mapa no queda vacío y mudo. */}
-      {!listo && <div className="cargando">Grabando las planchas del mapa…</div>}
+      {!listo && <div className="cargando">{tema.voz.cargando}</div>}
       {/* En un año histórico, el panel de la época ocupa el lugar de la leyenda. */}
       {!epoca && <Leyenda tema={tema} />}
-      <RosaDeLosVientos tema={tema} />
+      {tema.rasgos.rosa && <RosaDeLosVientos tema={tema} />}
       {children}
     </div>
   )

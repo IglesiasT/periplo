@@ -1,5 +1,6 @@
-/* Los colores y las fuentes no se definen acá: son variables que escribe el tema activo
-   (src/tema/, ver aplicarTema), junto con el color-scheme de los controles nativos. */
+/* Los colores, las fuentes y la forma no se definen acá: son variables que escribe el tema activo
+   (src/tema/, ver aplicarTema), junto con el color-scheme de los controles nativos. Los tamaños de letra
+   van en rem porque cada tema elige su tamaño base (forma.tamBase). */
 :root {
   /* scrollbar-color se hereda: alcanza con ponerlo acá para todo lo que scrollea. */
   scrollbar-color: var(--borde) var(--papel);
@@ -12,9 +13,13 @@ body,
   margin: 0;
 }
 
+html {
+  font-size: var(--tam-base);
+}
+
 body {
   font-family: var(--texto);
-  font-size: 16px;
+  font-size: 1rem;
   background: var(--papel);
   color: var(--tinta);
 }
@@ -41,60 +46,170 @@ textarea {
 }
 
 .panel {
+  display: flex;
+  flex-direction: column;
   width: 360px;
   flex-shrink: 0;
+  box-sizing: border-box;
+  background: var(--panel);
+  border-right: 1px solid var(--borde);
+}
+
+/* Lo que scrollea: el pie con el selector de tema queda siempre a la vista. */
+.panel-contenido {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
   padding: 28px 24px;
-  box-sizing: border-box;
-  background: var(--papel);
-  border-right: 1px solid var(--borde);
+}
+
+/* Panel flotante: el mapa ocupa toda la ventana y el panel y las tarjetas van encima.
+   Los 376px (panel más su margen) son los mismos que MARGEN_PANEL_FLOTANTE de mapa/vista.ts. */
+:root[data-panel='flotante'] .app {
+  position: relative;
+  display: block;
+}
+
+:root[data-panel='flotante'] .mapa {
+  position: absolute;
+  inset: 0;
+}
+
+:root[data-panel='flotante'] .panel {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  bottom: 16px;
+  left: 16px;
+  width: 344px;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-tarjeta);
+  backdrop-filter: var(--desenfoque);
+}
+
+:root[data-panel='flotante'] .panel-contenido {
+  padding: 22px 20px;
+}
+
+:root[data-panel='flotante'] .leyenda,
+:root[data-panel='flotante'] .epoca-panel {
+  left: 376px;
+}
+
+:root[data-panel='flotante'] .controles-mapa {
+  left: calc(50% + 188px);
+  width: min(420px, calc(100% - 516px));
+}
+
+/* El pie del panel: qué tema está puesto y los puntos para cambiarlo. */
+.pie-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 24px;
+  border: none;
+  border-top: 1px solid var(--linea);
+}
+
+:root[data-panel='flotante'] .pie-panel {
+  padding: 10px 20px;
+}
+
+.pie-panel legend {
+  float: left;
+  padding: 0;
+  color: var(--tenue);
+  font-family: var(--etiqueta);
+  font-size: calc(0.8125rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.04em * var(--espaciado-etiqueta));
+  text-transform: var(--caso-etiqueta);
+}
+
+.selector-tema {
+  display: flex;
+  gap: 8px;
+}
+
+/* Cada punto muestra el mar y el acento de su tema. Son radios de verdad, como las lentes. */
+.selector-tema label {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.selector-tema label.activa {
+  outline: 2px solid var(--carmin);
+  outline-offset: 2px;
+}
+
+.selector-tema label:has(input:focus-visible) {
+  outline: 2px solid var(--tinta);
+  outline-offset: 2px;
+}
+
+.selector-tema input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel h1 {
   margin: 0;
   font-family: var(--titulo);
-  font-weight: 400;
-  font-size: 38px;
-  letter-spacing: 0.04em;
+  font-weight: var(--peso-titulo);
+  font-size: var(--tam-logo);
+  letter-spacing: calc(0.04em * var(--espaciado-titulo));
   line-height: 1;
+  text-transform: var(--caso-titulo);
 }
 
 .panel h2 {
   margin: 10px 0 14px;
   font-family: var(--titulo);
-  font-weight: 400;
-  font-size: 28px;
+  font-weight: var(--peso-titulo);
+  font-size: 1.75rem;
   line-height: 1.1;
+  text-transform: var(--caso-titulo);
 }
 
 .panel h3 {
   margin: 26px 0 8px;
-  font-family: var(--titulo);
+  font-family: var(--etiqueta);
   font-weight: 400;
-  font-size: 18px;
-  letter-spacing: 0.06em;
+  font-size: calc(1.125rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.06em * var(--espaciado-etiqueta));
+  text-transform: var(--caso-etiqueta);
 }
 
 .lema,
 .cursiva {
   margin: 2px 0 0;
   font-family: var(--cursiva);
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
   color: var(--tenue);
 }
 
-/* Botones: tinta sobre papel, en versalitas. Los activos se entintan. */
+/* Botones: un marco sobre el papel, con la letra de las etiquetas. Los activos se rellenan. */
 .panel button {
   cursor: pointer;
   min-height: 36px;
   padding: 6px 12px;
-  border: 1px solid var(--tinta);
-  border-radius: 0;
+  border: 1px solid var(--marco);
+  border-radius: var(--radio-control);
   background: transparent;
-  font-family: var(--titulo);
-  font-size: 15px;
-  letter-spacing: 0.05em;
+  font-family: var(--etiqueta);
+  font-size: calc(0.9375rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.05em * var(--espaciado-etiqueta));
+  text-transform: var(--caso-etiqueta);
 }
 
 .panel button:hover:not(:disabled) {
@@ -103,8 +218,9 @@ textarea {
 
 .panel button.activa,
 .panel button[type='submit'] {
-  background: var(--tinta);
-  color: var(--papel);
+  border-color: var(--activo);
+  background: var(--activo);
+  color: var(--activo-texto);
 }
 
 .panel button:disabled {
@@ -121,9 +237,10 @@ textarea {
   background: none;
   color: var(--tenue);
   font-family: var(--cursiva);
-  font-style: italic;
-  font-size: 16px;
+  font-style: var(--estilo-cursiva);
+  font-size: 1rem;
   letter-spacing: 0;
+  text-transform: none;
 }
 
 .panel .enlace {
@@ -145,20 +262,20 @@ textarea {
 
 .tenue {
   color: var(--tenue);
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .vacio {
   color: var(--tenue);
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
 }
 
 /* Origen de un dato (por ahora, solo "Notion"): una acotación al margen, no una etiqueta. */
 .etiqueta {
   margin-left: 4px;
   color: var(--sepia);
-  font-style: italic;
-  font-size: 14px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.875rem;
 }
 
 .etiqueta::before {
@@ -169,7 +286,7 @@ textarea {
 
 .estadisticas {
   padding: 14px 0 12px;
-  border-top: 3px double var(--sepia);
+  border-top: 1px solid var(--borde);
   border-bottom: 1px solid var(--borde);
 }
 
@@ -180,14 +297,15 @@ textarea {
 }
 
 .cifra-grande {
-  font-size: 54px;
-  font-weight: 500;
+  color: var(--cifra);
+  font-family: var(--fuente-cifra);
+  font-size: 3.375rem;
+  font-weight: var(--peso-cifra);
   line-height: 1;
-  font-variant-numeric: oldstyle-nums;
 }
 
 .cifra-principal .cursiva {
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.2;
 }
 
@@ -204,15 +322,15 @@ textarea {
 }
 
 .cifra-valor {
-  font-size: 19px;
-  font-variant-numeric: oldstyle-nums;
+  font-size: 1.1875rem;
 }
 
 .cifra-etiqueta {
-  font-family: var(--titulo);
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  font-family: var(--etiqueta);
+  font-size: calc(0.8125rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.04em * var(--espaciado-etiqueta));
   color: var(--tenue);
+  text-transform: var(--caso-etiqueta);
 }
 
 .barras {
@@ -234,11 +352,13 @@ textarea {
 .barra {
   height: 3px;
   margin-top: 3px;
+  border-radius: var(--radio-marca);
   background: var(--linea);
 }
 
 .barra div {
   height: 100%;
+  border-radius: var(--radio-marca);
   background: var(--carmin);
 }
 
@@ -264,9 +384,10 @@ textarea {
   border: none;
   background: none;
   font-family: var(--texto);
-  font-size: 16px;
+  font-size: 1rem;
   letter-spacing: 0;
   text-align: left;
+  text-transform: none;
 }
 
 .logro-texto {
@@ -276,7 +397,7 @@ textarea {
 }
 
 .logro-texto strong {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 500;
 }
 
@@ -299,7 +420,7 @@ textarea {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 15px;
+  font-size: 0.9375rem;
   color: var(--tenue);
 }
 
@@ -310,6 +431,7 @@ textarea {
   height: 8px;
   margin-right: 6px;
   border: 1px solid var(--sepia);
+  border-radius: var(--radio-marca);
   vertical-align: 1px;
 }
 
@@ -339,6 +461,14 @@ textarea {
 
 .sello-estrella {
   fill: var(--papel);
+}
+
+.sello-tilde {
+  fill: none;
+  stroke: var(--activo-texto);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .sello-pista {
@@ -372,7 +502,7 @@ textarea {
   border: none;
   background: none;
   color: var(--tenue);
-  font-size: 16px;
+  font-size: calc(1rem * var(--escala-etiqueta));
 }
 
 .panel .filtros button.activa {
@@ -398,8 +528,8 @@ textarea {
   margin: 0;
   padding: 8px 10px;
   background: var(--papel-hondo);
-  font-style: italic;
-  font-size: 15px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.9375rem;
 }
 
 .aviso-accion {
@@ -431,9 +561,10 @@ textarea {
   border: none;
   background: none;
   font-family: var(--texto);
-  font-size: 16px;
+  font-size: 1rem;
   letter-spacing: 0;
   text-align: left;
+  text-transform: none;
 }
 
 .viaje-texto {
@@ -442,12 +573,12 @@ textarea {
 }
 
 .viaje-texto strong {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 500;
 }
 
 .viaje-texto .tenue {
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
 }
 
 /* Marca del viaje en la lista: carmín si ya fui, contorno índigo si es un plan (igual que en el mapa). */
@@ -455,7 +586,8 @@ textarea {
   flex-shrink: 0;
   width: 13px;
   height: 13px;
-  border: 1px solid var(--tinta);
+  border: 1px solid var(--carmin);
+  border-radius: var(--radio-marca);
 }
 
 .marca-hecho {
@@ -479,9 +611,10 @@ textarea {
   flex-direction: column;
   gap: 2px;
   color: var(--tenue);
-  font-family: var(--titulo);
-  font-size: 14px;
-  letter-spacing: 0.04em;
+  font-family: var(--etiqueta);
+  font-size: calc(0.875rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.04em * var(--espaciado-etiqueta));
+  text-transform: var(--caso-etiqueta);
 }
 
 .formulario input,
@@ -490,20 +623,21 @@ textarea {
 .visitas select {
   padding: 4px 2px;
   border: none;
-  border-bottom: 1px solid var(--tinta);
+  border-bottom: 1px solid var(--marco);
   border-radius: 0;
   background: transparent;
   color: var(--tinta);
   font-family: var(--texto);
-  font-size: 16px;
+  font-size: 1rem;
   letter-spacing: 0;
 }
 
 .formulario textarea {
   padding: 6px 8px;
   border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
   background: var(--campo);
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
 }
 
 /* Campos que manda Notion: se leen como texto impreso, no como un control roto. */
@@ -537,13 +671,13 @@ textarea {
 
 .error {
   color: var(--carmin-oscuro);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .ok {
   color: var(--ok);
-  font-size: 14px;
-  font-style: italic;
+  font-size: 0.875rem;
+  font-style: var(--estilo-cursiva);
 }
 
 /* --- Ficha de región --- */
@@ -561,9 +695,10 @@ textarea {
 .ficha-texto h3 {
   margin: 16px 0 6px;
   font-family: var(--titulo);
-  font-weight: 400;
-  font-size: 19px;
-  letter-spacing: 0.04em;
+  font-weight: var(--peso-titulo);
+  font-size: 1.1875rem;
+  letter-spacing: calc(0.04em * var(--espaciado-titulo));
+  text-transform: var(--caso-titulo);
 }
 
 .ficha-texto blockquote {
@@ -571,7 +706,7 @@ textarea {
   padding-left: 12px;
   border-left: 2px solid var(--borde);
   color: var(--tenue);
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
 }
 
 .ficha-texto a {
@@ -599,7 +734,6 @@ textarea {
 
 .tramo-anios {
   color: var(--tenue);
-  font-variant-numeric: oldstyle-nums;
 }
 
 /* --- Lista de visitas --- */
@@ -623,8 +757,8 @@ textarea {
   align-items: center;
   gap: 4px;
   color: var(--tenue);
-  font-style: italic;
-  font-size: 15px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.9375rem;
 }
 
 .panel .icono {
@@ -633,11 +767,12 @@ textarea {
   padding: 0 8px;
   border: none;
   font-family: var(--texto);
-  font-size: 20px;
+  font-size: 1.25rem;
   line-height: 1;
+  text-transform: none;
 }
 
-/* --- Fotos: copias montadas sobre el papel --- */
+/* --- Fotos --- */
 
 .fotos {
   display: grid;
@@ -654,10 +789,7 @@ textarea {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   box-sizing: border-box;
-  padding: 4px;
-  border: 1px solid var(--borde);
-  background: var(--papel-claro);
-  box-shadow: 2px 2px 0 var(--linea);
+  border-radius: var(--radio-control);
 }
 
 .foto-pie {
@@ -672,7 +804,7 @@ textarea {
   margin-top: 4px;
   min-height: 0;
   padding: 2px 6px;
-  font-size: 13px;
+  font-size: calc(0.8125rem * var(--escala-etiqueta));
 }
 
 .popup-foto img {
@@ -689,17 +821,21 @@ textarea {
   left: 16px;
   bottom: 16px;
   padding: 12px 16px;
-  border: 1px solid var(--tinta);
-  background: var(--papel);
-  font-size: 15px;
+  border: 1px solid var(--marco);
+  border-radius: var(--radio);
+  background: var(--panel);
+  box-shadow: var(--sombra-tarjeta);
+  backdrop-filter: var(--desenfoque);
+  font-size: 0.9375rem;
   line-height: 1.65;
 }
 
 .leyenda-titulo {
   margin: 0 0 2px;
-  font-family: var(--titulo);
-  font-size: 16px;
-  letter-spacing: 0.08em;
+  font-family: var(--etiqueta);
+  font-size: calc(1rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.08em * var(--espaciado-etiqueta));
+  text-transform: var(--caso-etiqueta);
 }
 
 .leyenda-color {
@@ -708,6 +844,7 @@ textarea {
   height: 12px;
   margin-right: 10px;
   border: 1px solid var(--sepia);
+  border-radius: calc(var(--radio-control) / 3);
   vertical-align: -1px;
 }
 
@@ -727,8 +864,11 @@ textarea {
   width: min(420px, calc(100% - 140px));
   padding: 8px 16px 8px;
   box-sizing: border-box;
-  border: 1px solid var(--tinta);
-  background: var(--papel);
+  border: 1px solid var(--marco);
+  border-radius: var(--radio);
+  background: var(--panel);
+  box-shadow: var(--sombra-tarjeta);
+  backdrop-filter: var(--desenfoque);
 }
 
 .epoca-selector {
@@ -741,14 +881,14 @@ textarea {
   margin: -2px 0 0;
   text-align: right;
   font-family: var(--cursiva);
-  font-style: italic;
-  font-size: 14px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.875rem;
   color: var(--tenue);
 }
 
 .epoca-panel-periodo {
   font-family: var(--cursiva);
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
   letter-spacing: 0;
 }
 
@@ -777,10 +917,12 @@ textarea {
 .lentes label {
   padding: 1px 7px;
   border: 1px solid var(--borde);
-  font-family: var(--titulo);
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  border-radius: var(--radio-control);
+  font-family: var(--etiqueta);
+  font-size: calc(0.8125rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.04em * var(--espaciado-etiqueta));
   cursor: pointer;
+  text-transform: var(--caso-etiqueta);
 }
 
 .lentes label:hover {
@@ -788,9 +930,9 @@ textarea {
 }
 
 .lentes label.activa {
-  border-color: var(--tinta);
-  background: var(--tinta);
-  color: var(--papel);
+  border-color: var(--activo);
+  background: var(--activo);
+  color: var(--activo-texto);
 }
 
 .lentes label:has(input:focus-visible) {
@@ -814,15 +956,17 @@ textarea {
 }
 
 .epoca-titulo {
-  font-family: var(--titulo);
-  font-size: 16px;
-  letter-spacing: 0.08em;
+  font-family: var(--etiqueta);
+  font-size: calc(1rem * var(--escala-etiqueta));
+  letter-spacing: calc(0.08em * var(--espaciado-etiqueta));
+  text-transform: var(--caso-etiqueta);
 }
 
 .epoca-anio {
   font-family: var(--titulo);
-  font-size: 22px;
+  font-size: 1.375rem;
   color: var(--carmin-oscuro);
+  text-transform: var(--caso-titulo);
 }
 
 /* Reproducir, anterior, el slider y siguiente, en una sola línea. */
@@ -838,9 +982,10 @@ textarea {
   height: 26px;
   padding: 0;
   border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
   background: transparent;
   color: var(--tinta);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -865,10 +1010,11 @@ textarea {
   background: none;
   color: inherit;
   font: inherit;
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
+  text-transform: none;
 }
 
 .epoca-plegar:hover {
@@ -886,8 +1032,8 @@ textarea {
   display: flex;
   justify-content: space-between;
   font-family: var(--cursiva);
-  font-style: italic;
-  font-size: 13px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.8125rem;
 }
 
 .epoca-panel {
@@ -900,9 +1046,12 @@ textarea {
   scrollbar-width: thin;
   padding: 12px 16px;
   box-sizing: border-box;
-  border: 1px solid var(--tinta);
-  background: var(--papel);
-  font-size: 15px;
+  border: 1px solid var(--marco);
+  border-radius: var(--radio);
+  background: var(--panel);
+  box-shadow: var(--sombra-tarjeta);
+  backdrop-filter: var(--desenfoque);
+  font-size: 0.9375rem;
 }
 
 .epoca-panel .cursiva {
@@ -929,8 +1078,8 @@ textarea {
 .epoca-fuente {
   margin: 8px 0 0;
   color: var(--tenue);
-  font-style: italic;
-  font-size: 13px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.8125rem;
 }
 
 .epoca-fuente a {
@@ -952,26 +1101,27 @@ textarea {
   background: var(--aguada);
   color: var(--tenue);
   font-family: var(--cursiva);
-  font-style: italic;
-  font-size: 20px;
+  font-style: var(--estilo-cursiva);
+  font-size: 1.25rem;
 }
 
 .maplibregl-popup-content {
   padding: 8px 12px;
-  border: 1px solid var(--tinta);
-  border-radius: 0;
+  border: 1px solid var(--marco);
+  border-radius: var(--radio);
   background: var(--papel);
-  box-shadow: 3px 3px 0 var(--sombra);
+  box-shadow: var(--sombra);
   color: var(--tinta);
   font-family: var(--texto);
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .maplibregl-popup-content strong {
   font-family: var(--titulo);
-  font-weight: 400;
-  font-size: 18px;
-  letter-spacing: 0.04em;
+  font-weight: var(--peso-titulo);
+  font-size: 1.125rem;
+  letter-spacing: calc(0.04em * var(--espaciado-titulo));
+  text-transform: var(--caso-titulo);
 }
 
 .maplibregl-popup-tip {
@@ -979,10 +1129,18 @@ textarea {
 }
 
 .maplibregl-ctrl-group:not(:empty) {
-  border: 1px solid var(--tinta);
-  border-radius: 0;
-  background: var(--papel);
+  overflow: hidden;
+  border: 1px solid var(--marco);
+  border-radius: var(--radio-control);
+  background: var(--panel);
   box-shadow: none;
+  backdrop-filter: var(--desenfoque);
+}
+
+/* Los íconos de MapLibre son imágenes oscuras: en un tema oscuro se invierten. */
+.maplibregl-ctrl-icon,
+.maplibregl-ctrl-attrib-button {
+  filter: var(--filtro-iconos);
 }
 
 .maplibregl-ctrl-group button {
@@ -991,22 +1149,27 @@ textarea {
 }
 
 .maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--tinta);
+  border-top: 1px solid var(--marco);
 }
 
 .maplibregl-ctrl-scale {
-  border-color: var(--tinta);
+  border-color: var(--marco);
   background: var(--velo);
   color: var(--tinta);
   font-family: var(--texto);
-  font-style: italic;
-  font-size: 12px;
+  font-style: var(--estilo-cursiva);
+  font-size: 0.75rem;
 }
 
 .maplibregl-ctrl.maplibregl-ctrl-attrib {
   background: var(--velo);
+  color: var(--tenue);
   font-family: var(--texto);
-  font-style: italic;
+  font-style: var(--estilo-cursiva);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--tenue);
 }
 
 /* Los datos del mapa no llegaron: encabeza los controles, sin taparlos. */
@@ -1017,7 +1180,7 @@ textarea {
   padding: 0 0 8px;
   border-bottom: 1px solid var(--carmin);
   color: var(--carmin-oscuro);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 /* La barrera de errores: reemplaza a toda la app. */
@@ -1032,30 +1195,61 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  flex-shrink: 0;
   margin: 2px 0 0;
   text-align: right;
 }
 
-/* Las pestañas del panel: una fila de versalitas sobre una línea doble, como las secciones de un atlas. */
+.cifra-encabezado .cifra-valor {
+  color: var(--cifra);
+  font-family: var(--fuente-cifra);
+  font-size: var(--tam-cifra);
+  font-weight: var(--peso-cifra);
+  line-height: 1;
+}
+
+/* Las pestañas del panel. Cada tema elige su forma (rasgos.pestanias). */
 .pestanias {
   display: flex;
+  gap: 4px;
   margin-bottom: 16px;
-  border-top: 3px double var(--sepia);
-  border-bottom: 1px solid var(--borde);
 }
 
 .panel .pestanias button {
   flex: 1;
   min-height: 34px;
   padding: 4px 0;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  font-size: 14px;
+  border: 1px solid var(--borde);
+  font-size: calc(0.875rem * var(--escala-etiqueta));
   color: var(--tenue);
 }
 
+/* Pastilla: sin borde, sobre un fondo apenas más hondo. */
+:root[data-pestanias='pastilla'] .panel .pestanias button:not(.activa) {
+  border-color: transparent;
+  background: var(--papel-hondo);
+}
+
 .panel .pestanias button.activa {
+  border-color: var(--activo);
+  background: var(--activo);
+  color: var(--activo-texto);
+}
+
+/* Filete: una fila de texto sobre una línea doble, como las secciones de un atlas. */
+:root[data-pestanias='filete'] .pestanias {
+  gap: 0;
+  border-top: 3px double var(--sepia);
+  border-bottom: 1px solid var(--borde);
+}
+
+:root[data-pestanias='filete'] .panel .pestanias button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+:root[data-pestanias='filete'] .panel .pestanias button.activa {
   background: none;
   border-bottom-color: var(--tinta);
   color: var(--tinta);
@@ -1063,4 +1257,36 @@ textarea {
 
 .panel .volver {
   display: block;
+}
+
+/* --- Lo que es solo del atlas: ornamentos de un libro impreso. Un tema nuevo no necesita nada de esto. --- */
+
+:root[data-tema='atlas'] .estadisticas {
+  border-top: 3px double var(--sepia);
+}
+
+:root[data-tema='atlas'] .cifra-grande {
+  font-weight: 500;
+}
+
+:root[data-tema='atlas'] .cifra-grande,
+:root[data-tema='atlas'] .cifra-valor,
+:root[data-tema='atlas'] .tramo-anios {
+  font-variant-numeric: oldstyle-nums;
+}
+
+:root[data-tema='atlas'] .cifra-encabezado .cifra-valor {
+  line-height: normal;
+}
+
+:root[data-tema='atlas'] .marca-hecho {
+  border-color: var(--tinta);
+}
+
+/* Las fotos, copias montadas sobre el papel. */
+:root[data-tema='atlas'] .fotos img {
+  padding: 4px;
+  border: 1px solid var(--borde);
+  background: var(--papel-claro);
+  box-shadow: 2px 2px 0 var(--linea);
 }

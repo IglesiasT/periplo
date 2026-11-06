@@ -126,20 +126,25 @@ function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecificati
   const halo = { 'text-halo-color': tema.mapa.haloRotulo, 'text-halo-width': 1.6, 'text-halo-blur': 0.5 }
   // Las provincias se rotulan desde que aparecen, pero nunca a un zoom tan lejano que serían miles.
   const inicio = Math.max(p, ZOOM_MINIMO_ROTULOS_PROVINCIAS)
+  // Lo que cada tema cambia de los rótulos: mayúsculas, espaciado entre letras y tamaño.
+  const { mayusculas, mayusculasAgua, espaciado, escala: e } = tema.mapa.rotulos
+  const caso = (conMayusculas: boolean): 'uppercase' | 'none' => (conMayusculas ? 'uppercase' : 'none')
+  const tierra = { 'text-font': [VERSALITAS], 'text-transform': caso(mayusculas) }
+  const agua = { 'text-font': [CURSIVA], 'text-transform': caso(mayusculasAgua) }
   return [
     {
       id: 'rotulos-oceanos', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'oceano'],
       layout: {
-        'text-field': ['get', 'nombre'], 'text-font': [CURSIVA], 'text-max-width': 6, 'text-letter-spacing': 0.25,
-        'text-size': ['interpolate', ['linear'], ['zoom'], 1, 13, 5, 22],
+        'text-field': ['get', 'nombre'], ...agua, 'text-max-width': 6, 'text-letter-spacing': 0.25 * espaciado,
+        'text-size': ['interpolate', ['linear'], ['zoom'], 1, 13 * e, 5, 22 * e],
       },
       paint: { 'text-color': tema.mapa.rotuloAgua },
     },
     {
       id: 'rotulos-mares', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'mar'], minzoom: 2.5,
       layout: {
-        'text-field': ['get', 'nombre'], 'text-font': [CURSIVA], 'text-max-width': 7, 'text-letter-spacing': 0.12,
-        'text-size': ['interpolate', ['linear'], ['zoom'], 2.5, 12, 6, 17],
+        'text-field': ['get', 'nombre'], ...agua, 'text-max-width': 7, 'text-letter-spacing': 0.12 * espaciado,
+        'text-size': ['interpolate', ['linear'], ['zoom'], 2.5, 12 * e, 6, 17 * e],
       },
       paint: { 'text-color': tema.mapa.rotuloAgua },
     },
@@ -147,8 +152,8 @@ function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecificati
       id: 'rotulos-mares-menores', type: 'symbol', source: 'rotulos', filter: ['==', NIVEL_ROTULO, 'mar-menor'],
       minzoom: 5,
       layout: {
-        'text-field': ['get', 'nombre'], 'text-font': [CURSIVA], 'text-max-width': 6, 'text-letter-spacing': 0.1,
-        'text-size': ['interpolate', ['linear'], ['zoom'], 5, 12, 8, 15],
+        'text-field': ['get', 'nombre'], ...agua, 'text-max-width': 6, 'text-letter-spacing': 0.1 * espaciado,
+        'text-size': ['interpolate', ['linear'], ['zoom'], 5, 12 * e, 8, 15 * e],
       },
       paint: { 'text-color': tema.mapa.rotuloAgua },
     },
@@ -156,9 +161,9 @@ function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecificati
       id: 'rotulos-provincias', type: 'symbol', source: 'rotulos', minzoom: acotar(inicio),
       filter: ['all', ['==', NIVEL_ROTULO, 'provincia'], visiblesPorArea([inicio, 30000], [inicio + 1, 5000], [inicio + 2, 0])],
       layout: {
-        'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 7,
-        'text-letter-spacing': 0.08, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 4, porArea(11, 14), 8, porArea(14, 19)],
+        'text-field': ['get', 'nombre'], ...tierra, 'text-max-width': 7,
+        'text-letter-spacing': 0.08 * espaciado, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 4, porArea(11 * e, 14 * e), 8, porArea(14 * e, 19 * e)],
       },
       paint: {
         'text-color': tema.mapa.rotuloProvincia, ...halo,
@@ -171,9 +176,9 @@ function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecificati
       id: 'rotulos-paises', type: 'symbol', source: 'rotulos', maxzoom: acotar(p + 1.5),
       filter: ['all', ['==', NIVEL_ROTULO, 'pais'], visiblesPorArea([0, 250000], [2, 60000], [3, 10000], [4, 0])],
       layout: {
-        'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 7,
-        'text-letter-spacing': 0.14, 'text-padding': 4, 'symbol-sort-key': ['-', AREA],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 1, porArea(9, 16), 5, porArea(13, 26)],
+        'text-field': ['get', 'nombre'], ...tierra, 'text-max-width': 7,
+        'text-letter-spacing': 0.14 * espaciado, 'text-padding': 4, 'symbol-sort-key': ['-', AREA],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 1, porArea(9 * e, 16 * e), 5, porArea(13 * e, 26 * e)],
       },
       paint: {
         'text-color': tema.mapa.rotuloPais, ...halo,
@@ -187,9 +192,9 @@ function capasRotulos(tema: Tema, { provincias: p }: Umbrales): LayerSpecificati
       filter: visiblesPorArea([0, 1_500_000], [1, 600_000], [2, 150_000], [3, 40_000], [4, 8_000], [5, 0]),
       layout: {
         visibility: 'none',
-        'text-field': ['get', 'nombre'], 'text-font': [VERSALITAS], 'text-max-width': 8,
-        'text-letter-spacing': 0.1, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 1, porArea(9, 15), 5, porArea(12, 22)],
+        'text-field': ['get', 'nombre'], ...tierra, 'text-max-width': 8,
+        'text-letter-spacing': 0.1 * espaciado, 'text-padding': 3, 'symbol-sort-key': ['-', AREA],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 1, porArea(9 * e, 15 * e), 5, porArea(12 * e, 22 * e)],
       },
       paint: { 'text-color': tema.mapa.rotuloPais, ...halo },
     },
@@ -229,6 +234,26 @@ function capasResaltado(source: Source, opacidad: (f: number) => Valor, tema: Te
       paint: { 'line-color': tema.mapa.resaltado, 'line-width': 2, 'line-opacity': opacidad(1) },
     },
   ] as LayerSpecification[]
+}
+
+/** Meridianos y paralelos cada 15°, para los temas que los dibujan sobre el mar. */
+export function reticula(): FeatureCollection {
+  const grados = (desde: number, hasta: number) =>
+    Array.from({ length: (hasta - desde) / 15 + 1 }, (_, i) => desde + i * 15)
+  return {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'MultiLineString',
+        coordinates: [
+          ...grados(-180, 180).map((lon) => [[lon, -75], [lon, 75]]),
+          ...grados(-75, 75).map((lat) => [[-180, lat], [180, lat]]),
+        ],
+      },
+    }],
+  }
 }
 
 export const CAPAS_FOTOS = ['fotos-grupos', 'fotos-punto']
@@ -286,9 +311,15 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
       fotos: {
         type: 'geojson', data: { type: 'FeatureCollection', features: [] }, cluster: true, clusterRadius: 40, clusterMaxZoom: 14,
       },
+      ...(tema.mapa.reticula ? { reticula: { type: 'geojson', data: reticula() } } as const : {}),
     },
     layers: [
       { id: 'fondo', type: 'background', paint: { 'background-color': tema.mapa.mar } },
+      ...(tema.mapa.reticula
+        ? [{
+          id: 'reticula', type: 'line', source: 'reticula', paint: { 'line-color': tema.mapa.reticula, 'line-width': 0.7 },
+        } as LayerSpecification]
+        : []),
 
       // Provincias: aparecen al acercarse; las argentinas se vuelven a desvanecer cuando llegan los departamentos.
       {

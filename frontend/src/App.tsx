@@ -77,9 +77,7 @@ export default function App() {
         aviso={aviso}
         onAviso={setAviso}
       />
-      {/* Otro tema, otro mapa: el estilo de MapLibre se arma una vez, con los colores del tema. */}
       <Mapa
-        key={tema.id}
         tema={tema}
         lente={lente}
         estados={estados.data}

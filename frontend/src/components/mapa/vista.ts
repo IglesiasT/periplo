@@ -32,6 +32,10 @@ export interface Encuadre {
 // (un departamento chico no queda pegado a los bordes).
 export const ZOOM_MAXIMO_ENCUADRE = 8
 
+// Lo que tapa el panel cuando flota sobre el mapa (rasgos.panel): su ancho más su margen, los mismos de index.css.
+// Es el padding del mapa: el centro y los encuadres quedan en la parte que se ve.
+export const MARGEN_PANEL_FLOTANTE = 376
+
 // Margen alrededor de lo encuadrado: deja lugar al selector de época arriba y a los controles.
 // Acotado al tamaño del mapa, porque con un margen más grande que el lienzo MapLibre no se mueve.
 export function margenEncuadre(map: maplibregl.Map) {

@@ -1,3 +1,4 @@
+import { useTema } from '../tema/contexto'
 import type { Logro } from '../types'
 
 /** Primero los completos, después los más avanzados. */
@@ -15,6 +16,7 @@ interface ListaProps {
 }
 
 export function LogrosLista({ logros, elegido, onElegir }: ListaProps) {
+  const { tema } = useTema()
   return (
     <ul className="logros">
       {ordenarLogros(logros).map((logro) => {
@@ -28,7 +30,7 @@ export function LogrosLista({ logros, elegido, onElegir }: ListaProps) {
               <Sello cumplidos={logro.cumplidos} total={logro.total} />
               <span className="logro-texto">
                 <strong>{logro.nombre}</strong>
-                <span className="tenue">{logro.completo ? 'Sellado' : `${logro.cumplidos} de ${logro.total}`}</span>
+                <span className="tenue">{logro.completo ? tema.voz.completo : `${logro.cumplidos} de ${logro.total}`}</span>
               </span>
             </button>
             {abierto && (
@@ -59,9 +61,18 @@ function poligono(puntos: number, radio: (i: number) => number): string {
   }).reduce((d, punto, i) => `${d}${i ? 'L' : 'M'}${punto}`, '') + 'Z'
 }
 
-/** Sello del logro: un anillo que se va cerrando con el avance; al completarse, lacre carmín. */
+/** Sello del logro: un anillo que se va cerrando con el avance; al completarse, lacre o disco según el tema. */
 function Sello({ cumplidos, total }: { cumplidos: number; total: number }) {
+  const lacre = useTema().tema.rasgos.sello === 'lacre'
   const circunferencia = 2 * Math.PI * 13
+  if (total > 0 && cumplidos === total && !lacre) {
+    return (
+      <svg className="sello" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+        <circle className="sello-lacre" cx="17" cy="17" r="14" />
+        <path className="sello-tilde" d="M11 17.5L15.5 22L23.5 12.5" />
+      </svg>
+    )
+  }
   if (total > 0 && cumplidos === total) {
     return (
       <svg className="sello" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
@@ -78,7 +89,7 @@ function Sello({ cumplidos, total }: { cumplidos: number; total: number }) {
         <circle className="sello-avance" cx="17" cy="17" r="13" transform="rotate(-90 17 17)"
                 strokeDasharray={`${(cumplidos / total) * circunferencia} ${circunferencia}`} />
       )}
-      <path className="sello-estrella-vacia" d={ESTRELLA} />
+      {lacre && <path className="sello-estrella-vacia" d={ESTRELLA} />}
     </svg>
   )
 }
