@@ -139,6 +139,17 @@ try {
     comprobar(`en la pestaña ${pestania} el viaje sigue resaltado`, activa === pestania && await estaResaltado(), `activa: ${activa}`)
   }
 
+  await evaluar("document.querySelector('.pestanias .activa').focus()")
+  const tecla = async (key) => {
+    await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key, code: key })
+    await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key, code: key })
+    await espera(150)
+    return evaluar("document.activeElement?.id + ' ' + document.querySelector('.pestanias .activa')?.textContent")
+  }
+  comprobar('la flecha derecha pasa a Logros, con el foco', (await tecla('ArrowRight')) === 'pestania-logros Logros')
+  comprobar('la flecha izquierda vuelve a Viajes', (await tecla('ArrowLeft')) === 'pestania-viajes Viajes')
+  comprobar('con las flechas el viaje sigue resaltado', await estaResaltado())
+
   // Un click de verdad en el mapa, en una región que no sea del viaje.
   comprobar('el mapa llega al viaje', await mapaQuieto())
   const punto = await evaluar(`(() => {

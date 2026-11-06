@@ -1,5 +1,5 @@
 import Markdown from 'react-markdown'
-import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, formatearFecha } from '../etiquetas'
+import { ETIQUETAS_NIVEL, etiquetaVisita, formatearFecha } from '../etiquetas'
 import { formatearAnio } from '../historia'
 import { useGuardarFicha, useRegion } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
@@ -95,7 +95,7 @@ function Visitas({ region, onElegirViaje }: { region: RegionDetalle; onElegirVia
           {region.visitas.map((v) => {
             const detalle = [
               v.region !== region.codigo ? v.region_nombre : null,
-              v.realizada ? ETIQUETAS_PRESENCIA[v.tipo_presencia] : 'Deseo',
+              etiquetaVisita(v),
             ].filter(Boolean).join(' · ')
             return (
               <li key={v.id}>

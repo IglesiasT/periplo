@@ -108,7 +108,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
    - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.
 4. Lo escrito a mano no se pierde:
    - Lo que no se guardó todavía (fichas, formularios de viaje) queda en el navegador: `hooks/useBorrador.ts`.
-   - `manage.py respaldar` guarda viajes, visitas, fichas y fotos en un `.zip`.
+   - `manage.py respaldar` guarda viajes, visitas, fichas y fotos en un `.zip`. El servidor hace uno solo al arrancar si el último tiene más de 7 días (`mapa/respaldos.py`), en `RESPALDOS_DIR`.
 
 ### Fase 3: la historia
 

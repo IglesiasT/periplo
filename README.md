@@ -28,7 +28,7 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - **Estadísticas:** países visitados, provincias argentinas, continentes y entidades históricas pisadas, con el detalle de provincias por país y de países por continente.
   - Solo cuentan las visitas realizadas, no los deseos.
   - Una visita a un departamento cuenta su provincia y su país: Tilcara suma Jujuy y Argentina.
-- **Logros:** colecciones de regiones definidas en `mapa/logros.py` ("Las 24 jurisdicciones", "Los seis continentes"). Las rutas históricas también son logros, con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil.
+- **Logros:** colecciones de regiones definidas en `mapa/logros.py` ("Las 24 jurisdicciones", "Las dos orillas del Bósforo"). Las rutas históricas también son logros, con un objetivo por etapa: "La Campaña Libertadora" sigue a San Martín de Mendoza a Guayaquil, y "La Ruta de la Seda" va de Chang'an a Constantinopla.
 
 **La historia (Fase 3)**
 - **Épocas:** un slider sobre el mapa recorre los snapshots de historical-basemaps, con el nombre de la época junto al año ("1815 · Era de las revoluciones", editable en `frontend/src/periodos.ts`). Arranca en el cambio de era, con los años anteriores plegados, y un botón los recorre solo hasta el presente. Cada región toma el color de la entidad que la ocupaba, distinto del de sus vecinas, y los nombres de esas entidades reemplazan a los países y provincias de hoy (en castellano para las ~650 más grandes y conocidas). Un panel cuenta las entidades cuyo territorio pisaste ese año.
@@ -142,7 +142,11 @@ Vite reenvía las llamadas a `/api` hacia Django (ver `frontend/vite.config.ts`)
 ## Respaldos
 
 Las fichas, las fotos y las visitas cargadas a mano viven solo en `db.sqlite3` y `media/`, que no están en git.
-Este comando las guarda en un `.zip`. Las regiones y la capa histórica no van: salen de los comandos de datos.
+El servidor las guarda solo en un `.zip` al arrancar, si el último respaldo tiene más de 7 días, y conserva los últimos 8 automáticos (los hechos a mano no se borran nunca). Las regiones y la capa histórica no van: salen de los comandos de datos.
+
+Por defecto quedan en `backend/respaldos/`, en el mismo disco. Para que sobrevivan a una rotura, apuntá `RESPALDOS_DIR` en `backend/.env` a otro disco o a una carpeta sincronizada.
+
+Para hacer uno a mano:
 
 ```powershell
 python manage.py respaldar                       # queda en backend/respaldos/

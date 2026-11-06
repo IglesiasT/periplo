@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import departamentosGeojson from '../../../public/geo/departamentos.geojson?raw'
+import provinciasGeojson from '../../../public/geo/provincias.geojson?raw'
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec'
 import type { LayerSpecification } from 'maplibre-gl'
 import type { Tema } from '../../tema'
 import { atlas } from '../../tema/atlas'
 import type { Epoca } from '../../types'
 import {
-  capasConsultables, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
+  capasConsultables, crearEstilo, type Lente, PAISES_CON_DEPARTAMENTOS, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
   visibilidadRotulos,
 } from './estilo'
 
@@ -166,6 +168,16 @@ describe('qué nivel muestra cada lente', () => {
     expect(capasConsultables(10, 'paises')).toEqual(['paises-relleno'])
     expect(capasConsultables(1, 'provincias')).toEqual(['provincias-relleno'])
     expect(capasConsultables(1, 'departamentos')).toEqual(['departamentos-relleno', 'provincias-relleno'])
+  })
+})
+
+describe('los países con departamentos', () => {
+  it('son los que aparecen en departamentos.geojson', () => {
+    const leer = (geojson: string) => (JSON.parse(geojson) as { features: { properties: { codigo: string; padre: string } }[] })
+      .features.map((f) => f.properties)
+    const paisDe = new Map(leer(provinciasGeojson).map((p) => [p.codigo, p.padre]))
+    const paises = new Set(leer(departamentosGeojson).map((d) => paisDe.get(d.padre)))
+    expect([...paises].sort()).toEqual([...PAISES_CON_DEPARTAMENTOS].sort())
   })
 })
 

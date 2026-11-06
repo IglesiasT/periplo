@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, rangoFechas } from '../etiquetas'
+import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_NIVEL, etiquetaVisita, rangoFechas } from '../etiquetas'
 import { useVisitasSueltas } from '../hooks/consultas'
 import type { Viaje } from '../types'
 
@@ -80,7 +80,7 @@ function LugaresSueltos({ onElegir }: { onElegir: (codigo: string) => void }) {
               <span className="viaje-texto">
                 <strong>{visita.region_nombre}</strong>
                 <span className="tenue">
-                  {ETIQUETAS_NIVEL[visita.region_nivel]} · {visita.realizada ? ETIQUETAS_PRESENCIA[visita.tipo_presencia] : 'Deseo'}
+                  {ETIQUETAS_NIVEL[visita.region_nivel]} · {etiquetaVisita(visita)}
                 </span>
               </span>
             </button>

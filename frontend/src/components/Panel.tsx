@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { type KeyboardEvent, useEffect, useRef } from 'react'
 import { useEstadisticas } from '../hooks/consultas'
 import {
-  abrirFicha, cerrarFicha, elegirLogro, elegirViaje, irAPestania, type Pestania, PESTANIAS, type Seleccion,
+  abrirFicha, cerrarFicha, elegirLogro, elegirViaje, irAPestania, type Pestania, pestaniaPorTecla, PESTANIAS, type Seleccion,
   viajeElegido,
 } from '../seleccion'
 import type { Foto, Logro, Viaje } from '../types'
@@ -48,6 +48,13 @@ export default function Panel({
   const cambiarPestania = (nueva: Pestania) => {
     if (nueva !== pestania || region) onSeleccionar(irAPestania(seleccion, nueva), { acercar: false })
   }
+  const alApretarTecla = (evento: KeyboardEvent<HTMLElement>) => {
+    const nueva = pestaniaPorTecla(pestania, evento.key)
+    if (!nueva) return
+    evento.preventDefault()
+    cambiarPestania(nueva)
+    evento.currentTarget.querySelector<HTMLElement>(`#pestania-${nueva}`)?.focus()
+  }
   const salirDelViaje = () => onSeleccionar(elegirViaje(seleccion, null), { acercar: false })
   // De vuelta a lo que había debajo de la ficha: el viaje elegido, si se la abrió desde ahí.
   const debajoDeLaFicha = pestania === 'viajes' && viaje ? viaje.nombre : NOMBRES[pestania]
@@ -68,10 +75,12 @@ export default function Panel({
         )}
       </header>
 
-      <nav className="pestanias" role="tablist" aria-label="Secciones del panel">
+      {/* Con Tab se entra a la pestaña activa y con las flechas se pasa a las otras: un solo paso de Tab para las cuatro. */}
+      <nav className="pestanias" role="tablist" aria-label="Secciones del panel" onKeyDown={alApretarTecla}>
         {PESTANIAS.map((p) => (
           <button
-            key={p} role="tab" aria-selected={p === pestania} className={p === pestania ? 'activa' : ''}
+            key={p} id={`pestania-${p}`} role="tab" aria-selected={p === pestania} aria-controls="pestania-contenido"
+            tabIndex={p === pestania ? 0 : -1} className={p === pestania ? 'activa' : ''}
             onClick={() => cambiarPestania(p)}
           >
             {NOMBRES[p]}
@@ -79,51 +88,53 @@ export default function Panel({
         ))}
       </nav>
 
-      {region ? (
-        <>
-          <button className="volver" onClick={() => onSeleccionar(cerrarFicha(seleccion), { acercar: false })}>
-            ← Volver a {debajoDeLaFicha}
-          </button>
-          <RegionFicha codigo={region} onElegirViaje={(id) => onSeleccionar(elegirViaje(seleccion, id))} />
-        </>
-      ) : pestania === 'viajes' ? (
-        idViaje === 'nuevo' ? (
+      <div id="pestania-contenido" role="tabpanel" aria-labelledby={`pestania-${pestania}`}>
+        {region ? (
           <>
-            <button className="volver" onClick={salirDelViaje}>← Viajes</button>
-            <h2>Nuevo viaje</h2>
-            <ViajeForm onGuardado={(nuevo) => onSeleccionar(elegirViaje(seleccion, nuevo.id))} />
+            <button className="volver" onClick={() => onSeleccionar(cerrarFicha(seleccion), { acercar: false })}>
+              ← Volver a {debajoDeLaFicha}
+            </button>
+            <RegionFicha codigo={region} onElegirViaje={(id) => onSeleccionar(elegirViaje(seleccion, id))} />
           </>
-        ) : viaje ? (
-          <ViajeDetalle
-            viaje={viaje} fotos={fotos} onVolver={salirDelViaje}
-            marcando={marcando} onCambiarMarcando={onCambiarMarcando} aviso={aviso} onAviso={onAviso}
-          />
-        ) : (
-          <ViajesLista
-            viajes={viajes} cargando={cargando} error={error}
-            onElegir={(id) => onSeleccionar(elegirViaje(seleccion, id))}
-            onNuevo={() => onSeleccionar(elegirViaje(seleccion, 'nuevo'))}
-            onElegirRegion={(codigo) => onSeleccionar(abrirFicha(seleccion, codigo))}
-          />
-        )
-      ) : pestania === 'logros' ? (
-        <>
-          <p className="cursiva">
-            {logros?.filter((l) => l.completo).length ?? 0} de {logros?.length ?? 0} sellados.
-            {' '}Elegí uno para ver sus regiones en el mapa.
-          </p>
-          {logros ? (
-            <LogrosLista
-              logros={logros} elegido={logro}
-              onElegir={(id) => onSeleccionar(elegirLogro(seleccion, id), { acercar: id !== null })}
+        ) : pestania === 'viajes' ? (
+          idViaje === 'nuevo' ? (
+            <>
+              <button className="volver" onClick={salirDelViaje}>← Viajes</button>
+              <h2>Nuevo viaje</h2>
+              <ViajeForm onGuardado={(nuevo) => onSeleccionar(elegirViaje(seleccion, nuevo.id))} />
+            </>
+          ) : viaje ? (
+            <ViajeDetalle
+              viaje={viaje} fotos={fotos} onVolver={salirDelViaje}
+              marcando={marcando} onCambiarMarcando={onCambiarMarcando} aviso={aviso} onAviso={onAviso}
             />
-          ) : <p className="vacio">Cargando…</p>}
-        </>
-      ) : pestania === 'fichas' ? (
-        <FichasLista onElegir={(codigo) => onSeleccionar(abrirFicha(seleccion, codigo))} />
-      ) : (
-        <Estadisticas />
-      )}
+          ) : (
+            <ViajesLista
+              viajes={viajes} cargando={cargando} error={error}
+              onElegir={(id) => onSeleccionar(elegirViaje(seleccion, id))}
+              onNuevo={() => onSeleccionar(elegirViaje(seleccion, 'nuevo'))}
+              onElegirRegion={(codigo) => onSeleccionar(abrirFicha(seleccion, codigo))}
+            />
+          )
+        ) : pestania === 'logros' ? (
+          <>
+            <p className="cursiva">
+              {logros?.filter((l) => l.completo).length ?? 0} de {logros?.length ?? 0} sellados.
+              {' '}Elegí uno para ver sus regiones en el mapa.
+            </p>
+            {logros ? (
+              <LogrosLista
+                logros={logros} elegido={logro}
+                onElegir={(id) => onSeleccionar(elegirLogro(seleccion, id), { acercar: id !== null })}
+              />
+            ) : <p className="vacio">Cargando…</p>}
+          </>
+        ) : pestania === 'fichas' ? (
+          <FichasLista onElegir={(codigo) => onSeleccionar(abrirFicha(seleccion, codigo))} />
+        ) : (
+          <Estadisticas />
+        )}
+      </div>
     </aside>
   )
 }
