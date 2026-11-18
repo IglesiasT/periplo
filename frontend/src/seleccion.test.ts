@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  abrirFicha, cerrarFicha, elegirLogro, elegirViaje, irAPestania, regionesDe, resaltadasDe, type Seleccion,
+  abrirFicha, cerrarFicha, elegirLogro, elegirViaje, irAPestania, pestaniaPorTecla, regionesDe, resaltadasDe, type Seleccion,
   SIN_SELECCION, viajeElegido,
 } from './seleccion'
 import type { Logro, Viaje, Visita } from './types'
@@ -99,6 +99,25 @@ describe('regionesDe', () => {
 
   it('un viaje sin regiones no mueve el mapa', () => {
     expect(regionesDe({ ...SIN_SELECCION, viaje: 2 }, viajes)).toEqual([])
+  })
+})
+
+describe('pestaniaPorTecla', () => {
+  it('las flechas pasan a la vecina y dan la vuelta', () => {
+    expect(pestaniaPorTecla('viajes', 'ArrowRight')).toBe('logros')
+    expect(pestaniaPorTecla('numeros', 'ArrowRight')).toBe('viajes')
+    expect(pestaniaPorTecla('logros', 'ArrowLeft')).toBe('viajes')
+    expect(pestaniaPorTecla('viajes', 'ArrowLeft')).toBe('numeros')
+  })
+
+  it('Inicio y Fin van a los extremos', () => {
+    expect(pestaniaPorTecla('fichas', 'Home')).toBe('viajes')
+    expect(pestaniaPorTecla('logros', 'End')).toBe('numeros')
+  })
+
+  it('cualquier otra tecla no hace nada', () => {
+    expect(pestaniaPorTecla('viajes', 'a')).toBeNull()
+    expect(pestaniaPorTecla('viajes', 'Tab')).toBeNull()
   })
 })
 

@@ -13,7 +13,9 @@ export class ErrorApi extends Error {
     const normalizados = Object.fromEntries(
       Object.entries(campos).map(([campo, msj]) => [campo, Array.isArray(msj) ? msj.map(String) : [String(msj)]]),
     )
-    super(normalizados.detail?.[0] ?? `La API respondió ${status}`)
+    // Lo más legible que haya: el detalle, el error general de la validación o el del primer campo.
+    const legible = normalizados.detail ?? normalizados.non_field_errors ?? Object.values(normalizados)[0]
+    super(legible?.[0] ?? `La API respondió ${status}`)
     this.status = status
     this.campos = normalizados
   }
@@ -64,6 +66,7 @@ export const actualizarViaje = (id: number, datos: Partial<DatosViaje>) =>
   pedir<Viaje>('PATCH', `/api/viajes/${id}/`, datos)
 export const borrarViaje = (id: number) => pedir<void>('DELETE', `/api/viajes/${id}/`)
 
+export const listarVisitasSueltas = () => pedir<Visita[]>('GET', '/api/visitas/?viaje=ninguno')
 export const crearVisita = (datos: DatosVisita) => pedir<Visita>('POST', '/api/visitas/', datos)
 export const actualizarVisita = (id: number, datos: Partial<DatosVisita>) =>
   pedir<Visita>('PATCH', `/api/visitas/${id}/`, datos)

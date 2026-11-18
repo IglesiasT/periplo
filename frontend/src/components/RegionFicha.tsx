@@ -1,5 +1,5 @@
 import Markdown from 'react-markdown'
-import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, formatearFecha } from '../etiquetas'
+import { ETIQUETAS_NIVEL, etiquetaVisita, formatearFecha } from '../etiquetas'
 import { formatearAnio } from '../historia'
 import { useGuardarFicha, useRegion } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
@@ -44,8 +44,12 @@ function Texto({ region }: { region: RegionDetalle }) {
   const { ficha } = region
   const sinGuardar = borrador !== null && borrador !== (ficha?.texto ?? '')
 
-  const enviar = () =>
-    guardar.mutate({ codigo: region.codigo, texto: borrador ?? '' }, { onSuccess: () => setBorrador(null) })
+  const enviar = () => {
+    const texto = borrador ?? ''
+    // Vaciar una ficha escrita la borra para siempre: que no pase por un descuido.
+    if (ficha && !texto.trim() && !window.confirm(`¿Borrar la ficha de ${region.nombre}? No se puede deshacer.`)) return
+    guardar.mutate({ codigo: region.codigo, texto }, { onSuccess: () => setBorrador(null) })
+  }
 
   return (
     <section>
@@ -91,7 +95,7 @@ function Visitas({ region, onElegirViaje }: { region: RegionDetalle; onElegirVia
           {region.visitas.map((v) => {
             const detalle = [
               v.region !== region.codigo ? v.region_nombre : null,
-              v.realizada ? ETIQUETAS_PRESENCIA[v.tipo_presencia] : 'Deseo',
+              etiquetaVisita(v),
             ].filter(Boolean).join(' · ')
             return (
               <li key={v.id}>

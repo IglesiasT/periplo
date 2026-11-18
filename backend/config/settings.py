@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'mapa.middleware.SoloOrigenLocalMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -138,6 +139,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# Respaldos (ver mapa/respaldos.py). Conviene que RESPALDOS_DIR apunte a otro disco o a una carpeta sincronizada.
+RESPALDOS_DIR = Path(os.environ.get('RESPALDOS_DIR') or BASE_DIR / 'respaldos')
+RESPALDO_CADA_DIAS = 7
+RESPALDOS_A_CONSERVAR = 8
 
 # Notion (ver backend/.env.example)
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN', '')

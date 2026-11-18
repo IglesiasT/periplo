@@ -1259,6 +1259,15 @@ textarea {
   display: block;
 }
 
+.epoca-panel summary {
+  cursor: pointer;
+}
+
+.panel .pestanias button:focus-visible {
+  outline: 2px solid var(--carmin);
+  outline-offset: -2px;
+}
+
 /* --- Lo que es solo del atlas: ornamentos de un libro impreso. Un tema nuevo no necesita nada de esto. --- */
 
 :root[data-tema='atlas'] .estadisticas {

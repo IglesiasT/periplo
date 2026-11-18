@@ -1,4 +1,4 @@
-import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA } from '../etiquetas'
+import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, etiquetaVisita } from '../etiquetas'
 import { useActualizarVisita, useBorrarVisita } from '../hooks/consultas'
 import type { TipoPresencia, Visita } from '../types'
 
@@ -27,7 +27,7 @@ export default function VisitasLista({ visitas, onAviso }: Props) {
           </div>
           {visita.desde_notion ? (
             <span className="tenue">
-              {visita.realizada ? ETIQUETAS_PRESENCIA[visita.tipo_presencia] : 'Deseo'}
+              {etiquetaVisita(visita)}
             </span>
           ) : (
             <div className="controles">

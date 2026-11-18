@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { ErrorApi } from '../api'
-import { ETIQUETAS_ESTADO_VIAJE } from '../etiquetas'
+import { ETIQUETAS_ESTADO_VIAJE, mensajeBorrarViaje } from '../etiquetas'
 import { useBorrarViaje, useGuardarViaje } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
 import type { DatosViaje, EstadoViaje, Viaje } from '../types'
@@ -10,11 +10,13 @@ const VACIO: DatosViaje = { nombre: '', estado: 'hecho', fecha_inicio: null, fec
 interface Props {
   /** Sin viaje, el formulario crea uno nuevo. */
   viaje?: Viaje
+  /** Cuántas fotos se van con el viaje si se lo borra. */
+  cantidadFotos?: number
   onGuardado?: (viaje: Viaje) => void
   onBorrado?: () => void
 }
 
-export default function ViajeForm({ viaje, onGuardado, onBorrado }: Props) {
+export default function ViajeForm({ viaje, cantidadFotos = 0, onGuardado, onBorrado }: Props) {
   // Formulario controlado: lo que se ve es lo guardado con los cambios sin guardar encima.
   const [borrador, setBorrador] = useBorrador<DatosViaje>(`viaje.${viaje?.id ?? 'nuevo'}`)
   const guardado: DatosViaje = viaje
@@ -46,13 +48,13 @@ export default function ViajeForm({ viaje, onGuardado, onBorrado }: Props) {
   }
 
   const eliminar = () => {
-    if (viaje && window.confirm(`¿Borrar "${viaje.nombre}" y sus visitas?`)) {
-      borrar.mutate(viaje.id, {
-        onSuccess: () => {
-          setBorrador(null)
-          onBorrado?.()
-        },
-      })
+    if (viaje && window.confirm(mensajeBorrarViaje(viaje.nombre, viaje.visitas.length, cantidadFotos))) {
+      // Con la promesa y no con onSuccess: al refrescarse la lista este formulario se desmonta antes de que la
+      // mutación termine, y sus callbacks ya no se llamarían. Si falla, el error se muestra abajo.
+      borrar.mutateAsync(viaje.id).then(() => {
+        setBorrador(null)
+        onBorrado?.()
+      }, () => {})
     }
   }
 

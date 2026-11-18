@@ -6,6 +6,7 @@ import type { DatosViaje, DatosVisita } from '../types'
 const CLAVES = {
   estados: ['estados'],
   viajes: ['viajes'],
+  visitasSueltas: ['visitas-sueltas'],
   estadisticas: ['estadisticas'],
   logros: ['logros'],
   fotos: ['fotos'],
@@ -73,6 +74,8 @@ export function useGuardarFicha() {
 }
 
 export const useFotos = () => useQuery({ queryKey: CLAVES.fotos, queryFn: api.listarFotos })
+
+export const useVisitasSueltas = () => useQuery({ queryKey: CLAVES.visitasSueltas, queryFn: api.listarVisitasSueltas })
 
 export const useViajes = () => useQuery({ queryKey: CLAVES.viajes, queryFn: api.listarViajes })
 

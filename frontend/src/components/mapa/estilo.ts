@@ -60,8 +60,10 @@ const RESALTADA: ExpressionSpecification = ['coalesce', ['feature-state', 'resal
 const DIRECTA: ExpressionSpecification = ['==', RESALTADA, 'directa']
 const ALGUNA: ExpressionSpecification = ['!=', RESALTADA, 'ninguna']
 
-// Provincias con un nivel más detallado debajo (por ahora, solo las argentinas del IGN).
-const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['==', ['get', 'padre'], 'ARG']
+// Los países con un nivel más detallado debajo de las provincias. Si se cargan departamentos de otro país, hay
+// que sumarlo acá: un test compara esta lista con departamentos.geojson.
+export const PAISES_CON_DEPARTAMENTOS = ['ARG']
+const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['in', ['get', 'padre'], ['literal', PAISES_CON_DEPARTAMENTOS]]
 
 const ES_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 1, 0]
 

@@ -20,6 +20,24 @@ export interface Seleccion {
 
 export const SIN_SELECCION: Seleccion = { pestania: 'viajes', viaje: null, logro: null, region: null }
 
+/** A qué pestaña lleva una tecla, parado en `actual`, como en cualquier grupo de pestañas: las flechas dan la vuelta.
+ *  null si la tecla no es de navegación. */
+export function pestaniaPorTecla(actual: Pestania, tecla: string): Pestania | null {
+  const i = PESTANIAS.indexOf(actual)
+  switch (tecla) {
+    case 'ArrowRight':
+      return PESTANIAS[(i + 1) % PESTANIAS.length]
+    case 'ArrowLeft':
+      return PESTANIAS[(i - 1 + PESTANIAS.length) % PESTANIAS.length]
+    case 'Home':
+      return PESTANIAS[0]
+    case 'End':
+      return PESTANIAS[PESTANIAS.length - 1]
+    default:
+      return null
+  }
+}
+
 export const irAPestania = (actual: Seleccion, pestania: Pestania): Seleccion => ({ ...actual, pestania, region: null })
 
 export const elegirViaje = (actual: Seleccion, viaje: Seleccion['viaje']): Seleccion =>
