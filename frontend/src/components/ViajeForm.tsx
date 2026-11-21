@@ -93,6 +93,7 @@ export default function ViajeForm({ viaje, cantidadFotos = 0, onGuardado, onBorr
           <CampoFecha valor={datos.fecha_fin} onCambio={(iso) => cambiar('fecha_fin', iso)} />
         </label>
       </div>
+      <Error mensajes={errores.fecha_inicio} />
       <Error mensajes={errores.fecha_fin} />
 
       <label>

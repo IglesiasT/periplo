@@ -1,3 +1,6 @@
+from datetime import date
+
+from django.test import override_settings
 from rest_framework.test import APITestCase
 
 from ..models import Region, Viaje, Visita
@@ -38,6 +41,27 @@ class ApiTests(APITestCase):
                                                       'fecha_fin': '2026-05-01'}, format='json')
         self.assertEqual(respuesta.status_code, 400)
         self.assertIn('fecha_fin', respuesta.data)
+
+    def test_fecha_que_no_existe(self):
+        respuesta = self.client.post('/api/viajes/', {'nombre': 'X', 'fecha_inicio': '2026-02-31'}, format='json')
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn('fecha_inicio', respuesta.data)
+
+    @override_settings(FECHA_NACIMIENTO=date(2000, 3, 15))
+    def test_fecha_anterior_al_nacimiento(self):
+        respuesta = self.client.post('/api/viajes/', {'nombre': 'X', 'fecha_inicio': '1026-01-20',
+                                                      'fecha_fin': '2000-03-14'}, format='json')
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn('15/03/2000', respuesta.data['fecha_inicio'][0])
+        self.assertIn('fecha_fin', respuesta.data)
+        # El mismo día de nacimiento vale.
+        respuesta = self.client.post('/api/viajes/', {'nombre': 'X', 'fecha_inicio': '2000-03-15'}, format='json')
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+
+    @override_settings(FECHA_NACIMIENTO=None)
+    def test_sin_fecha_de_nacimiento_no_se_controla(self):
+        respuesta = self.client.post('/api/viajes/', {'nombre': 'X', 'fecha_inicio': '1026-01-20'}, format='json')
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
 
     def test_viaje_de_notion_admite_fechas_y_notas_pero_no_nombre(self):
         url = f'/api/viajes/{self.notion.id}/'

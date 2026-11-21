@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from .models import Foto, Region, Viaje, Visita
@@ -36,6 +37,15 @@ class ViajeSerializer(serializers.ModelSerializer):
         fin = datos.get('fecha_fin', getattr(self.instance, 'fecha_fin', None))
         if inicio and fin and fin < inicio:
             raise serializers.ValidationError({'fecha_fin': 'No puede ser anterior a la fecha de inicio.'})
+
+        # Una fecha antes de nacer es un error de tipeo (1026 por 2026), no un viaje.
+        nacimiento = settings.FECHA_NACIMIENTO
+        if nacimiento:
+            antes = {campo: f'No puede ser anterior a tu nacimiento ({nacimiento:%d/%m/%Y}).'
+                     for campo, fecha in (('fecha_inicio', inicio), ('fecha_fin', fin))
+                     if fecha and fecha < nacimiento}
+            if antes:
+                raise serializers.ValidationError(antes)
 
         # Nombre y estado de un viaje de Notion los pisa el sync: solo se pueden editar fechas y notas.
         if self.instance and self.instance.notion_id:
