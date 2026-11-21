@@ -4,6 +4,7 @@ import { ETIQUETAS_ESTADO_VIAJE, mensajeBorrarViaje } from '../etiquetas'
 import { useBorrarViaje, useGuardarViaje } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
 import type { DatosViaje, EstadoViaje, Viaje } from '../types'
+import CampoFecha from './CampoFecha'
 
 const VACIO: DatosViaje = { nombre: '', estado: 'hecho', fecha_inicio: null, fecha_fin: null, notas: '' }
 
@@ -85,13 +86,11 @@ export default function ViajeForm({ viaje, cantidadFotos = 0, onGuardado, onBorr
       <div className="fila">
         <label>
           Desde
-          <input type="date" value={datos.fecha_inicio ?? ''}
-                 onChange={(e) => cambiar('fecha_inicio', e.target.value || null)} />
+          <CampoFecha valor={datos.fecha_inicio} onCambio={(iso) => cambiar('fecha_inicio', iso)} />
         </label>
         <label>
           Hasta
-          <input type="date" value={datos.fecha_fin ?? ''}
-                 onChange={(e) => cambiar('fecha_fin', e.target.value || null)} />
+          <CampoFecha valor={datos.fecha_fin} onCambio={(iso) => cambiar('fecha_fin', iso)} />
         </label>
       </div>
       <Error mensajes={errores.fecha_fin} />

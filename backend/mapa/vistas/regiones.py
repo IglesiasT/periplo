@@ -32,6 +32,7 @@ def region(request, codigo):
         'visitas': [
             {'id': v.id, 'viaje': v.viaje_id, 'viaje_nombre': v.viaje.nombre if v.viaje else None,
              'viaje_inicio': v.viaje.fecha_inicio if v.viaje else None,
+             'viaje_fin': v.viaje.fecha_fin if v.viaje else None,
              'region': v.region.codigo, 'region_nombre': v.region.nombre,
              'tipo_presencia': v.tipo_presencia, 'realizada': v.realizada}
             for v in visitas
