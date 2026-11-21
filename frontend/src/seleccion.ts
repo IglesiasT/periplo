@@ -1,4 +1,4 @@
-import { regionesAEncuadrar, resaltarRegiones, resaltarViaje, type Resaltadas } from './resaltado'
+import { regionesAEncuadrar, resaltarLogro, resaltarViaje, type Resaltadas } from './resaltado'
 import type { Logro, Viaje } from './types'
 
 export const PESTANIAS = ['viajes', 'logros', 'fichas', 'numeros'] as const
@@ -57,7 +57,7 @@ export function viajeElegido(seleccion: Seleccion, viajes: Viaje[] = []): Viaje 
 // Lo que se resalta debajo de la ficha: un logro desplegado, o si no el viaje elegido.
 function resaltadasBase(seleccion: Seleccion, viajes: Viaje[], logros: Logro[]): Resaltadas {
   const logro = seleccion.pestania === 'logros' ? logros.find((l) => l.id === seleccion.logro) : undefined
-  if (logro) return resaltarRegiones(logro.objetivos.flatMap((o) => o.regiones))
+  if (logro) return resaltarLogro(logro.objetivos)
   return resaltarViaje(viajeElegido(seleccion, viajes)?.visitas ?? [])
 }
 

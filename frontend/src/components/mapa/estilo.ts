@@ -58,6 +58,7 @@ const ESTADO: ExpressionSpecification = ['coalesce', ['feature-state', 'estado']
 // Feature-state "resaltada": 'directa' (la región elegida) o 'contiene' (su país o provincia); ver resaltado.ts.
 const RESALTADA: ExpressionSpecification = ['coalesce', ['feature-state', 'resaltada'], 'ninguna']
 const DIRECTA: ExpressionSpecification = ['==', RESALTADA, 'directa']
+const NIVEL: ExpressionSpecification = ['==', RESALTADA, 'nivel']
 const ALGUNA: ExpressionSpecification = ['!=', RESALTADA, 'ninguna']
 
 // Los países con un nivel más detallado debajo de las provincias. Si se cargan departamentos de otro país, hay
@@ -403,15 +404,21 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
       },
 
       // Contorno de lo elegido en el panel (feature-state "resaltada"): las directas en cualquier zoom,
-      // las que contienen a una elegida solo mientras se ven a ese nivel. Sin minzoom ni maxzoom a propósito.
-      ...capasResaltado('departamentos', (f) => ['case', DIRECTA, f, 0], tema),
+      // las que contienen a una elegida solo mientras se ven a ese nivel, y las de un logro (`nivel`) desde que
+      // aparece su nivel hacia adentro. Sin minzoom ni maxzoom a propósito.
+      ...capasResaltado('departamentos', (f) => [
+        'interpolate', ['linear'], ['zoom'],
+        d - FUNDIDO, ['case', DIRECTA, f, 0],
+        d + FUNDIDO, ['case', DIRECTA, f, NIVEL, f, 0],
+      ], tema),
       ...capasResaltado('provincias', (f) => [
         'interpolate', ['linear'], ['zoom'],
         p - FUNDIDO, ['case', DIRECTA, f, 0],
         p + FUNDIDO, ['case', ALGUNA, f, 0],
         d - FUNDIDO, ['case', ALGUNA, f, 0],
-        // Con departamentos, la provincia que los contiene deja el contorno a ellos.
-        d + FUNDIDO, ['case', DIRECTA, f, ALGUNA, ['case', TIENE_DEPARTAMENTOS, 0, f], 0],
+        // Con departamentos, la provincia que los contiene deja el contorno a ellos. La de un logro no: el
+        // objetivo es la provincia entera.
+        d + FUNDIDO, ['case', DIRECTA, f, NIVEL, f, ALGUNA, ['case', TIENE_DEPARTAMENTOS, 0, f], 0],
       ], tema),
       ...capasResaltado('paises', (f) => [
         'interpolate', ['linear'], ['zoom'],

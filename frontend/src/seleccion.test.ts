@@ -14,8 +14,8 @@ const logros = [
   {
     id: 'campania_libertadora',
     objetivos: [
-      { nombre: 'Mendoza', regiones: ['AR-M'], cumplido: true },
-      { nombre: 'Santiago', regiones: ['CL-RM'], cumplido: false },
+      { nombre: 'Mendoza', regiones: ['AR-M'], contenedoras: ['ARG'], cumplido: true },
+      { nombre: 'Santiago', regiones: ['CL-RM'], contenedoras: ['CHL'], cumplido: false },
     ],
   },
 ] as unknown as Logro[]
@@ -69,7 +69,7 @@ describe('el viaje elegido sigue resaltado', () => {
 describe('resaltadasDe', () => {
   it('un logro desplegado resalta todos sus objetivos en lugar del viaje', () => {
     const resaltadas = resaltadasDe(elegirLogro(conViaje, 'campania_libertadora'), viajes, logros)
-    expect([...resaltadas.keys()]).toEqual(['AR-M', 'CL-RM'])
+    expect(Object.fromEntries(resaltadas)).toEqual({ 'AR-M': 'nivel', 'CL-RM': 'nivel', ARG: 'contiene', CHL: 'contiene' })
   })
 
   it('el logro desplegado se resalta solo en su pestaña', () => {
