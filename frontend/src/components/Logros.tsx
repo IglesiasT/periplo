@@ -1,12 +1,6 @@
 import { useTema } from '../tema/contexto'
+import { ordenarLogros } from '../logros'
 import type { Logro } from '../types'
-
-/** Primero los completos, después los más avanzados. */
-function ordenarLogros(logros: Logro[]): Logro[] {
-  const avance = (l: Logro) => (l.total ? l.cumplidos / l.total : 0)
-  return [...logros].sort((a, b) => Number(b.completo) - Number(a.completo) || avance(b) - avance(a)
-    || a.nombre.localeCompare(b.nombre, 'es'))
-}
 
 interface ListaProps {
   logros: Logro[]
@@ -38,7 +32,7 @@ export function LogrosLista({ logros, elegido, onElegir }: ListaProps) {
                 <p className="cursiva">{logro.descripcion}</p>
                 <ul className="objetivos">
                   {objetivos.map((objetivo) => (
-                    <li key={objetivo.nombre} className={objetivo.cumplido ? 'cumplido' : ''}>{objetivo.nombre}</li>
+                    <li key={`${objetivo.nombre}·${objetivo.regiones[0]}`} className={objetivo.cumplido ? 'cumplido' : ''}>{objetivo.nombre}</li>
                   ))}
                 </ul>
               </div>

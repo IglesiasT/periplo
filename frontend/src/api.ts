@@ -55,10 +55,9 @@ export const guardarFicha = (codigo: string, texto: string) =>
 export const listarFichas = () => pedir<FichaResumen[]>('GET', '/api/fichas/')
 
 /** Recuadro [oeste, sur, este, norte] que contiene a esas regiones; null si ninguna existe. */
-export function obtenerEncuadre(codigos: string[]) {
-  const parametros = new URLSearchParams(codigos.map((codigo) => ['codigo', codigo]))
-  return pedir<{ limites: [number, number, number, number] | null }>('GET', `/api/encuadre/?${parametros}`)
-}
+// POST y no GET: un logro grande pide más de mil regiones y en la URL no entran.
+export const obtenerEncuadre = (codigos: string[]) =>
+  pedir<{ limites: [number, number, number, number] | null }>('POST', '/api/encuadre/', { codigos })
 
 export const listarViajes = () => pedir<Viaje[]>('GET', '/api/viajes/')
 export const crearViaje = (datos: DatosViaje) => pedir<Viaje>('POST', '/api/viajes/', datos)

@@ -12,11 +12,19 @@ class EncuadreApiTests(APITestCase):
         Region.objects.create(nivel='provincia', codigo='AR-X', nombre='Sin calcular')
 
     def test_une_las_regiones_pedidas_e_ignora_las_desconocidas(self):
-        respuesta = self.client.get('/api/encuadre/', {'codigo': ['AR-M', 'CL-RM', 'XX-NADA', 'AR-X']})
+        respuesta = self.client.post('/api/encuadre/', {'codigos': ['AR-M', 'CL-RM', 'XX-NADA', 'AR-X']}, format='json')
         self.assertEqual(respuesta.data, {'limites': [-71.7, -37.6, -66.5, -32]})
 
     def test_sin_regiones_conocidas(self):
-        self.assertEqual(self.client.get('/api/encuadre/', {'codigo': 'XX-NADA'}).data, {'limites': None})
+        self.assertEqual(self.client.post('/api/encuadre/', {'codigos': ['XX-NADA']}, format='json').data,
+                         {'limites': None})
+
+    def test_muchas_regiones(self):
+        # Un logro grande pide más de mil: por URL no entraban (431).
+        codigos = ['AR-M', 'CL-RM'] + [f'XX-{i}' for i in range(2000)]
+        respuesta = self.client.post('/api/encuadre/', {'codigos': codigos}, format='json')
+        self.assertEqual(respuesta.data, {'limites': [-71.7, -37.6, -66.5, -32]})
+        self.assertEqual(self.client.post('/api/encuadre/', {'codigos': 'AR-M'}, format='json').status_code, 400)
 
 
 class FichasApiTests(APITestCase):

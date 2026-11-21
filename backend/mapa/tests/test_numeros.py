@@ -5,7 +5,17 @@ from django.conf import settings
 from django.test import SimpleTestCase, TestCase
 
 from ..estadisticas import calcular_estadisticas
-from ..logros import LOGROS, Indice, Logro, calcular_logros, continentes, grupos, provincias_de, regiones
+from ..logros import (
+    LOGROS,
+    Indice,
+    Logro,
+    calcular_logros,
+    continentes,
+    grupos,
+    nacion_formable,
+    provincias_de,
+    regiones,
+)
 from ..models import EntidadPoliticaHistorica, Region, RegionEpoca, Visita
 
 
@@ -86,6 +96,12 @@ class LogrosTests(TestCase):
         plata = Logro('plata', 'Plata', '', grupos({'Argentina': ['AR-C', 'AR-B'], 'Uruguay': ['URY']}))
         self.assertEqual(self.avance(plata), {'plata': (2, 2, True)})
 
+    def test_cada_objetivo_trae_las_regiones_que_lo_contienen(self):
+        logro = Logro('x', 'X', '', grupos({'Quebrada': ['AR-38094'], 'NOA': ['AR-Y', 'AR-A'], 'País': ['ARG']}))
+        [resultado] = calcular_logros([logro])
+        self.assertEqual({o['nombre']: o['contenedoras'] for o in resultado['objetivos']},
+                         {'Quebrada': ['AR-Y', 'ARG'], 'NOA': ['ARG'], 'País': []})
+
     def test_codigos_que_no_estan_en_la_base_se_ignoran(self):
         Visita.objects.create(region=self.arg)
         logro = Logro('x', 'X', '', regiones('ARG', 'ZZZ'))
@@ -97,6 +113,42 @@ class LogrosTests(TestCase):
         [resultado] = calcular_logros([logro])
         self.assertEqual([(o['nombre'], o['cumplido']) for o in resultado['objetivos']],
                          [('Sudamérica', True), ('Europa', False)])
+
+    def test_nacion_formable_por_pais_solo_cuenta_lo_que_fue_parte(self):
+        imperio = EntidadPoliticaHistorica.objects.create(nombre='Imperio')
+        # Jujuy fue parte entera; Salta, solo una astilla del borde: no cuenta.
+        RegionEpoca.objects.create(region=self.jujuy, anio=1800, entidad=imperio, porcentaje_superficie=90)
+        RegionEpoca.objects.create(region=self.salta, anio=1800, entidad=imperio, porcentaje_superficie=10)
+        Visita.objects.create(region=self.salta)
+        logro = Logro('i', 'I', '', nacion_formable([('Imperio', 1800)]))
+
+        [resultado] = calcular_logros([logro])
+        self.assertEqual([(o['nombre'], o['regiones'], o['cumplido']) for o in resultado['objetivos']],
+                         [('Argentina', ['AR-Y'], False)])
+        Visita.objects.create(region=self.tilcara)
+        self.assertEqual(self.avance(logro), {'i': (1, 1, True)})
+
+    def test_nacion_formable_se_corrige_a_mano(self):
+        imperio = EntidadPoliticaHistorica.objects.create(nombre='Imperio')
+        RegionEpoca.objects.create(region=self.jujuy, anio=1800, entidad=imperio)
+        RegionEpoca.objects.create(region=self.caba, anio=1800, entidad=imperio)
+        # Un país entero se suma con todas sus provincias (o él mismo, si no tiene); una provincia, sola.
+        logro = Logro('i', 'I', '', nacion_formable([('Imperio', 1800)], incluir=['URY', 'AR-A'], excluir=['AR-C']))
+        [resultado] = calcular_logros([logro])
+        self.assertEqual([(o['nombre'], o['regiones']) for o in resultado['objetivos']],
+                         [('Argentina', ['AR-A', 'AR-Y']), ('Uruguay', ['URY'])])
+
+        # Sin datos históricos también se puede armar entera a mano.
+        a_mano = Logro('m', 'M', '', nacion_formable(incluir=['ARG'], excluir=['AR-C', 'AR-A']))
+        [resultado] = calcular_logros([a_mano])
+        self.assertEqual(resultado['objetivos'][0]['regiones'], ['AR-Y'])
+
+    def test_nacion_formable_por_provincia_lleva_el_pais_en_el_nombre(self):
+        Visita.objects.create(region=self.jujuy)
+        logro = Logro('i', 'I', '', nacion_formable(incluir=['AR-Y', 'AR-A'], por_provincia=True))
+        [resultado] = calcular_logros([logro])
+        self.assertEqual([(o['nombre'], o['cumplido']) for o in resultado['objetivos']],
+                         [('Jujuy (Argentina)', True), ('Salta (Argentina)', False)])
 
     def test_api(self):
         respuesta = self.client.get('/api/logros/')

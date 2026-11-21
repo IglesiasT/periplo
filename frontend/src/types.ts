@@ -73,6 +73,8 @@ export interface Logro {
     nombre: string
     /** Se cumple con una visita realizada a cualquiera de estas regiones (o a algo que esté adentro). */
     regiones: string[]
+    /** Las que contienen a esas regiones (sus países): de lejos se resaltan ellas. */
+    contenedoras: string[]
     cumplido: boolean
   }[]
 }

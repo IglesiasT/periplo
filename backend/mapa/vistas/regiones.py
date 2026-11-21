@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from ..epocas import linea_historica
@@ -41,10 +42,14 @@ def region(request, codigo):
     })
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def encuadre(request):
-    """{limites: [oeste, sur, este, norte]} que contiene a todas las regiones ?codigo=...&codigo=...
-    Las que no existen se ignoran; si no queda ninguna, `limites` es null."""
-    recuadros = (Region.objects.filter(codigo__in=request.query_params.getlist('codigo'), encuadre__isnull=False)
+    """{limites: [oeste, sur, este, norte]} que contiene a todas las regiones de {codigos: [...]}.
+    Las que no existen se ignoran; si no queda ninguna, `limites` es null. Es POST y no GET porque un logro como el
+    Imperio romano pide más de mil provincias, y en la URL no entran."""
+    codigos = request.data.get('codigos', [])
+    if not isinstance(codigos, list):
+        raise ValidationError({'codigos': 'Tiene que ser una lista de códigos.'})
+    recuadros = (Region.objects.filter(codigo__in=codigos, encuadre__isnull=False)
                  .values_list('encuadre', flat=True))
     return Response({'limites': unir_recuadros(recuadros)})
