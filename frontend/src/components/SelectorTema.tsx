@@ -10,7 +10,7 @@ export default function SelectorTema() {
         {temas.map((opcion) => (
           <label
             key={opcion.id} title={opcion.nombre} className={opcion.id === tema.id ? 'activa' : ''}
-            style={{ background: `linear-gradient(135deg, ${opcion.mapa.mar} 50%, ${opcion.estados.estadia} 50%)` }}
+            style={{ background: `linear-gradient(135deg, ${opcion.mapa.mar} 50%, ${opcion.estados.visitada} 50%)` }}
           >
             <input
               type="radio" name="tema" value={opcion.id} aria-label={opcion.nombre} checked={opcion.id === tema.id}

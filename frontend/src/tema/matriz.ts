@@ -95,9 +95,7 @@ export const matriz: Tema = {
     rotulos: { mayusculas: true, mayusculasAgua: true, espaciado: 0.6, escala: 0.8 },
   },
   estados: {
-    estadia: rojo,
-    paso: '#ee6f67',
-    transito: '#f5aea8',
+    visitada: rojo,
     deseo: negro,
   },
   aguadas: [

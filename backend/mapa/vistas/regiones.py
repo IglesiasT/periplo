@@ -11,7 +11,7 @@ from .fichas import datos_ficha
 
 @api_view(['GET'])
 def estados(request):
-    """{codigo: estado} con estado en estadia | paso | transito | deseo. Las regiones sin estado no aparecen."""
+    """{codigo: estado} con estado en visitada | deseo. Las regiones sin estado no aparecen."""
     return Response(calcular_estados())
 
 
@@ -34,7 +34,7 @@ def region(request, codigo):
              'viaje_inicio': v.viaje.fecha_inicio if v.viaje else None,
              'viaje_fin': v.viaje.fecha_fin if v.viaje else None,
              'region': v.region.codigo, 'region_nombre': v.region.nombre,
-             'tipo_presencia': v.tipo_presencia, 'realizada': v.realizada}
+             'realizada': v.realizada}
             for v in visitas
         ],
         'historia': linea_historica(region),

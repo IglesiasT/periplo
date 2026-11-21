@@ -42,12 +42,10 @@ describe.each(Object.values(TEMAS))('tema $id', (tema) => {
     expect(contraste(activoTexto, activo)).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('cuanta más presencia, más se separa de la tierra sin visitar', () => {
-    const { estadia, paso, transito, deseo } = tema.estados
+  it('lo visitado y los deseos se separan de la tierra sin visitar', () => {
+    const { visitada, deseo } = tema.estados
     const tierra = tema.mapa.noVisitado
-    expect(contraste(transito, tierra)).toBeGreaterThanOrEqual(1.25)
-    expect(contraste(paso, tierra)).toBeGreaterThan(contraste(transito, tierra))
-    expect(contraste(estadia, tierra)).toBeGreaterThan(contraste(paso, tierra))
+    expect(contraste(visitada, tierra)).toBeGreaterThanOrEqual(3)
     expect(contraste(deseo, tierra)).toBeGreaterThanOrEqual(3)
   })
 })

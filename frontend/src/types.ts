@@ -1,8 +1,5 @@
-/** Intensidad con la que se pinta una región visitada (campo `tipo_presencia` de Visita). */
-export type TipoPresencia = 'estadia' | 'paso' | 'transito'
-
-/** Estado de una región en el mapa: visitada con cierta intensidad, o en la lista de deseos. */
-export type EstadoRegion = TipoPresencia | 'deseo'
+/** Estado de una región en el mapa: visitada, o en la lista de deseos. */
+export type EstadoRegion = 'visitada' | 'deseo'
 
 /** Respuesta de /api/estados/: código de región → estado. Las regiones sin estado no aparecen. */
 export type EstadosRegiones = Record<string, EstadoRegion>
@@ -21,7 +18,6 @@ export interface Visita {
   region_nivel: NivelRegion
   /** Códigos de las regiones que la contienen, de la más chica a la más grande. */
   region_ancestros: string[]
-  tipo_presencia: TipoPresencia
   /** Falso = todavía no fui: se pinta como deseo. */
   realizada: boolean
   /** La creó el sync de Notion: es de solo lectura. */
@@ -42,7 +38,7 @@ export interface Viaje {
 /** Campos de un viaje que se pueden mandar a la API. */
 export type DatosViaje = Pick<Viaje, 'nombre' | 'estado' | 'fecha_inicio' | 'fecha_fin' | 'notas'>
 
-export type DatosVisita = Pick<Visita, 'viaje' | 'region'> & Partial<Pick<Visita, 'tipo_presencia' | 'realizada'>>
+export type DatosVisita = Pick<Visita, 'viaje' | 'region'> & Partial<Pick<Visita, 'realizada'>>
 
 /** Respuesta de /api/estadisticas/. */
 export interface Estadisticas {
@@ -104,7 +100,6 @@ export interface RegionDetalle {
     viaje_fin: string | null
     region: string
     region_nombre: string
-    tipo_presencia: TipoPresencia
     realizada: boolean
   }[]
   /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido. */

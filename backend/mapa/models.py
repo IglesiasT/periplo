@@ -79,16 +79,9 @@ class Viaje(models.Model):
 
 
 class Visita(models.Model):
-    class TipoPresencia(models.TextChoices):
-        # De más a menos intensa en el mapa.
-        ESTADIA = 'estadia', 'Estadía'
-        PASO = 'paso', 'De paso'
-        TRANSITO = 'transito', 'Tránsito'
-
     # Opcional: un lugar puede estar visitado sin saber en qué viaje.
     viaje = models.ForeignKey(Viaje, null=True, blank=True, on_delete=models.CASCADE, related_name='visitas')
     region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name='visitas')
-    tipo_presencia = models.CharField(max_length=10, choices=TipoPresencia.choices, default=TipoPresencia.ESTADIA)
     realizada = models.BooleanField(default=True, help_text='Falso = todavía no fui: se pinta como deseo.')
     desde_notion = models.BooleanField(default=False, editable=False,
                                        help_text='La creó sincronizar_notion, que la regenera en cada corrida.')
@@ -97,7 +90,7 @@ class Visita(models.Model):
         constraints = [models.UniqueConstraint(fields=['viaje', 'region'], name='visita_unica_por_viaje')]
 
     def __str__(self):
-        estado = self.get_tipo_presencia_display() if self.realizada else 'deseo'
+        estado = 'visitada' if self.realizada else 'deseo'
         return f'{self.viaje or "Sin viaje"} → {self.region} ({estado})'
 
 

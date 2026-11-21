@@ -99,11 +99,9 @@ export const atlas: Tema = {
     haloRotulo: velo,
     rotulos: { mayusculas: false, mayusculasAgua: false, espaciado: 1, escala: 1 },
   },
-  // De más a menos tinta, como un atlas coloreado a mano. El deseo no se rellena: solo lleva un contorno.
+  // Lo visitado va entintado, como un atlas coloreado a mano. El deseo no se rellena: solo lleva un contorno.
   estados: {
-    estadia: carmin,
-    paso: '#cf7356',
-    transito: '#e7a98a',
+    visitada: carmin,
     deseo: indigo,
   },
   // Las aguadas de un atlas coloreado a mano. Sin rojos puros, para no confundirse con el carmín de las visitas.

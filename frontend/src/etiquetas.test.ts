@@ -4,11 +4,11 @@ import { ETIQUETAS_ESTADO, ETIQUETAS_ESTADO_VIAJE, etiquetaVisita, mensajeBorrar
 describe('un deseo se llama igual en todos lados', () => {
   it('en el mapa, en los viajes y en las visitas', () => {
     expect(ETIQUETAS_ESTADO.deseo).toBe(ETIQUETAS_ESTADO_VIAJE.deseo)
-    expect(etiquetaVisita({ realizada: false, tipo_presencia: 'estadia' })).toBe(ETIQUETAS_ESTADO.deseo)
+    expect(etiquetaVisita({ realizada: false })).toBe(ETIQUETAS_ESTADO.deseo)
   })
 
-  it('una visita hecha dice su presencia', () => {
-    expect(etiquetaVisita({ realizada: true, tipo_presencia: 'paso' })).toBe('De paso')
+  it('una visita hecha dice que está visitada', () => {
+    expect(etiquetaVisita({ realizada: true })).toBe('Visitada')
   })
 })
 

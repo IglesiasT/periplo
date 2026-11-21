@@ -4,7 +4,7 @@ interface PopupRegion {
   nombre: string
   /** La entidad de la época que se está mirando; undefined en el presente. */
   entidad?: string
-  /** Cómo se la visitó: "Estadía", "Sin visitar"… */
+  /** Cómo se la visitó: "Visitada", "Sin visitar"… */
   detalle: string
   /** En modo de marcar, el click marca en lugar de abrir la ficha. */
   marcando: boolean

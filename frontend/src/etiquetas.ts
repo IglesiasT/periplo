@@ -1,4 +1,4 @@
-import type { EstadoRegion, EstadoViaje, NivelRegion, TipoPresencia, Visita } from './types'
+import type { EstadoRegion, EstadoViaje, NivelRegion, Visita } from './types'
 
 export const ETIQUETAS_ESTADO_VIAJE: Record<EstadoViaje, string> = {
   deseo: 'Deseo',
@@ -7,15 +7,9 @@ export const ETIQUETAS_ESTADO_VIAJE: Record<EstadoViaje, string> = {
   hecho: 'Hecho',
 }
 
-export const ETIQUETAS_PRESENCIA: Record<TipoPresencia, string> = {
-  estadia: 'Estadía',
-  paso: 'De paso',
-  transito: 'Tránsito',
-}
-
-/** Cómo se ve cada región en el mapa (la leyenda y el popup): la presencia, o el deseo. */
+/** Cómo se ve cada región en el mapa (la leyenda y el popup). */
 export const ETIQUETAS_ESTADO: Record<EstadoRegion, string> = {
-  ...ETIQUETAS_PRESENCIA,
+  visitada: 'Visitada',
   deseo: 'Deseo',
 }
 
@@ -32,9 +26,9 @@ export function formatearFecha(iso: string | null): string {
   return `${dia}/${mes}/${anio}`
 }
 
-/** Cómo se cuenta una visita: su presencia si ya fui; si no, es un deseo. */
-export function etiquetaVisita({ realizada, tipo_presencia }: Pick<Visita, 'realizada' | 'tipo_presencia'>): string {
-  return realizada ? ETIQUETAS_PRESENCIA[tipo_presencia] : ETIQUETAS_ESTADO.deseo
+/** Cómo se cuenta una visita: visitada si ya fui; si no, es un deseo. */
+export function etiquetaVisita({ realizada }: Pick<Visita, 'realizada'>): string {
+  return ETIQUETAS_ESTADO[realizada ? 'visitada' : 'deseo']
 }
 
 const contar = (cantidad: number, singular: string, plural: string) => `${cantidad} ${cantidad === 1 ? singular : plural}`

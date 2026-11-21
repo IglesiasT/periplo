@@ -14,7 +14,7 @@ Registro personal que acompaña mis viajes y cruza tres intereses: los juegos de
 
 - **Backend:** Django + Django REST Framework + SQLite. SQLite alcanza para un uso personal local.
 - **Frontend:** React + TypeScript + Vite, con **MapLibre GL** para el mapa.
-  - **Todo color y toda fuente salen del tema** (`frontend/src/tema/`). No escribir colores en el CSS ni en los componentes: el CSS usa las variables que escribe el tema (`var(--papel)`), y el estilo del mapa se arma con `crearEstilo(tema)`. Para sumar un tema: un archivo nuevo con un `Tema` completo y una línea en `TEMAS`. Los tests (`npm test`) fallan si aparece un color fuera del tema, y también si el texto no se lee sobre el papel o la presencia no se separa de la tierra.
+  - **Todo color y toda fuente salen del tema** (`frontend/src/tema/`). No escribir colores en el CSS ni en los componentes: el CSS usa las variables que escribe el tema (`var(--papel)`), y el estilo del mapa se arma con `crearEstilo(tema)`. Para sumar un tema: un archivo nuevo con un `Tema` completo y una línea en `TEMAS`. Los tests (`npm test`) fallan si aparece un color fuera del tema, y también si el texto no se lee sobre el papel o lo visitado no se separa de la tierra.
   - Un tema también decide la forma (`forma`: radios, letra de las etiquetas, tamaño base), lo que cambia el layout o qué se dibuja (`rasgos`: panel fijo o flotante, pestañas, sello, rosa de los vientos) y sus textos (`voz`). Los ornamentos que son solo de un tema van al final de `index.css`, bajo `:root[data-tema='…']`.
   - Temas: Atlas de gabinete (por defecto), Órbita, Consola, Cristal y Matriz. Se cambian a mano con los puntos al pie del panel; la elección se recuerda en el navegador. Cambiar de tema crea otro mapa en la misma posición.
 - **Procesamiento geográfico:** scripts Python con **geopandas / shapely**, ejecutados como *management commands* de Django. Precalculan una sola vez los datos pesados (áreas, intersecciones con fronteras históricas) y guardan el resultado en la base. **No usar PostGIS ni GeoDjango.**
@@ -45,8 +45,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 - **`Visita`**
   - `viaje`: FK, nullable; un lugar puede estar visitado sin estar asociado a un viaje
   - `region`: FK
-  - `tipo_presencia`: estadía, paso o tránsito; define la intensidad del color en el mapa
-  - `realizada`: si es falso, todavía no fui y se pinta como deseo
+  - `realizada`: si es verdadero se pinta como visitada; si es falso, todavía no fui y se pinta como deseo
   - `desde_notion`: la creó el sync, que la regenera en cada corrida
 - **`Foto`**
   - `viaje`: FK
@@ -86,7 +85,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 3. Armar el mapa en MapLibre con colores por estado:
    - Gris: no visitado ("niebla de guerra").
    - Contorno o semitransparente: lista de deseos.
-   - Color con intensidad según `tipo_presencia`: visitado.
+   - Color lleno: visitado.
 4. Agregar zoom semántico: con zoom lejano se ven países y al acercarse aparecen las provincias, como el mapa de estados de Victoria 3.
    - Lentes, como los modos de mapa de Victoria 3: la automática es el zoom semántico; las de países, provincias y departamentos fijan el nivel con cualquier zoom. Cada lente es un par de umbrales de zoom (`UMBRALES` en `estilo.ts`) y cambiarla no recarga el mapa.
    - Mirando un año, la automática pasa antes a provincias: a nivel de país, cada país de hoy toma una sola entidad (Alemania en 1815 sería toda Prusia). Las fronteras internas de hoy se atenúan, para que manden los colores de las entidades.

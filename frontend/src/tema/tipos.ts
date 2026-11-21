@@ -133,7 +133,7 @@ export interface Tema {
       escala: number
     }
   }
-  /** De más a menos tinta según la presencia; el deseo es el color de su contorno. */
+  /** El relleno de lo visitado; el deseo es el color de su contorno. */
   estados: Record<EstadoRegion, string>
   /** Paleta de las épocas: [entintada, diluida]. Cada entidad toma una según su nombre (ver historia.ts). */
   aguadas: [string, string][]

@@ -97,11 +97,8 @@ export const orbita: Tema = {
     haloRotulo: 'rgba(7, 9, 12, 0.8)',
     rotulos: { mayusculas: true, mayusculasAgua: true, espaciado: 1, escala: 0.85 },
   },
-  // Cuanto más tiempo, más luz: de más a menos contraste contra la tierra oscura.
   estados: {
-    estadia: ambar,
-    paso: '#b5803a',
-    transito: '#6b5433',
+    visitada: ambar,
     deseo: azul,
   },
   // Sobre fondo oscuro, la entintada es la encendida y la diluida apenas se separa de la tierra.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { htmlPopupFoto, htmlPopupRegion } from './popup'
 
-const base = { nombre: 'Jujuy', detalle: 'Estadía', marcando: false, tieneFicha: false }
+const base = { nombre: 'Jujuy', detalle: 'Visitada', marcando: false, tieneFicha: false }
 
 describe('htmlPopupRegion', () => {
   it('avisa que el click abre la ficha', () => {

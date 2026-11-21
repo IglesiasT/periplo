@@ -31,7 +31,7 @@ export default function ViajeDetalle({ viaje, fotos, onVolver, marcando, onCambi
       </div>
       {marcando && (
         <p className="aviso">
-          Hacé click en una región. Cada click avanza: estadía → de paso → tránsito → deseo → sin marcar.
+          Hacé click en una región. Cada click avanza: visitada → deseo → sin marcar.
           Marca el nivel que estás viendo: país, provincia o departamento.
         </p>
       )}

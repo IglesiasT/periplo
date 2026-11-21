@@ -18,8 +18,8 @@ class ApiTests(APITestCase):
         viaje = self.client.post('/api/viajes/', {'nombre': 'NOA 2027', 'estado': 'deseo'}, format='json')
         self.assertEqual(viaje.status_code, 201, viaje.data)
 
-        visita = self.client.post('/api/visitas/', {'viaje': viaje.data['id'], 'region': 'AR-A',
-                                                    'tipo_presencia': 'paso'}, format='json')
+        visita = self.client.post('/api/visitas/', {'viaje': viaje.data['id'], 'region': 'AR-A'},
+                                    format='json')
         self.assertEqual(visita.status_code, 201, visita.data)
         self.assertEqual(visita.data['region_nombre'], 'Salta')
         self.assertFalse(visita.data['desde_notion'])
@@ -72,7 +72,7 @@ class ApiTests(APITestCase):
 
     def test_visita_de_notion_es_de_solo_lectura(self):
         url = f'/api/visitas/{self.visita_notion.id}/'
-        self.assertEqual(self.client.patch(url, {'tipo_presencia': 'paso'}, format='json').status_code, 403)
+        self.assertEqual(self.client.patch(url, {'realizada': False}, format='json').status_code, 403)
         self.assertEqual(self.client.delete(url).status_code, 403)
         self.assertTrue(Visita.objects.filter(id=self.visita_notion.id).exists())
 

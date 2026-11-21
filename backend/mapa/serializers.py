@@ -17,7 +17,7 @@ class VisitaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visita
         fields = ['id', 'viaje', 'region', 'region_nombre', 'region_nivel', 'region_ancestros',
-                  'tipo_presencia', 'realizada', 'desde_notion']
+                  'realizada', 'desde_notion']
         read_only_fields = ['desde_notion']
 
     def get_region_ancestros(self, visita) -> list[str]:

@@ -29,7 +29,7 @@ El corazón es **el mapa que se pinta**: cuando haya que elegir entre capas, man
 Lo que lo distingue de un mapa de "países visitados":
 
 - Zoom semántico y lentes como los modos de mapa de Victoria 3 (países → provincias → departamentos argentinos).
-- Niebla de guerra, deseos e intensidad según el tipo de presencia (estadía, de paso, tránsito).
+- Niebla de guerra, deseos y lo visitado pintado.
 - Un slider de años que repinta el mapa con las entidades históricas que ocupaban cada región ("en 1815 pisaste territorio de X entidades").
 - Logros y rutas históricas definidos en código ("Las 24 jurisdicciones", "La Campaña Libertadora").
 

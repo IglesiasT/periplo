@@ -13,14 +13,14 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - Colores por estado:
   - papel sin pintar para sin visitar;
   - solo un contorno índigo para la lista de deseos;
-  - color con intensidad según el tipo de presencia (estadía, de paso o tránsito) para lo visitado.
+  - color lleno para lo visitado.
 - Viajes y visitas sincronizados desde Notion (bases Destinations y Lugares).
 - Todo queda en la URL (año, lente, pestaña, lo elegido y la posición): al recargar se mantiene, se puede guardar un enlace y Atrás vuelve a lo anterior.
 
 **El diario (Fase 2)**, desde el panel lateral, con cuatro pestañas (Viajes, Logros, Fichas y Números):
 - **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas. Lo que se visitó sin viaje aparece como "Lugares sueltos".
 - **Elegir un viaje, un logro o una ficha** desde el panel resalta sus regiones en el mapa y lo acerca a ellas. Las regiones elegidas se ven en cualquier zoom; de lejos también se marca el país o la provincia que las contiene. Abrir una ficha haciendo click en el mapa no lo mueve. Un viaje elegido sigue resaltado mientras se mira otra pestaña o se lee una ficha, hasta que se vuelve a la lista.
-- **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: estadía → de paso → tránsito → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
+- **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: visitada → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
 - **Fotos:**
   - subir JPG, PNG o WebP;
   - si tienen GPS en el EXIF, aparecen en el mapa (agrupadas cuando están cerca) y se ubican en su región;

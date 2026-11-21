@@ -19,7 +19,7 @@ class RespaldarTests(TestCase):
         with tempfile.TemporaryDirectory() as carpeta, override_settings(MEDIA_ROOT=Path(carpeta) / 'media'):
             region = Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy')
             viaje = Viaje.objects.create(nombre='NOA', notas='Llevar abrigo')
-            Visita.objects.create(viaje=viaje, region=region, tipo_presencia='paso')
+            Visita.objects.create(viaje=viaje, region=region, realizada=False)
             FichaRegion.objects.create(region=region, texto='# Tilcara\nÑandú y cardones.')
             foto = Foto(viaje=viaje, region=region)
             foto.archivo.save('tilcara.jpg', ContentFile(b'bytes de la foto'))
@@ -41,7 +41,7 @@ class RespaldarTests(TestCase):
 
             viaje = Viaje.objects.get(nombre='NOA')
             self.assertEqual(viaje.notas, 'Llevar abrigo')
-            self.assertEqual(viaje.visitas.get().tipo_presencia, 'paso')
+            self.assertFalse(viaje.visitas.get().realizada)
             self.assertEqual(viaje.visitas.get().region, region)
             self.assertEqual(FichaRegion.objects.get().texto, '# Tilcara\nÑandú y cardones.')
             self.assertEqual(Foto.objects.get().archivo.name, ruta_foto)

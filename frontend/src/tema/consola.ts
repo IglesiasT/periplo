@@ -93,9 +93,7 @@ export const consola: Tema = {
     rotulos: { mayusculas: true, mayusculasAgua: false, espaciado: 0.5, escala: 0.85 },
   },
   estados: {
-    estadia: lima,
-    paso: '#7c982a',
-    transito: '#485823',
+    visitada: lima,
     deseo: cian,
   },
   aguadas: [

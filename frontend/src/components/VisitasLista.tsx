@@ -1,6 +1,6 @@
-import { ETIQUETAS_NIVEL, ETIQUETAS_PRESENCIA, etiquetaVisita } from '../etiquetas'
+import { ETIQUETAS_NIVEL, etiquetaVisita } from '../etiquetas'
 import { useActualizarVisita, useBorrarVisita } from '../hooks/consultas'
-import type { TipoPresencia, Visita } from '../types'
+import type { Visita } from '../types'
 
 interface Props {
   visitas: Visita[]
@@ -31,15 +31,6 @@ export default function VisitasLista({ visitas, onAviso }: Props) {
             </span>
           ) : (
             <div className="controles">
-              <select
-                value={visita.tipo_presencia}
-                onChange={(e) =>
-                  actualizar.mutate({ id: visita.id, datos: { tipo_presencia: e.target.value as TipoPresencia } }, alFallar)}
-              >
-                {Object.entries(ETIQUETAS_PRESENCIA).map(([valor, etiqueta]) => (
-                  <option key={valor} value={valor}>{etiqueta}</option>
-                ))}
-              </select>
               <label className="check">
                 <input
                   type="checkbox"

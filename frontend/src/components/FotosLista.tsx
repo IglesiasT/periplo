@@ -43,7 +43,7 @@ export default function FotosLista({ viaje, fotos, onAviso }: Props) {
 
   const agregarRegion = (foto: Foto) =>
     foto.region && crearVisita.mutate(
-      { viaje: viaje.id, region: foto.region, tipo_presencia: 'estadia', realizada: true },
+      { viaje: viaje.id, region: foto.region, realizada: true },
       { onError: (e) => onAviso(e.message) },
     )
 

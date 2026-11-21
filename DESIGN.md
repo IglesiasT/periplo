@@ -18,8 +18,6 @@ colors:
   aguada: "#c6d4cc"
   tierra: "#eee4ce"
   ok: "#4f6b3a"
-  estado-paso: "#cf7356"
-  estado-transito: "#e7a98a"
   frontera-provincia: "#bfae8c"
   rotulo-pais: "#4f4232"
   rotulo-provincia: "#3b2f22"
@@ -169,13 +167,13 @@ Roles que todo tema llena (el tipo `Tema` en `tipos.ts`):
 - `ui`: los colores del panel y los controles.
 - `fuentes`: texto, título, cursiva, etiqueta, cifra y dos archivos de rótulos para el mapa.
 - `mapa`: mar, tierra sin visitar, fronteras, resaltado, halo y rótulos.
-- `estados`: estadía, paso, tránsito y deseo.
+- `estados`: visitada y deseo.
 - **Al menos 10 aguadas** `[entintada, diluida]`.
 - `forma`: tamaño base, radios, peso y caso de títulos y etiquetas, estilo de las aclaraciones, desenfoque del panel. Son variables CSS, igual que `ui`.
 - `rasgos`: lo que cambia el layout o qué se dibuja: panel `fijo` o `flotante`, pestañas `filete`, `pastilla` o `caja`, sello `lacre` o `disco`, rosa de los vientos sí o no.
 - `voz`: los textos que dependen de la personalidad del tema.
 
-Los ornamentos que son solo de un tema van al final de `index.css`, bajo `:root[data-tema='…']`. Los tests también fallan si el texto no se lee sobre el papel o si la presencia no se separa de la tierra.
+Los ornamentos que son solo de un tema van al final de `index.css`, bajo `:root[data-tema='…']`. Los tests también fallan si el texto no se lee sobre el papel o si lo visitado no se separa de la tierra.
 
 ### Los otros temas
 
@@ -191,7 +189,7 @@ Cada uno resuelve los mismos roles con otro mundo. Al trabajar en uno de ellos, 
 Los valores exactos de cada uno están en su archivo de `frontend/src/tema/`.
 
 ### Primary
-- **Carmín de lacre** (`carmin`): lo vivido. Es el relleno de una estadía en el mapa, la marca de un viaje hecho, la barra de avance, el lacre de los sellos de logros, la punta norte de la rosa de los vientos y el anillo de foco. Tiene una variante **Carmín seco** (`carmin-oscuro`) para texto sobre papel: enlaces, el año de la época, errores.
+- **Carmín de lacre** (`carmin`): lo vivido. Es el relleno de lo visitado en el mapa, la marca de un viaje hecho, la barra de avance, el lacre de los sellos de logros, la punta norte de la rosa de los vientos y el anillo de foco. Tiene una variante **Carmín seco** (`carmin-oscuro`) para texto sobre papel: enlaces, el año de la época, errores.
 
 ### Secondary
 - **Índigo de plan** (`indigo`): el deseo. En el mapa y en la lista va **solo como contorno** (1.2px en el mapa, 1.5px en la marca de la lista) y nunca como relleno.
@@ -215,8 +213,6 @@ Los valores exactos de cada uno están en su archivo de `frontend/src/tema/`.
 **The Lacre Rule.** El carmín significa "estuve ahí". No se usa para decorar ni para llamar la atención sobre algo que no sea lo vivido, salvo el foco de teclado y los errores (en carmín seco).
 
 **The Deseo Hueco Rule.** Un deseo nunca se rellena: es tierra sin pintar con contorno índigo, en el mapa, en la leyenda y en la lista. *(Invariante entre temas.)*
-
-**The Intensity Ladder Rule.** La presencia se lee por la carga de tinta, de más a menos: estadía (`carmin`) → de paso (`estado-paso`) → tránsito (`estado-transito`). Es una sola familia de color, nunca tres colores distintos. *(Invariante entre temas.)*
 
 **The Two Palettes Rule.** Las visitas y las épocas no comparten paleta. Mirando un año mandan las aguadas, y las fronteras internas de hoy se atenúan.
 
@@ -327,11 +323,11 @@ La cifra de países va a 54px y peso 500, con numerales antiguos y una acotació
 
 ## Do's and Don'ts
 
-Las reglas sobre el tema, los deseos, la escalera de presencia y el mapa valen para todos los temas. Las de forma (esquinas, sombras, desenfoque, blanco y negro puros, el uso del carmín) son del Atlas: cada tema define las suyas en su archivo.
+Las reglas sobre el tema, los deseos y el mapa valen para todos los temas. Las de forma (esquinas, sombras, desenfoque, blanco y negro puros, el uso del carmín) son del Atlas: cada tema define las suyas en su archivo.
 
 ### Do:
 - **Do** sacar cada color y cada fuente del tema activo: `var(--papel)` en el CSS, `tema.mapa.*` en el estilo del mapa.
-- **Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas de familias de color distintas y sin rojos que compitan con la estadía.
+- **Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas de familias de color distintas y sin rojos que compitan con lo visitado.
 - **Do** separar con filetes (1px, o 3px dobles para abrir una sección) en vez de cajas o fondos.
 - **Do** escribir las notas, los estados vacíos y los vínculos de vuelta en cursiva Fell, como acotaciones al margen.
 - **Do** mantener el foco de teclado visible con un contorno de 2px en carmín.

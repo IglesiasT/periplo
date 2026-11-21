@@ -67,15 +67,13 @@ const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['in', ['get', 'padre'], ['
 
 const ES_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 1, 0]
 
-const VISITADA: ExpressionSpecification = ['match', ESTADO, ['estadia', 'paso', 'transito'], true, false]
+const VISITADA: ExpressionSpecification = ['==', ESTADO, 'visitada']
 
 /** El color de cada región sale de su feature-state "estado"; si no tiene (o es un deseo), queda la tierra. */
 export function colorRelleno(tema: Tema): ExpressionSpecification {
   return [
     'match', ESTADO,
-    'estadia', tema.estados.estadia,
-    'paso', tema.estados.paso,
-    'transito', tema.estados.transito,
+    'visitada', tema.estados.visitada,
     tema.mapa.noVisitado,
   ]
 }

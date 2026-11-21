@@ -13,12 +13,12 @@ class CalcularEstadosTests(TestCase):
         cls.per = Region.objects.create(nivel='pais', codigo='PER', nombre='Perú')
         cls.cusco = Region.objects.create(nivel='provincia', codigo='PE-CUS', nombre='Cusco', padre=cls.per)
 
-    def test_el_estado_sube_al_pais_con_la_mayor_intensidad(self):
+    def test_el_estado_sube_al_pais(self):
         viaje = Viaje.objects.create(nombre='NOA')
-        Visita.objects.create(viaje=viaje, region=self.tucuman, tipo_presencia='paso')
-        Visita.objects.create(viaje=viaje, region=self.salta, tipo_presencia='estadia')
+        Visita.objects.create(viaje=viaje, region=self.tucuman)
+        Visita.objects.create(viaje=viaje, region=self.salta)
 
-        self.assertEqual(calcular_estados(), {'AR-T': 'paso', 'AR-A': 'estadia', 'ARG': 'estadia'})
+        self.assertEqual(calcular_estados(), {'AR-T': 'visitada', 'AR-A': 'visitada', 'ARG': 'visitada'})
 
     def test_visita_no_realizada_es_deseo(self):
         viaje = Viaje.objects.create(nombre='Perú', estado=Viaje.Estado.INVESTIGANDO)
@@ -28,6 +28,12 @@ class CalcularEstadosTests(TestCase):
 
     def test_lo_visitado_le_gana_al_deseo(self):
         Visita.objects.create(viaje=Viaje.objects.create(nombre='Volver'), region=self.salta, realizada=False)
-        Visita.objects.create(viaje=None, region=self.salta, tipo_presencia='transito')
+        Visita.objects.create(viaje=None, region=self.salta)
 
-        self.assertEqual(calcular_estados()['AR-A'], 'transito')
+        self.assertEqual(calcular_estados()['AR-A'], 'visitada')
+
+    def test_un_deseo_no_le_gana_a_lo_visitado_aunque_venga_despues(self):
+        Visita.objects.create(viaje=None, region=self.salta)
+        Visita.objects.create(viaje=Viaje.objects.create(nombre='Volver'), region=self.salta, realizada=False)
+
+        self.assertEqual(calcular_estados()['AR-A'], 'visitada')

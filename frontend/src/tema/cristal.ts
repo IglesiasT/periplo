@@ -96,9 +96,7 @@ export const cristal: Tema = {
     rotulos: { mayusculas: false, mayusculasAgua: false, espaciado: 0.3, escala: 1 },
   },
   estados: {
-    estadia: cobalto,
-    paso: '#6e8ff8',
-    transito: '#b2c4fb',
+    visitada: cobalto,
     deseo: magenta,
   },
   aguadas: [

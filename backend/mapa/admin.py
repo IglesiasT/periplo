@@ -21,7 +21,7 @@ class RegionAdmin(admin.ModelAdmin):
 class VisitaInline(admin.TabularInline):
     model = Visita
     autocomplete_fields = ['region']
-    fields = ['region', 'tipo_presencia', 'realizada', 'desde_notion']
+    fields = ['region', 'realizada', 'desde_notion']
     readonly_fields = ['desde_notion']
     extra = 1
 
@@ -37,8 +37,8 @@ class ViajeAdmin(admin.ModelAdmin):
 @admin.register(Visita)
 class VisitaAdmin(admin.ModelAdmin):
     """Incluye las visitas sin viaje (lugares sueltos de Notion o cargados a mano)."""
-    list_display = ['region', 'viaje', 'tipo_presencia', 'realizada', 'desde_notion']
-    list_filter = ['realizada', 'desde_notion', 'tipo_presencia']
+    list_display = ['region', 'viaje', 'realizada', 'desde_notion']
+    list_filter = ['realizada', 'desde_notion']
     search_fields = ['region__nombre', 'viaje__nombre']
     autocomplete_fields = ['region', 'viaje']
 

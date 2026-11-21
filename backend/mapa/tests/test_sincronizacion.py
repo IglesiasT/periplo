@@ -146,7 +146,7 @@ class SincronizarNotionTests(TestCase):
     def test_regenera_sus_visitas_y_respeta_las_cargadas_a_mano(self):
         self.sincronizar([Destino('d1', 'Peru', 'hecho', None)])
         viaje = Viaje.objects.get(notion_id='d1')
-        a_mano = Visita.objects.create(viaje=viaje, region=self.jujuy, tipo_presencia='paso')
+        a_mano = Visita.objects.create(viaje=viaje, region=self.jujuy, realizada=False)
         sin_viaje = Visita.objects.create(region=self.tucuman)
 
         # El destino ahora cae en Jujuy: la visita a Perú se va y la de Jujuy sigue siendo la cargada a mano.
@@ -154,7 +154,7 @@ class SincronizarNotionTests(TestCase):
 
         self.assertFalse(Visita.objects.filter(region=self.peru).exists())
         a_mano.refresh_from_db()
-        self.assertEqual((a_mano.tipo_presencia, a_mano.desde_notion), ('paso', False))
+        self.assertEqual((a_mano.realizada, a_mano.desde_notion), (False, False))
         self.assertEqual(Visita.objects.filter(viaje=viaje).count(), 1)
         self.assertTrue(Visita.objects.filter(id=sin_viaje.id).exists())
 

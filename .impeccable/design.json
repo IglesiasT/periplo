@@ -214,36 +214,6 @@
           "#e2f6d6"
         ]
       },
-      "estado-paso": {
-        "role": "primary",
-        "displayName": "Carmín diluido (de paso)",
-        "canonical": "#cf7356",
-        "tonalRamp": [
-          "#1e0100",
-          "#421406",
-          "#692d1a",
-          "#944831",
-          "#bf6649",
-          "#de8d74",
-          "#fdb59f",
-          "#ffdfcb"
-        ]
-      },
-      "estado-transito": {
-        "role": "primary",
-        "displayName": "Carmín lavado (tránsito)",
-        "canonical": "#e7a98a",
-        "tonalRamp": [
-          "#180500",
-          "#391c0d",
-          "#5d3723",
-          "#84543b",
-          "#ac7355",
-          "#cc987e",
-          "#ecbea7",
-          "#ffe5d2"
-        ]
-      },
       "frontera-provincia": {
         "role": "neutral",
         "displayName": "Frontera de provincia",
@@ -517,7 +487,7 @@
         "ui (17 colores)",
         "fuentes (texto, titulo, cursiva, mapa.versalitas, mapa.cursiva)",
         "mapa (mar, noVisitado, fronteraPais, fronteraProvincia, resaltado, halo, foto, rotuloPais, rotuloProvincia, rotuloAgua, haloRotulo)",
-        "estados (estadia, paso, transito, deseo)",
+        "estados (visitada, deseo)",
         "aguadas [entintada, diluida], al menos 10"
       ]
     }
@@ -584,8 +554,8 @@
       "kind": "card",
       "refersTo": "tarjeta-mapa",
       "description": "Tarjeta sobre el mapa: papel, borde de tinta, esquinas vivas.",
-      "html": "<div class=\"ds-leyenda\"><p class=\"t\">Leyenda</p><div><i class=\"estadia\"></i>Estadía</div><div><i class=\"paso\"></i>De paso</div><div><i class=\"transito\"></i>Tránsito</div><div><i class=\"deseo\"></i>Deseo</div></div>",
-      "css": ".ds-leyenda{display:inline-block;padding:12px 16px;border:1px solid var(--tinta,#2b2117);background:var(--papel,#f3ebda);color:var(--tinta,#2b2117);font-family:var(--texto,'EB Garamond',Georgia,serif);font-size:15px;line-height:1.65}.ds-leyenda .t{margin:0 0 2px;font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:16px;letter-spacing:.08em}.ds-leyenda i{display:inline-block;width:22px;height:12px;margin-right:10px;border:1px solid var(--sepia,#7c6a50);vertical-align:-1px}.ds-leyenda i.estadia{background:#a8382c}.ds-leyenda i.paso{background:#cf7356}.ds-leyenda i.transito{background:#e7a98a}.ds-leyenda i.deseo{border:1.5px solid var(--indigo,#3e5c76);background:var(--tierra,#eee4ce)}"
+      "html": "<div class=\"ds-leyenda\"><p class=\"t\">Leyenda</p><div><i class=\"visitada\"></i>Visitada</div><div><i class=\"deseo\"></i>Deseo</div></div>",
+      "css": ".ds-leyenda{display:inline-block;padding:12px 16px;border:1px solid var(--tinta,#2b2117);background:var(--papel,#f3ebda);color:var(--tinta,#2b2117);font-family:var(--texto,'EB Garamond',Georgia,serif);font-size:15px;line-height:1.65}.ds-leyenda .t{margin:0 0 2px;font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:16px;letter-spacing:.08em}.ds-leyenda i{display:inline-block;width:22px;height:12px;margin-right:10px;border:1px solid var(--sepia,#7c6a50);vertical-align:-1px}.ds-leyenda i.visitada{background:#a8382c}.ds-leyenda i.deseo{border:1.5px solid var(--indigo,#3e5c76);background:var(--tierra,#eee4ce)}"
     },
     {
       "name": "Fila de viaje",
@@ -618,11 +588,6 @@
         "section": "colors"
       },
       {
-        "name": "The Intensity Ladder Rule",
-        "body": "La presencia se lee por la carga de tinta, de más a menos: estadía (`carmin`) → de paso (`estado-paso`) → tránsito (`estado-transito`). Es una sola familia de color, nunca tres colores distintos. *(Invariante entre temas.)*",
-        "section": "colors"
-      },
-      {
         "name": "The Two Palettes Rule",
         "body": "Las visitas y las épocas no comparten paleta. Mirando un año mandan las aguadas, y las fronteras internas de hoy se atenúan.",
         "section": "colors"
@@ -645,7 +610,7 @@
     ],
     "dos": [
       "**Do** sacar cada color y cada fuente del tema activo: `var(--papel)` en el CSS, `tema.mapa.*` en el estilo del mapa.",
-      "**Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas de familias de color distintas y sin rojos que compitan con la estadía.",
+      "**Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas de familias de color distintas y sin rojos que compitan con lo visitado.",
       "**Do** separar con filetes (1px, o 3px dobles para abrir una sección) en vez de cajas o fondos.",
       "**Do** escribir las notas, los estados vacíos y los vínculos de vuelta en cursiva Fell, como acotaciones al margen.",
       "**Do** mantener el foco de teclado visible con un contorno de 2px en carmín.",
