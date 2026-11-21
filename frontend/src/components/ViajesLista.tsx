@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_NIVEL, etiquetaVisita, rangoFechas } from '../etiquetas'
+import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_NIVEL, etiquetaVisita } from '../etiquetas'
+import { rangoMeses } from '../fechas'
 import { useVisitasSueltas } from '../hooks/consultas'
 import type { Viaje } from '../types'
 
@@ -48,7 +49,7 @@ export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo
               <span className="viaje-texto">
                 <strong>{v.nombre}</strong>
                 <span className="tenue">
-                  {[ETIQUETAS_ESTADO_VIAJE[v.estado], rangoFechas(v.fecha_inicio, v.fecha_fin),
+                  {[ETIQUETAS_ESTADO_VIAJE[v.estado], rangoMeses(v.fecha_inicio, v.fecha_fin),
                     v.visitas.length ? `${v.visitas.length} ${v.visitas.length === 1 ? 'región' : 'regiones'}`
                       : 'sin regiones aún']
                     .filter(Boolean).join(' · ')}

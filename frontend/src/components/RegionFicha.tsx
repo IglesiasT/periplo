@@ -1,5 +1,6 @@
 import Markdown from 'react-markdown'
 import { ETIQUETAS_NIVEL, etiquetaVisita, formatearFecha } from '../etiquetas'
+import { rangoMeses } from '../fechas'
 import { formatearAnio } from '../historia'
 import { useGuardarFicha, useRegion } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
@@ -103,7 +104,7 @@ function Visitas({ region, onElegirViaje }: { region: RegionDetalle; onElegirVia
                   {v.viaje !== null ? (
                     <button className="enlace" onClick={() => onElegirViaje(v.viaje!)}>{v.viaje_nombre}</button>
                   ) : <strong>Sin viaje</strong>}
-                  {v.viaje_inicio && <span className="tenue"> · {formatearFecha(v.viaje_inicio)}</span>}
+                  {v.viaje_inicio && <span className="tenue"> · {rangoMeses(v.viaje_inicio, v.viaje_fin)}</span>}
                 </div>
                 <span className="tenue">{detalle}</span>
               </li>

@@ -655,6 +655,50 @@ textarea {
 
 .fila label {
   flex: 1;
+  min-width: 0;
+}
+
+/* Fecha escrita dd/mm/aaaa con un botón al calendario del navegador (ver CampoFecha). */
+.campo-fecha {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.campo-fecha input {
+  flex: 1;
+  min-width: 0;
+}
+
+.formulario .campo-fecha input[aria-invalid='true'] {
+  border-bottom-color: var(--carmin-oscuro);
+}
+
+.campo-fecha-calendario {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--tenue);
+  cursor: pointer;
+}
+
+.campo-fecha-calendario:hover {
+  color: var(--tinta);
+}
+
+/* El input nativo solo pone el calendario: invisible, debajo del botón para que se abra ahí. */
+.campo-fecha-nativo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .acciones {

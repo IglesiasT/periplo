@@ -95,8 +95,9 @@ function useInvalidar() {
 export function useGuardarViaje() {
   const invalidar = useInvalidar()
   return useMutation({
-    mutationFn: ({ id, datos }: { id?: number; datos: DatosViaje }) =>
-      id === undefined ? api.crearViaje(datos) : api.actualizarViaje(id, datos),
+    // Al editar se manda solo lo que se puede cambiar (de un viaje de Notion, fechas y notas); al crear, todo.
+    mutationFn: ({ id, datos }: { id?: number; datos: Partial<DatosViaje> }) =>
+      id === undefined ? api.crearViaje(datos as DatosViaje) : api.actualizarViaje(id, datos),
     onSuccess: invalidar,
   })
 }

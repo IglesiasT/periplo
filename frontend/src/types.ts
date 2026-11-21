@@ -101,6 +101,7 @@ export interface RegionDetalle {
     viaje: number | null
     viaje_nombre: string | null
     viaje_inicio: string | null
+    viaje_fin: string | null
     region: string
     region_nombre: string
     tipo_presencia: TipoPresencia

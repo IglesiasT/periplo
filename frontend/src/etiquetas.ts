@@ -32,11 +32,6 @@ export function formatearFecha(iso: string | null): string {
   return `${dia}/${mes}/${anio}`
 }
 
-export function rangoFechas(inicio: string | null, fin: string | null): string {
-  if (inicio && fin) return inicio === fin ? formatearFecha(inicio) : `${formatearFecha(inicio)} – ${formatearFecha(fin)}`
-  return formatearFecha(inicio ?? fin)
-}
-
 /** Cómo se cuenta una visita: su presencia si ya fui; si no, es un deseo. */
 export function etiquetaVisita({ realizada, tipo_presencia }: Pick<Visita, 'realizada' | 'tipo_presencia'>): string {
   return realizada ? ETIQUETAS_PRESENCIA[tipo_presencia] : ETIQUETAS_ESTADO.deseo
