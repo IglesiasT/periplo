@@ -39,7 +39,10 @@ export default function ViajeForm({ viaje, cantidadFotos = 0, onGuardado, onBorr
 
   const enviar = (e: FormEvent) => {
     e.preventDefault()
-    guardar.mutate({ id: viaje?.id, datos }, {
+    // De un viaje de Notion no se mandan nombre ni estado: si el sync los cambió con esta página abierta,
+    // los que tiene la página son viejos y el backend rechazaría todo el guardado.
+    const { fecha_inicio, fecha_fin, notas } = datos
+    guardar.mutate({ id: viaje?.id, datos: deNotion ? { fecha_inicio, fecha_fin, notas } : datos }, {
       onSuccess: (respuesta) => {
         setBorrador(null)
         onGuardado?.(respuesta)
