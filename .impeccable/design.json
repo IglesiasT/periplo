@@ -1,0 +1,663 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-13T00:08:20+00:00",
+  "title": "Design System: Periplo",
+  "extensions": {
+    "colorMeta": {
+      "papel": {
+        "role": "neutral",
+        "displayName": "Papel crudo",
+        "canonical": "#f3ebda",
+        "tonalRamp": [
+          "#0d0b06",
+          "#28251d",
+          "#464137",
+          "#676154",
+          "#898272",
+          "#aba497",
+          "#cec9bd",
+          "#f3eee4"
+        ]
+      },
+      "papel-hondo": {
+        "role": "neutral",
+        "displayName": "Papel hondo",
+        "canonical": "#e8dcc2",
+        "tonalRamp": [
+          "#0e0b04",
+          "#2a2418",
+          "#484131",
+          "#69604c",
+          "#8c816a",
+          "#aea48f",
+          "#d1c8b6",
+          "#f5eede"
+        ]
+      },
+      "papel-claro": {
+        "role": "neutral",
+        "displayName": "Papel claro",
+        "canonical": "#fbf7ee",
+        "tonalRamp": [
+          "#0c0b08",
+          "#272521",
+          "#44423c",
+          "#64615a",
+          "#85827a",
+          "#a8a59e",
+          "#ccc9c3",
+          "#f1eee9"
+        ]
+      },
+      "borde": {
+        "role": "neutral",
+        "displayName": "Borde",
+        "canonical": "#c9b48e",
+        "tonalRamp": [
+          "#110a01",
+          "#2d2311",
+          "#4d4028",
+          "#6f5f40",
+          "#937f5b",
+          "#b4a383",
+          "#d7c7ac",
+          "#faedd6"
+        ]
+      },
+      "linea": {
+        "role": "neutral",
+        "displayName": "Línea",
+        "canonical": "#dccbaa",
+        "tonalRamp": [
+          "#100a02",
+          "#2c2414",
+          "#4b412c",
+          "#6d5f46",
+          "#908062",
+          "#b1a388",
+          "#d4c8b0",
+          "#f8edda"
+        ]
+      },
+      "tinta": {
+        "role": "neutral",
+        "displayName": "Tinta de grabador",
+        "canonical": "#2b2117",
+        "tonalRamp": [
+          "#0e0a07",
+          "#2a241e",
+          "#494038",
+          "#6a5f55",
+          "#8c8074",
+          "#aea398",
+          "#d1c7be",
+          "#f5ede5"
+        ]
+      },
+      "tenue": {
+        "role": "neutral",
+        "displayName": "Tinta tenue",
+        "canonical": "#6b5a43",
+        "tonalRamp": [
+          "#100a03",
+          "#2c2317",
+          "#4c4030",
+          "#6e5f4a",
+          "#917f67",
+          "#b2a28d",
+          "#d5c7b4",
+          "#f8eddd"
+        ]
+      },
+      "sepia": {
+        "role": "neutral",
+        "displayName": "Sepia",
+        "canonical": "#7c6a50",
+        "tonalRamp": [
+          "#100a03",
+          "#2d2316",
+          "#4c402e",
+          "#6e5f48",
+          "#927f65",
+          "#b3a28b",
+          "#d5c7b2",
+          "#f9eddb"
+        ]
+      },
+      "carmin": {
+        "role": "primary",
+        "displayName": "Carmín de lacre",
+        "canonical": "#a8382c",
+        "tonalRamp": [
+          "#210000",
+          "#480b07",
+          "#71241c",
+          "#9e3e32",
+          "#cc5a4b",
+          "#ea8475",
+          "#ffaea0",
+          "#ffd9cc"
+        ]
+      },
+      "carmin-oscuro": {
+        "role": "primary",
+        "displayName": "Carmín seco",
+        "canonical": "#7e2a21",
+        "tonalRamp": [
+          "#1d0101",
+          "#42140f",
+          "#692d25",
+          "#93483e",
+          "#be6558",
+          "#dd8c80",
+          "#fcb5a9",
+          "#ffded4"
+        ]
+      },
+      "indigo": {
+        "role": "secondary",
+        "displayName": "Índigo de plan",
+        "canonical": "#3e5c76",
+        "tonalRamp": [
+          "#030c16",
+          "#172735",
+          "#2f4457",
+          "#4a647b",
+          "#6786a2",
+          "#8da9c2",
+          "#b4cce2",
+          "#ddf1ff"
+        ]
+      },
+      "aguada": {
+        "role": "neutral",
+        "displayName": "Aguada de mar",
+        "canonical": "#c6d4cc",
+        "tonalRamp": [
+          "#080c0a",
+          "#202723",
+          "#3c4440",
+          "#59645e",
+          "#79867f",
+          "#9da8a2",
+          "#c2ccc6",
+          "#e8f1ec"
+        ]
+      },
+      "tierra": {
+        "role": "neutral",
+        "displayName": "Tierra sin pintar",
+        "canonical": "#eee4ce",
+        "tonalRamp": [
+          "#0e0b05",
+          "#29251b",
+          "#474134",
+          "#686050",
+          "#8a816e",
+          "#aca492",
+          "#d0c8b9",
+          "#f4eee1"
+        ]
+      },
+      "ok": {
+        "role": "neutral",
+        "displayName": "Verde de confirmación",
+        "canonical": "#4f6b3a",
+        "tonalRamp": [
+          "#050e01",
+          "#1b2a10",
+          "#354927",
+          "#516a40",
+          "#708d5b",
+          "#94af82",
+          "#bbd2ab",
+          "#e2f6d6"
+        ]
+      },
+      "estado-paso": {
+        "role": "primary",
+        "displayName": "Carmín diluido (de paso)",
+        "canonical": "#cf7356",
+        "tonalRamp": [
+          "#1e0100",
+          "#421406",
+          "#692d1a",
+          "#944831",
+          "#bf6649",
+          "#de8d74",
+          "#fdb59f",
+          "#ffdfcb"
+        ]
+      },
+      "estado-transito": {
+        "role": "primary",
+        "displayName": "Carmín lavado (tránsito)",
+        "canonical": "#e7a98a",
+        "tonalRamp": [
+          "#180500",
+          "#391c0d",
+          "#5d3723",
+          "#84543b",
+          "#ac7355",
+          "#cc987e",
+          "#ecbea7",
+          "#ffe5d2"
+        ]
+      },
+      "frontera-provincia": {
+        "role": "neutral",
+        "displayName": "Frontera de provincia",
+        "canonical": "#bfae8c",
+        "tonalRamp": [
+          "#100a02",
+          "#2c2413",
+          "#4b412b",
+          "#6d5f44",
+          "#908060",
+          "#b2a387",
+          "#d4c8af",
+          "#f8edd9"
+        ]
+      },
+      "rotulo-pais": {
+        "role": "neutral",
+        "displayName": "Rótulo de país",
+        "canonical": "#4f4232",
+        "tonalRamp": [
+          "#0f0a05",
+          "#2b241b",
+          "#4a4035",
+          "#6b5f50",
+          "#8e806e",
+          "#b0a393",
+          "#d3c7b9",
+          "#f6ede1"
+        ]
+      },
+      "rotulo-provincia": {
+        "role": "neutral",
+        "displayName": "Rótulo de provincia",
+        "canonical": "#3b2f22",
+        "tonalRamp": [
+          "#0f0a06",
+          "#2b241c",
+          "#494036",
+          "#6b5f53",
+          "#8e8071",
+          "#afa395",
+          "#d2c7bb",
+          "#f6ede3"
+        ]
+      },
+      "rotulo-agua": {
+        "role": "neutral",
+        "displayName": "Rótulo de agua",
+        "canonical": "#4d6b63",
+        "tonalRamp": [
+          "#040e0b",
+          "#192925",
+          "#324741",
+          "#4e6861",
+          "#6b8a82",
+          "#91aca4",
+          "#b8cfc8",
+          "#e0f4ee"
+        ]
+      },
+      "aguada-ocre": {
+        "role": "tertiary",
+        "displayName": "Aguada ocre",
+        "canonical": "#c49a4a",
+        "tonalRamp": [
+          "#160800",
+          "#352100",
+          "#583c00",
+          "#7d5b0f",
+          "#a37b28",
+          "#c39f5d",
+          "#e4c58d",
+          "#ffebbe"
+        ],
+        "diluida": "#e6d3a8"
+      },
+      "aguada-salvia": {
+        "role": "tertiary",
+        "displayName": "Aguada salvia",
+        "canonical": "#8a9a5b",
+        "tonalRamp": [
+          "#090d00",
+          "#212907",
+          "#3d471c",
+          "#5b6833",
+          "#7b8a4c",
+          "#9ead77",
+          "#c3d0a1",
+          "#e9f4ce"
+        ],
+        "diluida": "#cfd6b4"
+      },
+      "aguada-siena": {
+        "role": "tertiary",
+        "displayName": "Aguada siena",
+        "canonical": "#b9714f",
+        "tonalRamp": [
+          "#1b0400",
+          "#3d1907",
+          "#63331c",
+          "#8b4f33",
+          "#b56e4c",
+          "#d49476",
+          "#f3bba1",
+          "#ffe3cd"
+        ],
+        "diluida": "#e3c2ae"
+      },
+      "aguada-pizarra": {
+        "role": "tertiary",
+        "displayName": "Aguada pizarra",
+        "canonical": "#6f8aa1",
+        "tonalRamp": [
+          "#040c14",
+          "#192732",
+          "#324453",
+          "#4e6477",
+          "#6b869d",
+          "#91a8bd",
+          "#b7ccde",
+          "#e0f1ff"
+        ],
+        "diluida": "#c4d0da"
+      },
+      "aguada-malva": {
+        "role": "tertiary",
+        "displayName": "Aguada malva",
+        "canonical": "#a07a9a",
+        "tonalRamp": [
+          "#130611",
+          "#301e2e",
+          "#51384e",
+          "#755570",
+          "#9a7494",
+          "#bb99b5",
+          "#dcbed7",
+          "#ffe6fa"
+        ],
+        "diluida": "#dccbd8"
+      },
+      "aguada-verde-agua": {
+        "role": "tertiary",
+        "displayName": "Aguada verde agua",
+        "canonical": "#7f9c8c",
+        "tonalRamp": [
+          "#050e09",
+          "#1a2921",
+          "#34473d",
+          "#50685b",
+          "#6e8a7b",
+          "#93ac9e",
+          "#bacfc3",
+          "#e1f4e9"
+        ],
+        "diluida": "#c9d8cf"
+      },
+      "aguada-tierra-de-sombra": {
+        "role": "tertiary",
+        "displayName": "Aguada tierra de sombra",
+        "canonical": "#9c7b56",
+        "tonalRamp": [
+          "#130800",
+          "#32210e",
+          "#533d24",
+          "#775b3c",
+          "#9c7b57",
+          "#bd9f7f",
+          "#dec4a8",
+          "#ffead3"
+        ],
+        "diluida": "#d9c7b0"
+      },
+      "aguada-rosa-viejo": {
+        "role": "tertiary",
+        "displayName": "Aguada rosa viejo",
+        "canonical": "#b58f8a",
+        "tonalRamp": [
+          "#130806",
+          "#32201d",
+          "#533b38",
+          "#775955",
+          "#9d7873",
+          "#bd9c98",
+          "#dfc1bd",
+          "#ffe8e5"
+        ],
+        "diluida": "#e4d0cc"
+      },
+      "aguada-oliva": {
+        "role": "tertiary",
+        "displayName": "Aguada oliva",
+        "canonical": "#8c8f6a",
+        "tonalRamp": [
+          "#0b0c02",
+          "#252714",
+          "#42442c",
+          "#626445",
+          "#838661",
+          "#a5a888",
+          "#c9ccb0",
+          "#eff1d9"
+        ],
+        "diluida": "#d1d2bb"
+      },
+      "aguada-amarillo-paja": {
+        "role": "tertiary",
+        "displayName": "Aguada amarillo paja",
+        "canonical": "#d1b84a",
+        "tonalRamp": [
+          "#130900",
+          "#312400",
+          "#514100",
+          "#746000",
+          "#998100",
+          "#baa54b",
+          "#dbca80",
+          "#fdefb4"
+        ],
+        "diluida": "#efe3a6"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "El título Periplo en la cabecera del panel."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Nombre de lo abierto: viaje, ficha o logro."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Secciones del panel, títulos de ficha y de popup."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto corrido, filas y campos."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Botones, pestañas, rótulos de campo, lentes."
+      },
+      "acotacion": {
+        "displayName": "Acotación",
+        "purpose": "Notas al margen en cursiva: volver, enlaces, vacíos, período."
+      },
+      "cifra": {
+        "displayName": "Cifra",
+        "purpose": "La cifra grande de países, con numerales antiguos."
+      }
+    },
+    "shadows": [
+      {
+        "name": "lamina-montada",
+        "value": "3px 3px 0 var(--sombra)",
+        "purpose": "Popups del mapa."
+      },
+      {
+        "name": "copia-pegada",
+        "value": "2px 2px 0 var(--linea)",
+        "purpose": "Fotos con paspartú."
+      }
+    ],
+    "breakpoints": [],
+    "themeContract": {
+      "source": "frontend/src/tema/tipos.ts",
+      "registry": "frontend/src/tema/index.ts",
+      "default": "atlas",
+      "minAguadas": 10,
+      "roles": [
+        "ui (17 colores)",
+        "fuentes (texto, titulo, cursiva, mapa.versalitas, mapa.cursiva)",
+        "mapa (mar, noVisitado, fronteraPais, fronteraProvincia, resaltado, halo, foto, rotuloPais, rotuloProvincia, rotuloAgua, haloRotulo)",
+        "estados (estadia, paso, transito, deseo)",
+        "aguadas [entintada, diluida], al menos 10"
+      ]
+    }
+  },
+  "components": [
+    {
+      "name": "Botón",
+      "kind": "button",
+      "refersTo": "boton",
+      "description": "Cajetín de tinta sobre papel, en versalitas.",
+      "html": "<button class=\"ds-btn\">Editar</button>",
+      "css": ".ds-btn{min-height:36px;padding:6px 12px;border:1px solid var(--tinta,#2b2117);border-radius:0;background:transparent;color:var(--tinta,#2b2117);font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:15px;letter-spacing:.05em;cursor:pointer}.ds-btn:focus-visible{outline:2px solid var(--carmin,#a8382c);outline-offset:1px}.ds-btn:hover{background:var(--papel-hondo,#e8dcc2)}"
+    },
+    {
+      "name": "Botón activo",
+      "kind": "button",
+      "refersTo": "boton-activo",
+      "description": "Botón entintado: submit o elección activa.",
+      "html": "<button class=\"ds-btn-activo\">Guardar</button>",
+      "css": ".ds-btn-activo{min-height:36px;padding:6px 12px;border:1px solid var(--tinta,#2b2117);border-radius:0;background:var(--tinta,#2b2117);color:var(--papel,#f3ebda);font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:15px;letter-spacing:.05em;cursor:pointer}.ds-btn-activo:focus-visible{outline:2px solid var(--carmin,#a8382c);outline-offset:1px}"
+    },
+    {
+      "name": "Botón peligro",
+      "kind": "button",
+      "refersTo": "boton-peligro",
+      "description": "Borrar: borde y texto en carmín.",
+      "html": "<button class=\"ds-btn-peligro\">Borrar viaje</button>",
+      "css": ".ds-btn-peligro{min-height:36px;padding:6px 12px;border:1px solid var(--carmin,#a8382c);border-radius:0;background:transparent;color:var(--carmin,#a8382c);font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:15px;letter-spacing:.05em;cursor:pointer}.ds-btn-peligro:focus-visible{outline:2px solid var(--carmin,#a8382c);outline-offset:1px}.ds-btn-peligro:hover{background:var(--papel-hondo,#e8dcc2)}"
+    },
+    {
+      "name": "Volver",
+      "kind": "button",
+      "refersTo": "volver",
+      "description": "Botón-texto en cursiva Fell, como acotación al margen.",
+      "html": "<button class=\"ds-volver\">← Viajes</button>",
+      "css": ".ds-volver{padding:0;border:none;background:none;color:var(--tenue,#6b5a43);font-family:var(--cursiva,'IM Fell English',Georgia,serif);font-style:italic;font-size:16px;cursor:pointer}.ds-volver:hover{color:var(--tinta,#2b2117)}.ds-volver:focus-visible{outline:2px solid var(--carmin,#a8382c);outline-offset:1px}"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "refersTo": "campo",
+      "description": "Una línea de tinta; el rótulo arriba en versalitas.",
+      "html": "<label class=\"ds-campo\"><span>Nombre</span><input value=\"Noroeste argentino\"></label>",
+      "css": ".ds-campo{display:flex;flex-direction:column;gap:2px;color:var(--tenue,#6b5a43);font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:14px;letter-spacing:.04em}.ds-campo input{padding:4px 2px;border:none;border-bottom:1px solid var(--tinta,#2b2117);border-radius:0;background:transparent;color:var(--tinta,#2b2117);font-family:var(--texto,'EB Garamond',Georgia,serif);font-size:16px}.ds-campo input:focus-visible{outline:2px solid var(--carmin,#a8382c);outline-offset:1px}"
+    },
+    {
+      "name": "Pestañas",
+      "kind": "nav",
+      "refersTo": "pestania",
+      "description": "Versalitas bajo un filete doble sepia; la activa lleva raya de tinta.",
+      "html": "<nav class=\"ds-pestanias\"><button class=\"activa\">Viajes</button><button>Logros</button><button>Fichas</button><button>Números</button></nav>",
+      "css": ".ds-pestanias{display:flex;border-top:3px double var(--sepia,#7c6a50);border-bottom:1px solid var(--borde,#c9b48e)}.ds-pestanias button{flex:1;min-height:34px;padding:4px 0;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--tenue,#6b5a43);font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:14px;letter-spacing:.05em;cursor:pointer}.ds-pestanias button:hover{color:var(--tinta,#2b2117)}.ds-pestanias button.activa{border-bottom-color:var(--tinta,#2b2117);color:var(--tinta,#2b2117)}.ds-pestanias button:focus-visible{outline:2px solid var(--carmin,#a8382c);outline-offset:-2px}"
+    },
+    {
+      "name": "Lentes",
+      "kind": "chip",
+      "refersTo": "lente",
+      "description": "Radios con aspecto de cajetín: Automática, Países, Provincias, Departamentos.",
+      "html": "<div class=\"ds-lentes\"><span class=\"activa\">Automática</span><span>Países</span><span>Provincias</span><span>Departamentos</span></div>",
+      "css": ".ds-lentes{display:flex;flex-wrap:wrap;gap:4px}.ds-lentes span{padding:1px 7px;border:1px solid var(--borde,#c9b48e);color:var(--tinta,#2b2117);font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:13px;letter-spacing:.04em;cursor:pointer}.ds-lentes span:hover{border-color:var(--tinta,#2b2117)}.ds-lentes span.activa{border-color:var(--tinta,#2b2117);background:var(--tinta,#2b2117);color:var(--papel,#f3ebda)}"
+    },
+    {
+      "name": "Leyenda",
+      "kind": "card",
+      "refersTo": "tarjeta-mapa",
+      "description": "Tarjeta sobre el mapa: papel, borde de tinta, esquinas vivas.",
+      "html": "<div class=\"ds-leyenda\"><p class=\"t\">Leyenda</p><div><i class=\"estadia\"></i>Estadía</div><div><i class=\"paso\"></i>De paso</div><div><i class=\"transito\"></i>Tránsito</div><div><i class=\"deseo\"></i>Deseo</div></div>",
+      "css": ".ds-leyenda{display:inline-block;padding:12px 16px;border:1px solid var(--tinta,#2b2117);background:var(--papel,#f3ebda);color:var(--tinta,#2b2117);font-family:var(--texto,'EB Garamond',Georgia,serif);font-size:15px;line-height:1.65}.ds-leyenda .t{margin:0 0 2px;font-family:var(--titulo,'IM Fell English SC',Georgia,serif);font-size:16px;letter-spacing:.08em}.ds-leyenda i{display:inline-block;width:22px;height:12px;margin-right:10px;border:1px solid var(--sepia,#7c6a50);vertical-align:-1px}.ds-leyenda i.estadia{background:#a8382c}.ds-leyenda i.paso{background:#cf7356}.ds-leyenda i.transito{background:#e7a98a}.ds-leyenda i.deseo{border:1.5px solid var(--indigo,#3e5c76);background:var(--tierra,#eee4ce)}"
+    },
+    {
+      "name": "Fila de viaje",
+      "kind": "custom",
+      "refersTo": "marca",
+      "description": "Fila de lista con la marca del mapa: carmín si fui, contorno índigo si es plan.",
+      "html": "<ul class=\"ds-viajes\"><li><i class=\"hecho\"></i><span><strong>Noroeste argentino</strong><em>2024</em></span></li><li><i class=\"plan\"></i><span><strong>Estambul</strong><em>Deseo</em></span></li></ul>",
+      "css": ".ds-viajes{list-style:none;margin:0;padding:0;font-family:var(--texto,'EB Garamond',Georgia,serif);color:var(--tinta,#2b2117)}.ds-viajes li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--linea,#dccbaa)}.ds-viajes i{width:13px;height:13px;flex-shrink:0;border:1px solid var(--tinta,#2b2117)}.ds-viajes i.hecho{background:var(--carmin,#a8382c)}.ds-viajes i.plan{border:1.5px solid var(--indigo,#3e5c76)}.ds-viajes span{display:flex;flex-direction:column}.ds-viajes strong{font-size:18px;font-weight:500}.ds-viajes em{color:var(--tenue,#6b5a43);font-size:15px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Atlas de gabinete",
+    "overview": "Periplo se ve como un atlas del siglo XIX coloreado a mano: papel crudo, tinta de grabador y aguadas. El mapa es la lámina y el panel lateral es el texto que la acompaña. La referencia de juego (los modos de mapa de Victoria 3) entra por la mecánica, con lentes, niebla y territorio que se pinta, y no por la estética de videojuego. Todo lo que el usuario toca parece impreso: filetes, versalitas, acotaciones en cursiva al margen.\n\nLa densidad es de libro, no de tablero. Hay pocos controles, separados por filetes finos y dobles en vez de cajas. El color está racionado: la tierra no visitada es papel, y el carmín se reserva para lo vivido. Así, abrir el mapa y verlo pintado es el momento que recompensa. Las épocas usan una paleta aparte, las diez aguadas, que nunca compite con el carmín de las visitas.\n\nPeriplo tiene **varios temas intercambiables**. \"Atlas de gabinete\" es el tema por defecto y es el mundo que este documento describe con valores. Cualquier otro tema tiene que llenar los mismos roles (ver *El contrato de temas* en Colors) y respetar las reglas marcadas como invariantes. Los valores pueden cambiar; los roles, no.",
+    "keyCharacteristics": [
+      "Papel, tinta y aguadas; nada de blancos puros ni negros puros.",
+      "Esquinas siempre rectas (0px) y bordes de 1px en tinta: piezas impresas, no tarjetas de app.",
+      "Versalitas IM Fell para títulos y controles, EB Garamond para leer, cursiva IM Fell para las acotaciones.",
+      "Plano: la profundidad son sombras duras desplazadas, sin difuminado.",
+      "Carmín = lo vivido; índigo = lo deseado; aguadas = la historia."
+    ],
+    "rules": [
+      {
+        "name": "The Lacre Rule",
+        "body": "El carmín significa \"estuve ahí\". No se usa para decorar ni para llamar la atención sobre algo que no sea lo vivido, salvo el foco de teclado y los errores (en carmín seco).",
+        "section": "colors"
+      },
+      {
+        "name": "The Deseo Hueco Rule",
+        "body": "Un deseo nunca se rellena: es tierra sin pintar con contorno índigo, en el mapa, en la leyenda y en la lista. *(Invariante entre temas.)*",
+        "section": "colors"
+      },
+      {
+        "name": "The Intensity Ladder Rule",
+        "body": "La presencia se lee por la carga de tinta, de más a menos: estadía (`carmin`) → de paso (`estado-paso`) → tránsito (`estado-transito`). Es una sola familia de color, nunca tres colores distintos. *(Invariante entre temas.)*",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Palettes Rule",
+        "body": "Las visitas y las épocas no comparten paleta. Mirando un año mandan las aguadas, y las fronteras internas de hoy se atenúan.",
+        "section": "colors"
+      },
+      {
+        "name": "The Versalitas Rule",
+        "body": "Lo que se nombra o se toca (títulos, botones, pestañas, rótulos) va en versalitas Fell con espaciado positivo. El texto corrido nunca va en versalitas.",
+        "section": "typography"
+      },
+      {
+        "name": "The Old-Style Numerals Rule",
+        "body": "Las cifras y los años usan numerales de estilo antiguo, como en un libro impreso.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hard Shadow Rule",
+        "body": "Si algo necesita despegarse del papel, se desplaza con sombra dura de 2–3px y 0 de difuminado. Nunca una sombra suave ni un `backdrop-filter`.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** sacar cada color y cada fuente del tema activo: `var(--papel)` en el CSS, `tema.mapa.*` en el estilo del mapa.",
+      "**Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas de familias de color distintas y sin rojos que compitan con la estadía.",
+      "**Do** separar con filetes (1px, o 3px dobles para abrir una sección) en vez de cajas o fondos.",
+      "**Do** escribir las notas, los estados vacíos y los vínculos de vuelta en cursiva Fell, como acotaciones al margen.",
+      "**Do** mantener el foco de teclado visible con un contorno de 2px en carmín.",
+      "**Do** llevar la gramática del mapa a todo lo que lo representa: la marca de la lista y la leyenda repiten exactamente el relleno o el contorno del mapa."
+    ],
+    "donts": [
+      "**Don't** escribir un hex, un `rgb()` o un nombre de fuente en el CSS o en un componente; los tests lo rechazan.",
+      "**Don't** redondear esquinas ni usar sombras difuminadas, vidrio esmerilado o gradientes.",
+      "**Don't** rellenar un deseo, ni rayarlo: es solo un contorno índigo.",
+      "**Don't** usar el carmín para algo que no sea lo vivido, el foco o un error.",
+      "**Don't** usar blanco puro ni negro puro; el papel y la tinta son siempre cálidos.",
+      "**Don't** tapar el mapa: el panel queda al costado y las tarjetas flotantes son chicas y van en las esquinas o arriba al centro."
+    ]
+  }
+}
