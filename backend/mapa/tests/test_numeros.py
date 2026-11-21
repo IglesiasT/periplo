@@ -16,7 +16,7 @@ from ..logros import (
     provincias_de,
     regiones,
 )
-from ..models import EntidadPoliticaHistorica, Region, RegionEpoca, Visita
+from ..models import EntidadPoliticaHistorica, Marca, Region, RegionEpoca, Visita
 
 
 class EstadisticasTests(TestCase):
@@ -49,6 +49,15 @@ class EstadisticasTests(TestCase):
             {'codigo': 'ARG', 'nombre': 'Argentina', 'provincias_visitadas': 1, 'provincias_total': 3},
         ])
         self.assertNotIn('km2_visitados', datos)
+
+    def test_cuentan_las_marcas(self):
+        Marca.objects.create(region=self.tilcara, estado=Marca.Estado.HOGAR)     # vivir cuenta como visitar
+        Visita.objects.create(region=self.madrid)
+        Marca.objects.create(region=self.madrid, estado=Marca.Estado.NINGUNO)  # "no fui" la anula
+
+        datos = calcular_estadisticas()
+        self.assertEqual(datos['paises_visitados'], 1)
+        self.assertEqual(datos['provincias_argentinas_visitadas'], 1)
 
     def test_entidades_historicas_con_la_regla_del_panel_de_la_epoca(self):
         rio = EntidadPoliticaHistorica.objects.create(nombre='Viceroyalty of the Río de la Plata')

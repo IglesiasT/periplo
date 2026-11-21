@@ -18,7 +18,9 @@ urlpatterns = [
     re_path(r'^historia/(?P<anio>-?\d+)/$', historia.epoca, name='epoca'),
     path('fichas/', fichas.fichas, name='fichas'),
     path('encuadre/', regiones.encuadre, name='encuadre'),
+    path('marcas/', regiones.marcas, name='marcas'),
     path('regiones/<str:codigo>/', regiones.region, name='region'),
     path('regiones/<str:codigo>/ficha/', fichas.ficha, name='ficha'),
+    path('regiones/<str:codigo>/marca/', regiones.marca, name='marca'),
     *router.urls,
 ]

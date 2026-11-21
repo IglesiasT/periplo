@@ -99,6 +99,8 @@ export const orbita: Tema = {
   },
   estados: {
     visitada: ambar,
+    // Hogar: rosa, cálido como lo visitado pero aparte.
+    hogar: '#e85d9a',
     deseo: azul,
   },
   // Sobre fondo oscuro, la entintada es la encendida y la diluida apenas se separa de la tierra.

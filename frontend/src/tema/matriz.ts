@@ -96,6 +96,8 @@ export const matriz: Tema = {
   },
   estados: {
     visitada: rojo,
+    // Hogar: rojo quemado, más oscuro que lo visitado.
+    hogar: '#7a0f0a',
     deseo: negro,
   },
   aguadas: [

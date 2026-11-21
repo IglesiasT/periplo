@@ -7,6 +7,7 @@ import './index.css'
 import { reintentar } from './api'
 import App from './App.tsx'
 import BarreraDeErrores from './components/BarreraDeErrores'
+import { ProveedorConfirmacion } from './components/Confirmacion'
 import { ProveedorTema } from './tema/ProveedorTema'
 
 // Caché compartida de las respuestas de la API (ver hooks/consultas.ts).
@@ -19,7 +20,9 @@ createRoot(document.getElementById('root')!).render(
     <ProveedorTema>
       <QueryClientProvider client={clienteConsultas}>
         <BarreraDeErrores>
-          <App />
+          <ProveedorConfirmacion>
+            <App />
+          </ProveedorConfirmacion>
         </BarreraDeErrores>
       </QueryClientProvider>
     </ProveedorTema>

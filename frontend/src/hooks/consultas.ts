@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as api from '../api'
-import type { DatosViaje, DatosVisita } from '../types'
+import type { DatosViaje, DatosVisita, EstadoMarca } from '../types'
 
 // Cada dato de la API tiene una clave en la caché de TanStack Query.
 const CLAVES = {
@@ -15,6 +15,7 @@ const CLAVES = {
   // Prefijo del detalle de cada región: sus visitas cambian con cualquier visita.
   regiones: ['regiones'],
   fichas: ['fichas'],
+  marcas: ['marcas'],
 } as const
 
 export const useEstados = () => useQuery({ queryKey: CLAVES.estados, queryFn: api.obtenerEstados })
@@ -54,6 +55,15 @@ export const useRegion = (codigo: string | null) =>
     enabled: codigo !== null,
   })
 
+/** Para leer una región desde un handler (un click en el mapa): usa la misma caché que useRegion. */
+export function usePedirRegion() {
+  const cliente = useQueryClient()
+  return (codigo: string) =>
+    cliente.fetchQuery({ queryKey: [...CLAVES.regiones, codigo], queryFn: () => api.obtenerRegion(codigo) })
+}
+
+export const useMarcas = () => useQuery({ queryKey: CLAVES.marcas, queryFn: api.listarMarcas })
+
 /** Fuera de CLAVES a propósito: el recuadro de una región no cambia con las visitas, no hace falta invalidarlo. */
 export const useEncuadre = (codigos: string[] | null) =>
   useQuery({
@@ -69,6 +79,16 @@ export function useGuardarFicha() {
   const invalidar = useInvalidar()
   return useMutation({
     mutationFn: ({ codigo, texto }: { codigo: string; texto: string }) => api.guardarFicha(codigo, texto),
+    onSuccess: invalidar,
+  })
+}
+
+/** Guarda la marca de una región, o la saca con `estado: null`. */
+export function useMarcar() {
+  const invalidar = useInvalidar()
+  return useMutation({
+    mutationFn: ({ codigo, estado }: { codigo: string; estado: EstadoMarca | null }): Promise<unknown> =>
+      estado === null ? api.borrarMarca(codigo) : api.guardarMarca(codigo, estado),
     onSuccess: invalidar,
   })
 }

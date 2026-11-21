@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 
-from ..models import EntidadPoliticaHistorica, FichaRegion, Region, RegionEpoca, Viaje, Visita
+from ..models import EntidadPoliticaHistorica, FichaRegion, Marca, Region, RegionEpoca, Viaje, Visita
 
 
 class EncuadreApiTests(APITestCase):
@@ -81,3 +81,40 @@ class FichasApiTests(APITestCase):
         self.assertEqual(self.client.get('/api/regiones/XX-NADA/').status_code, 404)
         respuesta = self.client.put('/api/regiones/XX-NADA/ficha/', {'texto': 'a'}, format='json')
         self.assertEqual(respuesta.status_code, 404)
+
+
+class MarcaApiTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.arg = Region.objects.create(nivel='pais', codigo='ARG', nombre='Argentina')
+        cls.tucuman = Region.objects.create(nivel='provincia', codigo='AR-T', nombre='Tucumán', padre=cls.arg)
+        Visita.objects.create(region=cls.tucuman, realizada=False, desde_notion=True)
+
+    def test_marcar_cambiar_y_sacar(self):
+        respuesta = self.client.put('/api/regiones/AR-T/marca/', {'estado': 'hogar'}, format='json')
+        self.assertEqual((respuesta.status_code, respuesta.data['estado']), (200, 'hogar'))
+        self.client.put('/api/regiones/AR-T/marca/', {'estado': 'visitada'}, format='json')
+        detalle = self.client.get('/api/regiones/AR-T/').data
+        self.assertEqual(detalle['marca']['estado'], 'visitada')
+        self.assertEqual(self.client.get('/api/estados/').data['AR-T'], 'visitada')
+        self.assertEqual(self.client.get('/api/marcas/').data,
+                         [{'codigo': 'AR-T', 'nombre': 'Tucumán', 'nivel': 'provincia', 'estado': 'visitada'}])
+
+        self.assertEqual(self.client.delete('/api/regiones/AR-T/marca/').status_code, 204)
+        self.assertIsNone(self.client.get('/api/regiones/AR-T/').data['marca'])
+        # La visita de Notion siguió ahí todo el tiempo: vuelve a verse.
+        self.assertEqual(self.client.get('/api/estados/').data['AR-T'], 'deseo')
+        self.assertTrue(self.client.get('/api/regiones/AR-T/').data['visitas'][0]['desde_notion'])
+
+    def test_estado_invalido_y_region_inexistente(self):
+        self.assertEqual(self.client.put('/api/regiones/AR-T/marca/', {'estado': 'de_paso'}, format='json')
+                         .status_code, 400)
+        self.assertEqual(self.client.put('/api/regiones/XX/marca/', {'estado': 'hogar'}, format='json')
+                         .status_code, 404)
+
+    def test_la_marca_protege_a_su_region(self):
+        from django.db.models import ProtectedError
+
+        Marca.objects.create(region=self.tucuman, estado=Marca.Estado.HOGAR)
+        with self.assertRaises(ProtectedError):
+            self.tucuman.delete()

@@ -97,6 +97,8 @@ export const cristal: Tema = {
   },
   estados: {
     visitada: cobalto,
+    // Hogar: verde agua.
+    hogar: '#0f8f7e',
     deseo: magenta,
   },
   aguadas: [

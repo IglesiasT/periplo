@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     EntidadPoliticaHistorica,
     FichaRegion,
+    Marca,
     Region,
     RegionEpoca,
     Viaje,
@@ -47,6 +48,15 @@ class VisitaAdmin(admin.ModelAdmin):
 class FichaRegionAdmin(admin.ModelAdmin):
     list_display = ['region', 'actualizada']
     search_fields = ['region__nombre', 'region__codigo', 'texto']
+    autocomplete_fields = ['region']
+
+
+@admin.register(Marca)
+class MarcaAdmin(admin.ModelAdmin):
+    """Lo marcado a mano en el mapa: le gana a las visitas de esa región sin borrarlas."""
+    list_display = ['region', 'estado', 'actualizada']
+    list_filter = ['estado']
+    search_fields = ['region__nombre', 'region__codigo']
     autocomplete_fields = ['region']
 
 
