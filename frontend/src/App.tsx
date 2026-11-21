@@ -46,6 +46,7 @@ export default function App() {
   }
 
   // Cambiar de selección, también con Atrás, termina el modo de marcar: no se marca en otro viaje sin querer.
+  // Sin viaje elegido, el modo marca las regiones sueltas (ver useMarcarRegion).
   const [seleccionPrevia, setSeleccionPrevia] = useState(seleccion)
   if (seleccion !== seleccionPrevia) {
     setSeleccionPrevia(seleccion)
@@ -83,7 +84,7 @@ export default function App() {
         estados={estados.data}
         resaltadas={resaltadas}
         encuadre={encuadre}
-        alClickearRegion={marcando && viaje ? alClickearRegion : undefined}
+        alClickearRegion={marcando ? alClickearRegion : undefined}
         alElegirRegion={(codigo) => seleccionar(abrirFicha(seleccion, codigo), { acercar: false })}
         fichas={fichas}
         fotos={fotos.data}

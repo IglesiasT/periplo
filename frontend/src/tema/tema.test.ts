@@ -19,6 +19,13 @@ function contraste(a: string, b: string): number {
   return (claro + 0.05) / (oscuro + 0.05)
 }
 
+/** Distancia entre dos colores `#rrggbb` en RGB: separa tonos que el contraste de luminancia no ve. */
+function distancia(a: string, b: string): number {
+  const canales = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  const [x, y] = [canales(a), canales(b)]
+  return Math.hypot(...x.map((c, i) => c - y[i]))
+}
+
 describe.each(Object.values(TEMAS))('tema $id', (tema) => {
   it('define todas las variables que usa index.css', () => {
     const definidas = new Set(Object.keys(variablesCss(tema)))
@@ -43,10 +50,15 @@ describe.each(Object.values(TEMAS))('tema $id', (tema) => {
   })
 
   it('lo visitado y los deseos se separan de la tierra sin visitar', () => {
-    const { visitada, deseo } = tema.estados
+    const { visitada, hogar, deseo } = tema.estados
     const tierra = tema.mapa.noVisitado
     expect(contraste(visitada, tierra)).toBeGreaterThanOrEqual(3)
+    expect(contraste(hogar, tierra)).toBeGreaterThanOrEqual(3)
     expect(contraste(deseo, tierra)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('el hogar no se confunde con lo visitado', () => {
+    expect(distancia(tema.estados.hogar, tema.estados.visitada)).toBeGreaterThanOrEqual(100)
   })
 })
 

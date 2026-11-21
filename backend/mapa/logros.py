@@ -13,7 +13,8 @@ from django.db.models import Q
 
 from .arbol import ArbolRegiones
 from .estadisticas import CONTINENTES
-from .models import Region, RegionEpoca, Visita
+from .estados import ids_regiones_visitadas
+from .models import Region, RegionEpoca
 
 
 @dataclass
@@ -300,7 +301,7 @@ def calcular_logros(logros: list[Logro] = LOGROS) -> list[dict]:
     # Cada región visitada y todas las que la contienen.
     alcanzadas = {
         nodo.codigo
-        for region_id in Visita.objects.filter(realizada=True).values_list('region_id', flat=True)
+        for region_id in ids_regiones_visitadas()
         for nodo in arbol.hacia_arriba(region_id)
     }
 

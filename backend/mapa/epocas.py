@@ -5,7 +5,8 @@ from pathlib import Path
 
 from django.conf import settings
 
-from .models import EntidadEpoca, EntidadPoliticaHistorica, RegionEpoca, Visita
+from .estados import ids_regiones_visitadas
+from .models import EntidadEpoca, EntidadPoliticaHistorica, Region, RegionEpoca
 
 # Nombres en castellano escritos a mano, por nombre original de historical-basemaps. Es la fuente
 # de verdad: sobrevive a regenerar la base y pisa lo que se haya cambiado desde el admin.
@@ -75,7 +76,7 @@ def linea_historica(region) -> list[dict]:
 
 def contar_entidades_pisadas() -> int:
     """Entidades distintas que pisé en algún año, con la misma regla que el panel de la época."""
-    visitadas = Visita.objects.filter(realizada=True).values('region_id')
+    visitadas = ids_regiones_visitadas()
     filas = (RegionEpoca.objects.filter(region_id__in=visitadas)
              .values_list('anio', 'region_id', 'entidad__nombre', 'porcentaje_superficie'))
     ocupacion: dict[tuple[int, int], Ocupacion] = defaultdict(list)
@@ -122,8 +123,7 @@ def calcular_epoca(anio: int) -> dict:
             nombres[entidad] = nombre_es
 
     pisadas: dict[str, dict[str, str]] = {}
-    visitadas = (Visita.objects.filter(realizada=True)
-                 .values_list('region__codigo', 'region__nombre').distinct())
+    visitadas = Region.objects.filter(id__in=ids_regiones_visitadas()).values_list('codigo', 'nombre')
     for codigo, nombre in visitadas:
         if codigo in ocupacion:
             for entidad in pisables(ocupacion[codigo]):

@@ -26,7 +26,7 @@ interface Props {
   seleccion: Seleccion
   /** `acercar: false` si no hay que mover el mapa: cambiar de pestaña o volver no llevan a ningún lado. */
   onSeleccionar: (seleccion: Seleccion, opciones?: { acercar: boolean }) => void
-  /** Qué hacen los clicks en el mapa: marcar la región en el viaje elegido, o abrir su ficha. */
+  /** Qué hacen los clicks en el mapa: marcar la región (en el viaje elegido, o suelta), o abrir su ficha. */
   marcando: boolean
   onCambiarMarcando: (marcando: boolean) => void
   /** Resultado o error de la última acción sobre el mapa. */
@@ -118,6 +118,7 @@ export default function Panel({
                 onElegir={(id) => onSeleccionar(elegirViaje(seleccion, id))}
                 onNuevo={() => onSeleccionar(elegirViaje(seleccion, 'nuevo'))}
                 onElegirRegion={(codigo) => onSeleccionar(abrirFicha(seleccion, codigo))}
+                marcando={marcando} onCambiarMarcando={onCambiarMarcando} aviso={aviso}
               />
             )
           ) : pestania === 'logros' ? (

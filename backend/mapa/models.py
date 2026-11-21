@@ -94,6 +94,29 @@ class Visita(models.Model):
         return f'{self.viaje or "Sin viaje"} → {self.region} ({estado})'
 
 
+class Marca(models.Model):
+    """Lo que digo yo de una región, marcado a mano en el mapa. Le gana a las visitas a esa misma región (las de los
+    viajes y las de Notion) pero nunca las borra: al sacarla, vuelve a verse lo que dicen ellas. El sync no la toca.
+    Lo de sus regiones hijas sigue subiendo como siempre (ver estados.py)."""
+
+    class Estado(models.TextChoices):
+        VISITADA = 'visitada', 'Fui'
+        HOGAR = 'hogar', 'Viví acá'
+        DESEO = 'deseo', 'Quiero ir'
+        NINGUNO = 'ninguno', 'No fui'  # anula lo que digan las visitas a esta región
+
+    # PROTECT: como la ficha, es escrito a mano y cargar_regiones no puede borrarlo.
+    region = models.OneToOneField(Region, on_delete=models.PROTECT, related_name='marca')
+    estado = models.CharField(max_length=8, choices=Estado.choices)
+    actualizada = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['region']
+
+    def __str__(self):
+        return f'{self.region}: {self.get_estado_display()}'
+
+
 class Foto(models.Model):
     """Foto subida desde la app. Si trae GPS en el EXIF, se ubica sola en el mapa."""
 

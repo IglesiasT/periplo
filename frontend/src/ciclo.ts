@@ -17,7 +17,7 @@ export function siguientePaso(viajeId: number, visitas: Visita[], codigo: string
     return { tipo: 'crear', datos: { viaje: viajeId, region: codigo, realizada: true } }
   }
   if (visita.desde_notion) {
-    return { tipo: 'bloqueada', motivo: `${visita.region_nombre} viene de Notion: se edita allá.` }
+    return { tipo: 'bloqueada', motivo: `${visita.region_nombre} viene de Notion: corregila desde su ficha.` }
   }
   return visita.realizada
     ? { tipo: 'actualizar', id: visita.id, datos: { realizada: false } }

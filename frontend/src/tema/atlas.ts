@@ -102,6 +102,8 @@ export const atlas: Tema = {
   // Lo visitado va entintado, como un atlas coloreado a mano. El deseo no se rellena: solo lleva un contorno.
   estados: {
     visitada: carmin,
+    // Hogar: verde oliva, otra tinta de la misma caja.
+    hogar: '#4a6a2c',
     deseo: indigo,
   },
   // Las aguadas de un atlas coloreado a mano. Sin rojos puros, para no confundirse con el carmín de las visitas.

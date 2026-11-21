@@ -8,7 +8,8 @@ from collections import Counter, defaultdict
 
 from .arbol import ArbolRegiones
 from .epocas import contar_entidades_pisadas
-from .models import Region, Visita
+from .estados import ids_regiones_visitadas
+from .models import Region
 
 CONTINENTES = {
     'South America': 'Sudamérica',
@@ -30,7 +31,7 @@ def calcular_estadisticas() -> dict:
     arbol = ArbolRegiones()
     regiones = arbol.nodos
 
-    visitadas = [regiones[i] for i in set(Visita.objects.filter(realizada=True).values_list('region_id', flat=True))]
+    visitadas = [regiones[i] for i in ids_regiones_visitadas()]
     paises = [r for r in regiones.values() if r.nivel == Region.Nivel.PAIS]
     paises_visitados = {p.id for r in visitadas if (p := arbol.subir_hasta(r.id, Region.Nivel.PAIS))}
 

@@ -5,6 +5,7 @@ Sincroniza la base Destinations de Notion (y su base relacionada Lugares) con Vi
 - Las visitas creadas por este comando (desde_notion=True) se regeneran en cada corrida;
   las que cargues a mano no se tocan.
 - Nunca borra viajes: si un destino desaparece de Notion, solo lo avisa.
+- No toca las marcas (lo corregido a mano en el mapa), pero avisa cuáles contradicen lo que trajo Notion.
 
 Uso:
     python manage.py sincronizar_notion --dry-run    # muestra qué haría, sin guardar
@@ -15,7 +16,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from mapa.models import Region, Viaje, Visita
+from mapa.estados import estado_de_visitas, pisa
+from mapa.models import Marca, Region, Viaje, Visita
 from mapa.notion import ClienteNotion, ErrorNotion, parsear_destino, parsear_lugar
 from mapa.sincronizacion import planificar_visitas
 from mapa.ubicacion import Ubicador
@@ -71,6 +73,7 @@ class Command(BaseCommand):
             Visita.objects.bulk_create(nuevas)
 
             self.reportar(destinos, visitas, sin_ubicar)
+            self.reportar_marcas()
             if opts['dry_run']:
                 transaction.set_rollback(True)
                 self.stdout.write(self.style.WARNING('--dry-run: no se guardó nada.'))
@@ -107,3 +110,21 @@ class Command(BaseCommand):
         huerfanos = Viaje.objects.exclude(notion_id__isnull=True).exclude(notion_id__in=ids_notion)
         for viaje in huerfanos:
             self.stdout.write(self.style.WARNING(f'"{viaje}" ya no está en Notion (no se borró).'))
+
+    def reportar_marcas(self):
+        """Las marcas que esconden algo que dice Notion: puede que Notion haya cambiado y la marca ya no haga falta."""
+        de_notion: dict[int, list[bool]] = {}
+        for region_id, realizada in Visita.objects.filter(desde_notion=True).values_list('region_id', 'realizada'):
+            de_notion.setdefault(region_id, []).append(realizada)
+        contradicen = [
+            (marca, notion) for marca in Marca.objects.select_related('region')
+            if pisa(marca.estado, notion := estado_de_visitas(de_notion.get(marca.region_id, [])))
+        ]
+        if not contradicen:
+            return
+        self.stdout.write(self.style.WARNING(
+            f'Marcas que contradicen a Notion ({len(contradicen)}): manda la marca. '
+            'Sacala desde la ficha si ya no va.'))
+        for marca, notion in contradicen:
+            self.stdout.write(f'  - {marca.region.nombre}: Notion dice {notion}, tu marca dice '
+                              f'"{marca.get_estado_display()}"')

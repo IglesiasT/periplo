@@ -47,12 +47,29 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
   - `region`: FK
   - `realizada`: si es verdadero se pinta como visitada; si es falso, todavía no fui y se pinta como deseo
   - `desde_notion`: la creó el sync, que la regenera en cada corrida
+- **`Marca`**: lo que digo yo de una región, marcado a mano en el mapa. Ver "Visitas y marcas" más abajo.
+  - `region`: OneToOne, protegida como la ficha
+  - `estado`: visitada, hogar (viví ahí), deseo o ninguno ("no fui")
+  - `actualizada`
 - **`Foto`**
   - `viaje`: FK
   - `archivo` y `miniatura`: van a `backend/media/`, que está fuera del repo
   - `lat`, `lon` y `tomada_en`: opcionales; se leen del EXIF si están
   - `region`: región donde cae la foto, calculada al subirla
   - `descripcion`
+
+### Visitas y marcas: dos fuentes
+
+Lo que se pinta sale de dos fuentes que pueden no coincidir: las **visitas** (de los viajes y de Notion) y las **marcas** (lo corregido a mano). Las reglas (`mapa/estados.py`, y `frontend/src/conflictos.ts` para los avisos):
+
+1. **La marca de una región le gana a las visitas a esa misma región**, en el mapa, en Números, en Logros y en la historia. Lo de sus hijas sigue subiendo como siempre: si marco Tucumán "no fui" pero Tafí del Valle está visitada, Tucumán se pinta igual.
+2. **Hogar se pinta solo en la región marcada**; hacia arriba sube como visitada, y cuenta como visitada en todo lo demás.
+3. **Una marca nunca borra visitas**, y el sync de Notion no toca las marcas. Al sacar una marca vuelve a verse lo que dicen las visitas.
+4. **Agregar no pregunta; pisar o perder algo, sí**, con el modal del tema (`components/Confirmacion.tsx`, nunca `window.confirm`):
+   - una marca que esconde lo que dicen las visitas (deseo o "no fui" sobre algo visitado);
+   - sacar una marca que cambia lo que se ve, o un hogar;
+   - quitar una visita realizada de un viaje, borrar un viaje, una foto o una ficha.
+5. **Las dos fuentes siempre se ven**: la ficha muestra qué dicen las visitas cuando no coinciden con la marca, y `sincronizar_notion` lista al final las marcas que contradicen lo que trajo.
 
 ### Fase 3
 
@@ -86,6 +103,7 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
    - Gris: no visitado ("niebla de guerra").
    - Contorno o semitransparente: lista de deseos.
    - Color lleno: visitado.
+   - Otro color lleno: hogar, donde viví.
 4. Agregar zoom semántico: con zoom lejano se ven países y al acercarse aparecen las provincias, como el mapa de estados de Victoria 3.
    - Lentes, como los modos de mapa de Victoria 3: la automática es el zoom semántico; las de países, provincias y departamentos fijan el nivel con cualquier zoom. Cada lente es un par de umbrales de zoom (`UMBRALES` en `estilo.ts`) y cambiarla no recarga el mapa.
    - Mirando un año, la automática pasa antes a provincias: a nivel de país, cada país de hoy toma una sola entidad (Alemania en 1815 sería toda Prusia). Las fronteras internas de hoy se atenúan, para que manden los colores de las entidades.
@@ -103,13 +121,14 @@ Las geometrías **no** se guardan en la base: viven en archivos GeoJSON (simplif
 
 1. CRUD de viajes y visitas desde el frontend, idealmente haciendo click en el mapa para marcar regiones.
    - El panel tiene cuatro pestañas: Viajes, Logros, Fichas y Números.
+   - Con un viaje abierto, "Marcar en el mapa" agrega regiones a ese viaje. Sin viaje, marca las regiones sueltas (visitada → hogar → deseo → sin marca); la ficha de cada región también tiene los botones Fui, Viví acá, Quiero ir y No fui.
    - Un viaje elegido sigue resaltado mientras se mira otra pestaña o se lee una ficha: se deselecciona solo con "← Viajes". Una ficha se abre encima de lo que haya, con un enlace para volver.
 2. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
 3. Estadísticas: países visitados, provincias argentinas, continentes y entidades históricas pisadas.
    - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.
 4. Lo escrito a mano no se pierde:
    - Lo que no se guardó todavía (fichas, formularios de viaje) queda en el navegador: `hooks/useBorrador.ts`.
-   - `manage.py respaldar` guarda viajes, visitas, fichas y fotos en un `.zip`. El servidor hace uno solo al arrancar si el último tiene más de 7 días (`mapa/respaldos.py`), en `RESPALDOS_DIR`.
+   - `manage.py respaldar` guarda viajes, visitas, marcas, fichas y fotos en un `.zip`. El servidor hace uno solo al arrancar si el último tiene más de 7 días (`mapa/respaldos.py`), en `RESPALDOS_DIR`.
 
 ### Fase 3: la historia
 

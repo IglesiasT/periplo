@@ -5,6 +5,7 @@ import { useBorrarViaje, useGuardarViaje } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
 import type { DatosViaje, EstadoViaje, Viaje } from '../types'
 import CampoFecha from './CampoFecha'
+import { useConfirmar } from '../hooks/useConfirmar'
 
 const VACIO: DatosViaje = { nombre: '', estado: 'hecho', fecha_inicio: null, fecha_fin: null, notas: '' }
 
@@ -26,6 +27,7 @@ export default function ViajeForm({ viaje, cantidadFotos = 0, onGuardado, onBorr
     : VACIO
   const guardar = useGuardarViaje()
   const borrar = useBorrarViaje()
+  const confirmar = useConfirmar()
   const deNotion = Boolean(viaje?.notion_id)
   // De un viaje de Notion, el nombre y el estado son siempre los que trajo el último sync.
   const datos: DatosViaje = {
@@ -51,8 +53,10 @@ export default function ViajeForm({ viaje, cantidadFotos = 0, onGuardado, onBorr
     })
   }
 
-  const eliminar = () => {
-    if (viaje && window.confirm(mensajeBorrarViaje(viaje.nombre, viaje.visitas.length, cantidadFotos))) {
+  const eliminar = async () => {
+    if (!viaje) return
+    const mensaje = mensajeBorrarViaje(viaje.nombre, viaje.visitas.length, cantidadFotos)
+    if (await confirmar({ titulo: `¿Borrar "${viaje.nombre}"?`, mensaje, aceptar: 'Borrar' })) {
       // Con la promesa y no con onSuccess: al refrescarse la lista este formulario se desmonta antes de que la
       // mutación termine, y sus callbacks ya no se llamarían. Si falla, el error se muestra abajo.
       borrar.mutateAsync(viaje.id).then(() => {

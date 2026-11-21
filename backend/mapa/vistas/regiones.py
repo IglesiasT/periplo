@@ -6,13 +6,14 @@ from rest_framework.response import Response
 from ..epocas import linea_historica
 from ..estados import calcular_estados
 from ..geodatos import unir_recuadros
-from ..models import FichaRegion, Region
+from ..models import FichaRegion, Marca, Region
 from .fichas import datos_ficha
 
 
 @api_view(['GET'])
 def estados(request):
-    """{codigo: estado} con estado en visitada | deseo. Las regiones sin estado no aparecen."""
+    """{codigo: estado} con estado en visitada | hogar | deseo, con las marcas aplicadas. Las regiones sin estado
+    no aparecen."""
     return Response(calcular_estados())
 
 
@@ -30,16 +31,45 @@ def region(request, codigo):
         'nivel': region.nivel,
         'ancestros': [{'codigo': a.codigo, 'nombre': a.nombre} for a in ancestros],
         'ficha': datos_ficha(FichaRegion.objects.filter(region=region).first()),
+        'marca': datos_marca(Marca.objects.filter(region=region).first()),
         'visitas': [
             {'id': v.id, 'viaje': v.viaje_id, 'viaje_nombre': v.viaje.nombre if v.viaje else None,
              'viaje_inicio': v.viaje.fecha_inicio if v.viaje else None,
              'viaje_fin': v.viaje.fecha_fin if v.viaje else None,
              'region': v.region.codigo, 'region_nombre': v.region.nombre,
-             'realizada': v.realizada}
+             'realizada': v.realizada, 'desde_notion': v.desde_notion}
             for v in visitas
         ],
         'historia': linea_historica(region),
     })
+
+
+def datos_marca(marca: Marca | None) -> dict | None:
+    return None if marca is None else {'estado': marca.estado, 'actualizada': marca.actualizada}
+
+
+@api_view(['GET'])
+def marcas(request):
+    """Las regiones marcadas a mano, por nombre: lo que corregí y donde viví."""
+    return Response([
+        {'codigo': m.region.codigo, 'nombre': m.region.nombre, 'nivel': m.region.nivel, 'estado': m.estado}
+        for m in Marca.objects.select_related('region').order_by('region__nombre')
+    ])
+
+
+@api_view(['PUT', 'DELETE'])
+def marca(request, codigo):
+    """PUT {estado} guarda la marca de la región y la devuelve; DELETE la saca (204). Las visitas no se tocan:
+    la marca solo cambia lo que se pinta (ver estados.py)."""
+    region = get_object_or_404(Region, codigo=codigo)
+    if request.method == 'DELETE':
+        Marca.objects.filter(region=region).delete()
+        return Response(status=204)
+    estado = request.data.get('estado')
+    if estado not in Marca.Estado.values:
+        raise ValidationError({'estado': [f'Tiene que ser uno de: {", ".join(Marca.Estado.values)}.']})
+    marca, _ = Marca.objects.update_or_create(region=region, defaults={'estado': estado})
+    return Response(datos_marca(marca))
 
 
 @api_view(['POST'])
