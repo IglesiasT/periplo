@@ -27,6 +27,17 @@ class ApiTests(APITestCase):
         detalle = self.client.get(f'/api/viajes/{viaje.data["id"]}/')
         self.assertEqual([v['region'] for v in detalle.data['visitas']], ['AR-A'])
 
+    def test_marcar_como_deseo_se_guarda_y_se_pinta_como_deseo(self):
+        # El ciclo del mapa: el primer click crea la visita y el segundo la pasa a deseo.
+        viaje = self.client.post('/api/viajes/', {'nombre': 'Volver'}, format='json').data
+        Region.objects.create(nivel='provincia', codigo='AR-Y', nombre='Jujuy', padre=self.arg)
+        visita = self.client.post('/api/visitas/', {'viaje': viaje['id'], 'region': 'AR-Y', 'realizada': True},
+                                  format='json').data
+        respuesta = self.client.patch(f'/api/visitas/{visita["id"]}/', {'realizada': False}, format='json')
+        self.assertEqual(respuesta.status_code, 200, respuesta.data)
+        self.assertFalse(Visita.objects.get(id=visita['id']).realizada)
+        self.assertEqual(self.client.get('/api/estados/').data['AR-Y'], 'deseo')
+
     def test_visita_sin_viaje(self):
         respuesta = self.client.post('/api/visitas/', {'viaje': None, 'region': 'ARG'}, format='json')
         self.assertEqual(respuesta.status_code, 201, respuesta.data)
