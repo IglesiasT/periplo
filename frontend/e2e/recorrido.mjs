@@ -112,6 +112,17 @@ try {
   await cdp('Runtime.enable')
 
   comprobar('el mapa carga', await abrir('/'))
+  // El perfil es nuevo, así que el tema es el de por defecto (Atlas), que tiene rosa de los vientos.
+  comprobar('la rosa de los vientos gira con el mapa', await (async () => {
+    await evaluar('window.__mapaPeriplo.setBearing(40)')
+    const gira = await hasta("document.querySelector('.rosa g')?.getAttribute('transform') === 'rotate(-40)'", 2000)
+    return gira
+  })())
+  comprobar('un click en la rosa vuelve al norte', await (async () => {
+    await evaluar("document.querySelector('.rosa').click()")
+    return hasta("window.__mapaPeriplo.getBearing() === 0 && !window.__mapaPeriplo.isMoving()"
+      + " && document.querySelector('.rosa g')?.getAttribute('transform') === 'rotate(0)'", 3000)
+  })())
   const viajes = await evaluar("fetch('/api/viajes/').then((r) => r.json())")
   const viaje = viajes?.find((v) => v.visitas.length > 0)
   if (!viaje) {

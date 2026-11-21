@@ -97,6 +97,8 @@ export default function Mapa({
   const cerrarPopup = useRef<() => void>(null)
   // `listo` es estado (no ref) para que los efectos de abajo se vuelvan a correr cuando el mapa termina de cargar.
   const [listo, setListo] = useState(false)
+  // El mismo mapa que `cargado`, como estado: la rosa de los vientos lo necesita para escuchar el giro.
+  const [mapaCargado, setMapaCargado] = useState<maplibregl.Map | null>(null)
   // El mapa que terminó de cargar. Si el tema cambia, el efecto que crea el mapa arma otro en el mismo
   // ciclo en que corren los demás efectos: hasta su "load", ninguno tiene que tocarlo.
   const cargado = useRef<maplibregl.Map | null>(null)
@@ -128,6 +130,7 @@ export default function Mapa({
     if (import.meta.env.DEV) window.__mapaPeriplo = map
     map.on('load', () => {
       cargado.current = map
+      setMapaCargado(map)
       setListo(true)
     })
     cerrarPopup.current = conectarInteracciones(map, () => interacciones.current)
@@ -137,6 +140,7 @@ export default function Mapa({
       map.remove()
       mapRef.current = null
       cargado.current = null
+      setMapaCargado(null)
       setListo(false)
     }
     // El estilo se arma con el tema: si cambia, se crea otro mapa.
@@ -223,7 +227,7 @@ export default function Mapa({
       {!listo && <div className="cargando">{tema.voz.cargando}</div>}
       {/* En un año histórico, el panel de la época ocupa el lugar de la leyenda. */}
       {!epoca && <Leyenda tema={tema} />}
-      {tema.rasgos.rosa && <RosaDeLosVientos tema={tema} />}
+      {tema.rasgos.rosa && <RosaDeLosVientos tema={tema} mapa={mapaCargado} />}
       {children}
     </div>
   )

@@ -1088,9 +1088,24 @@ textarea {
 
 .rosa {
   position: absolute;
-  right: 18px;
-  bottom: 70px;
-  pointer-events: none;
+  /* Recuadro cuadrado para que la N no se corte al girar; el centro queda donde estaba. */
+  right: 10px;
+  bottom: 62px;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.rosa:disabled {
+  cursor: default;
+}
+
+.rosa:focus-visible {
+  outline: 2px solid var(--carmin);
+  outline-offset: -6px;
 }
 
 .cargando {
