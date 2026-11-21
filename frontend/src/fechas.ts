@@ -40,10 +40,32 @@ export function textoAIso(texto: string): string | null {
   return `${anio}-${mes}-${dia}`
 }
 
-/** Pone las barras mientras se escribe: '1501' -> '15/01', '15012026' -> '15/01/2026'. */
+/**
+ * Arma dd/mm/aaaa mientras se escribe: pone las barras ('15012026' -> '15/01/2026') y el cero que se suele
+ * olvidar. Un día o mes de un dígito se completa al escribir la barra ('5/3/2024' -> '05/03/2024') o
+ * apenas se sabe que no hay segundo dígito: un día que empieza en 4-9 o un mes que empieza en 2-9.
+ */
 export function enmascarar(texto: string): string {
-  const digitos = texto.replace(/\D/g, '').slice(0, 8)
-  if (digitos.length > 4) return `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`
-  if (digitos.length > 2) return `${digitos.slice(0, 2)}/${digitos.slice(2)}`
-  return digitos
+  const partes = ['']
+  for (const caracter of texto) {
+    const i = partes.length - 1
+    if (caracter === '/') {
+      // Cierra un día o mes de un dígito; con la parte vacía (recién completada) la barra sobra.
+      if (i < 2 && partes[i].length === 1) {
+        partes[i] = `0${partes[i]}`
+        partes.push('')
+      }
+      continue
+    }
+    if (!/\d/.test(caracter)) continue
+    if (i === 2) {
+      if (partes[i].length < 4) partes[i] += caracter
+      continue
+    }
+    partes[i] += caracter
+    const maximoPrimerDigito = i === 0 ? 3 : 1
+    if (partes[i].length === 1 && Number(caracter) > maximoPrimerDigito) partes[i] = `0${caracter}`
+    if (partes[i].length === 2) partes.push('')
+  }
+  return partes.filter(Boolean).join('/')
 }

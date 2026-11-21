@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import date
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -144,6 +145,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 RESPALDOS_DIR = Path(os.environ.get('RESPALDOS_DIR') or BASE_DIR / 'respaldos')
 RESPALDO_CADA_DIAS = 7
 RESPALDOS_A_CONSERVAR = 8
+
+# Ningún viaje puede ser anterior a esta fecha (AAAA-MM-DD). Va en .env y no acá porque es un dato personal
+# y el repo es público. Vacía, no se controla. Cuando haya usuarios, será la de cada uno.
+FECHA_NACIMIENTO = date.fromisoformat(os.environ['FECHA_NACIMIENTO']) if os.environ.get('FECHA_NACIMIENTO') else None
 
 # Notion (ver backend/.env.example)
 NOTION_TOKEN = os.environ.get('NOTION_TOKEN', '')

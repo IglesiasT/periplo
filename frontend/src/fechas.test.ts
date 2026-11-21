@@ -42,4 +42,27 @@ describe('el campo de fecha se escribe día/mes/año', () => {
     expect(enmascarar('15012026')).toBe('15/01/2026')
     expect(enmascarar('15/01/2026999')).toBe('15/01/2026')
   })
+
+  it('pone el cero que falta en un día o mes de un dígito', () => {
+    expect(enmascarar('5/3/2024')).toBe('05/03/2024')
+    expect(enmascarar('1/')).toBe('01')
+    expect(enmascarar('01/1/')).toBe('01/01')
+    // Sin segundo dígito posible, no hace falta la barra: no hay día 40 ni mes 20.
+    expect(enmascarar('532024')).toBe('05/03/2024')
+    expect(enmascarar('4')).toBe('04')
+    expect(enmascarar('15/2')).toBe('15/02')
+  })
+
+  it('con un primer dígito que admite otro, espera', () => {
+    expect(enmascarar('3')).toBe('3')
+    expect(enmascarar('31')).toBe('31')
+    expect(enmascarar('15/1')).toBe('15/1')
+    expect(enmascarar('15/12')).toBe('15/12')
+  })
+
+  it('borrar hacia atrás no deja barras sueltas', () => {
+    expect(enmascarar('15/')).toBe('15')
+    expect(enmascarar('15/01/')).toBe('15/01')
+    expect(enmascarar('')).toBe('')
+  })
 })
