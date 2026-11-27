@@ -129,6 +129,10 @@ Lo que se pinta sale de dos fuentes que pueden no coincidir: las **visitas** (de
 4. Lo escrito a mano no se pierde:
    - Lo que no se guardó todavía (fichas, formularios de viaje) queda en el navegador: `hooks/useBorrador.ts`.
    - `manage.py respaldar` guarda viajes, visitas, marcas, fichas y fotos en un `.zip`. El servidor hace uno solo al arrancar si el último tiene más de 7 días (`mapa/respaldos.py`), en `RESPALDOS_DIR`.
+5. Exportar el mapa como imagen, para compartirlo: el botón Exportar arma una "lámina" PNG (`components/Exportar.tsx`).
+   - El mapa se rinde en un MapLibre aparte, fuera de pantalla (`mapa/rendir.ts`), y se compone en un canvas 2D con marco, título, cifras, leyenda y atribución (`src/lamina/`). Todo color y toda fuente salen del tema, como en el resto.
+   - El título sigue a lo que se mira: un año, un viaje elegido o el mapa entero. Formatos cuadrado, vertical y horizontal; encuadre de lo que se ve, del viaje entero o de todo lo visitado. Con un viaje elegido arranca encuadrando el viaje.
+   - **El hogar viene oculto** (se pinta como visitado) y las fotos apagadas: la imagen se comparte y no tiene por qué decir dónde vivo.
 
 ### Fase 3: la historia
 

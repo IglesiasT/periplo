@@ -70,12 +70,13 @@ export const consola: Tema = {
     desenfoque: 'none',
     filtroIconos: 'invert(1)',
   },
-  rasgos: { panel: 'fijo', pestanias: 'caja', sello: 'disco', rosa: false },
+  rasgos: { panel: 'fijo', pestanias: 'caja', sello: 'disco', rosa: false, lamina: 'hud' },
   voz: {
     lema: 'Registro de campo',
     cargando: 'Cargando capas…',
     completos: 'completos',
     completo: 'Completo',
+    tituloLamina: '> registro de viajes',
   },
   mapa: {
     mar,

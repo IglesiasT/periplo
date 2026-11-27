@@ -7,7 +7,7 @@ import type { Tema } from '../../tema'
 import { atlas } from '../../tema/atlas'
 import type { Epoca } from '../../types'
 import {
-  capasConsultables, crearEstilo, type Lente, PAISES_CON_DEPARTAMENTOS, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
+  capasConsultables, crearEstilo, type Lente, lenteSinFundido, PAISES_CON_DEPARTAMENTOS, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
   visibilidadRotulos,
 } from './estilo'
 
@@ -254,5 +254,28 @@ describe('rótulos de la época', () => {
     ])
     expect(features[0].geometry).toEqual({ type: 'Point', coordinates: [-62, -30] })
     expect(rotulosComoGeoJSON(undefined).features).toEqual([])
+  })
+})
+
+describe('lenteSinFundido', () => {
+  it('lejos de un umbral deja la automática', () => {
+    expect(lenteSinFundido('automatica', 1.5, false)).toBe('automatica')
+    expect(lenteSinFundido('automatica', 5.5, false)).toBe('automatica')
+    expect(lenteSinFundido('automatica', 9, false)).toBe('automatica')
+  })
+
+  it('en un fundido fija el nivel más detallado de los dos', () => {
+    expect(lenteSinFundido('automatica', 6.8, false)).toBe('departamentos')
+    expect(lenteSinFundido('automatica', 7.3, false)).toBe('departamentos')
+    expect(lenteSinFundido('automatica', 3.7, false)).toBe('provincias')
+  })
+
+  it('mirando un año, el umbral de provincias es el de la época', () => {
+    expect(lenteSinFundido('automatica', 2.6, true)).toBe('provincias')
+    expect(lenteSinFundido('automatica', 3.7, true)).toBe('automatica')
+  })
+
+  it('una lente fija no se toca', () => {
+    expect(lenteSinFundido('paises', 6.8, false)).toBe('paises')
   })
 })

@@ -1,13 +1,12 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
-import type { GeoJSONSource, LayerSpecification } from 'maplibre-gl'
+import type { GeoJSONSource } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import type { Resaltadas } from '../../resaltado'
 import type { Tema } from '../../tema'
 import type { Epoca, EstadosRegiones, Foto } from '../../types'
-import {
-  colorRelleno, crearEstilo, type Lente, rellenoHistorico, rotulosComoGeoJSON, SOURCES, visibilidadRotulos,
-} from './estilo'
+import { aplicarCapas, aplicarEpoca, aplicarFeatureState } from './aplicar'
+import { crearEstilo, type Lente } from './estilo'
 import { fotosComoGeoJSON } from './fotos'
 import { conectarInteracciones, type EstadoInteracciones } from './interacciones'
 import Leyenda from './Leyenda'
@@ -30,34 +29,9 @@ declare global {
 // Con `?url` Vite copia ese archivo tal cual y nos da su URL.
 maplibregl.setWorkerUrl(workerUrl)
 
-// Los códigos de país, provincia y departamento no se pisan: alcanza con darle el estado a todas las sources.
-function aplicarFeatureState(map: maplibregl.Map, codigo: string, estado: Record<string, unknown>) {
-  for (const source of SOURCES) map.setFeatureState({ source, id: codigo }, estado)
-}
-
 // El mapa sobre el que pueden trabajar los efectos: el actual, y solo después de que terminó de cargar.
 function mapaListo(listo: boolean, actual: maplibregl.Map | null, cargado: maplibregl.Map | null) {
   return listo && actual && actual === cargado ? actual : null
-}
-
-type PropiedadPaint = Parameters<maplibregl.Map['setPaintProperty']>[1]
-type PropiedadLayout = Parameters<maplibregl.Map['setLayoutProperty']>[1]
-
-// Lleva las capas del mapa a las de otro estilo con las mismas capas (otra lente). MapLibre ignora los
-// valores que no cambiaron, así que alcanza con pasarle todo: solo se tocan los zooms y las opacidades.
-function aplicarCapas(map: maplibregl.Map, capas: LayerSpecification[]) {
-  for (const capa of capas) {
-    map.setLayerZoomRange(capa.id, capa.minzoom ?? 0, capa.maxzoom ?? 24)
-    for (const [propiedad, valor] of Object.entries(capa.paint ?? {})) {
-      map.setPaintProperty(capa.id, propiedad as PropiedadPaint, valor)
-    }
-    if ('layout' in capa) {
-      for (const [propiedad, valor] of Object.entries(capa.layout ?? {})) {
-        map.setLayoutProperty(capa.id, propiedad as PropiedadLayout, valor)
-      }
-    }
-    if ('filter' in capa) map.setFilter(capa.id, capa.filter)
-  }
 }
 
 interface Props {
@@ -82,10 +56,12 @@ interface Props {
   epoca?: Epoca
   /** Controles superpuestos al mapa (el selector de época y su panel). */
   children?: ReactNode
+  /** Avisa qué mapa está cargado (null mientras carga): el de exportar lee de ahí lo que se está viendo. */
+  alCargar?: (map: maplibregl.Map | null) => void
 }
 
 export default function Mapa({
-  tema, lente, estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fichas, fotos, epoca, children,
+  tema, lente, estados, resaltadas, encuadre, alClickearRegion, alElegirRegion, fichas, fotos, epoca, children, alCargar,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -105,6 +81,7 @@ export default function Mapa({
   // Lo que ya está aplicado en el mapa actual, para calcular la diferencia en cada cambio.
   const estadosAplicados = useRef<EstadosRegiones>({})
   const resaltadasAplicadas = useRef<Resaltadas>(new Map())
+  useEffect(() => alCargar?.(mapaCargado), [alCargar, mapaCargado])
   // Sobrevive al cambio de tema: el mapa nuevo no tiene que volver a acercarse a lo último que se eligió.
   const encuadreAplicado = useRef<Encuadre | undefined>(undefined)
 
@@ -197,12 +174,7 @@ export default function Mapa({
     if (!map) return
     // El popup solo se actualiza al mover el mouse: con otro año (el botón de reproducir) mentiría.
     cerrarPopup.current?.()
-    const relleno = epoca ? rellenoHistorico(epoca, tema) : colorRelleno(tema)
-    for (const source of SOURCES) map.setPaintProperty(`${source}-relleno`, 'fill-color', relleno)
-    map.getSource<GeoJSONSource>('rotulos-epoca')?.setData(rotulosComoGeoJSON(epoca))
-    for (const [capa, visibilidad] of Object.entries(visibilidadRotulos(Boolean(epoca)))) {
-      map.setLayoutProperty(capa, 'visibility', visibilidad)
-    }
+    aplicarEpoca(map, epoca, tema)
   }, [epoca, lente, listo, tema])
 
   // Marcando, dos clicks seguidos son dos pasos del ciclo: no un pedido de acercarse.

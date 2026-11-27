@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type * as maplibregl from 'maplibre-gl'
 import type { Tema } from '../../tema'
+import { ROSA } from './rosa'
 
 /**
  * Rosa de los vientos del atlas: apunta al norte del mapa y, si se lo rota (click derecho y arrastrar), gira con él.
@@ -30,15 +31,17 @@ export default function RosaDeLosVientos({ tema, mapa }: { tema: Tema; mapa: map
       disabled={!mapa}
       onClick={() => mapa?.resetNorthPitch()}
     >
-      <svg width="86" height="86" viewBox="-43 -43 86 86" aria-hidden="true">
+      <svg width={ROSA.lado} height={ROSA.lado} viewBox={`${-ROSA.lado / 2} ${-ROSA.lado / 2} ${ROSA.lado} ${ROSA.lado}`} aria-hidden="true">
         {/* El rumbo de MapLibre es hacia dónde mira la pantalla: el norte queda girado al revés. */}
         <g transform={`rotate(${-rumbo})`}>
-          <circle r="28" fill="none" stroke={tinta} strokeWidth="0.8" />
-          <circle r="24" fill="none" stroke={tinta} strokeWidth="0.5" />
-          <path d="M0 -32L4.5 0L0 32L-4.5 0Z" fill={tinta} />
-          <path d="M-32 0L0 -4.5L32 0L0 4.5Z" fill={papel} stroke={tinta} strokeWidth="0.8" />
-          <path d="M0 -32L4.5 0L0 0Z" fill={tema.estados.visitada} />
-          <text y="-35" textAnchor="middle" fontFamily={tema.fuentes.titulo} fontSize="11" fill={tinta}>N</text>
+          {ROSA.circulos.map(({ r, trazo }) => (
+            <circle key={r} r={r} fill="none" stroke={tinta} strokeWidth={trazo} />
+          ))}
+          <path d={ROSA.meridiano} fill={tinta} />
+          <path d={ROSA.paralelo} fill={papel} stroke={tinta} strokeWidth="0.8" />
+          <path d={ROSA.norte} fill={tema.estados.visitada} />
+          <text y={ROSA.letra.y} textAnchor="middle" fontFamily={tema.fuentes.titulo} fontSize={ROSA.letra.tam}
+                fill={tinta}>N</text>
         </g>
       </svg>
     </button>

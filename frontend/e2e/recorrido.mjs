@@ -123,6 +123,28 @@ try {
     return hasta("window.__mapaPeriplo.getBearing() === 0 && !window.__mapaPeriplo.isMoving()"
       + " && document.querySelector('.rosa g')?.getAttribute('transform') === 'rotate(0)'", 3000)
   })())
+  // Exportar arma la lámina en memoria: no descarga ni copia nada.
+  comprobar('exportar arma la lámina cuadrada al doble', await (async () => {
+    await evaluar("document.querySelector('.exportar-boton').click()")
+    return hasta("document.querySelector('.exportar-vista img')?.naturalWidth === 2160"
+      + " && document.querySelector('.exportar-vista img').naturalHeight === 2160"
+      + " && !document.querySelector('.exportar-armando')", 40000)
+  })())
+  comprobar('la lámina no está en blanco', await evaluar(`(() => {
+    const img = document.querySelector('.exportar-vista img')
+    if (!img) return false
+    const lienzo = document.createElement('canvas')
+    lienzo.width = 64
+    lienzo.height = 64
+    const ctx = lienzo.getContext('2d')
+    ctx.drawImage(img, 0, 0, 64, 64)
+    const datos = ctx.getImageData(0, 0, 64, 64).data
+    const colores = new Set()
+    for (let i = 0; i < datos.length; i += 4) colores.add(datos[i] + ',' + datos[i + 1] + ',' + datos[i + 2])
+    return colores.size > 20
+  })()`))
+  await evaluar("document.querySelector('dialog.exportar').close()")
+
   const viajes = await evaluar("fetch('/api/viajes/').then((r) => r.json())")
   const viaje = viajes?.find((v) => v.visitas.length > 0)
   if (!viaje) {

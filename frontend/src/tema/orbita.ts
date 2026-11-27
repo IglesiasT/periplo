@@ -75,12 +75,13 @@ export const orbita: Tema = {
     desenfoque: 'blur(18px)',
     filtroIconos: 'invert(1)',
   },
-  rasgos: { panel: 'flotante', pestanias: 'pastilla', sello: 'disco', rosa: false },
+  rasgos: { panel: 'flotante', pestanias: 'pastilla', sello: 'disco', rosa: false, lamina: 'cartela' },
   voz: {
     lema: 'Vistos desde arriba',
     cargando: 'Bajando las imágenes…',
     completos: 'completados',
     completo: 'Completado',
+    tituloLamina: 'Bitácora orbital',
   },
   mapa: {
     mar,

@@ -38,6 +38,19 @@ export function umbralesDe(lente: Lente, enEpoca: boolean): Umbrales {
   return lente === 'automatica' && enEpoca ? AUTOMATICA_EN_EPOCA : UMBRALES[lente]
 }
 
+/**
+ * La lente para una imagen fija. En pantalla, cerca de un umbral los dos niveles se funden y al moverse pasa
+ * enseguida; en una imagen quedaría mezclado para siempre (provincias a medias sobre departamentos). Si el zoom
+ * cae en un fundido, se fija el nivel más detallado de los dos, sin tocar el zoom ni el encuadre.
+ */
+export function lenteSinFundido(lente: Lente, zoom: number, enEpoca: boolean): Lente {
+  if (lente !== 'automatica') return lente
+  const { provincias, departamentos } = umbralesDe(lente, enEpoca)
+  if (Math.abs(zoom - departamentos) < FUNDIDO) return 'departamentos'
+  if (Math.abs(zoom - provincias) < FUNDIDO) return 'provincias'
+  return lente
+}
+
 // Las fronteras internas de hoy no existían en un mapa histórico: quedan apenas como referencia, para que
 // manden los colores de las entidades.
 const OPACIDAD_FRONTERA_INTERNA_EN_EPOCA = 0.25
