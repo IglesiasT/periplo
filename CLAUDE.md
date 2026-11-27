@@ -126,7 +126,10 @@ Lo que se pinta sale de dos fuentes que pueden no coincidir: las **visitas** (de
 2. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
 3. Estadísticas: países visitados, provincias argentinas, continentes y entidades históricas pisadas.
    - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.
-4. Lo escrito a mano no se pierde:
+4. Mi periplo, la repetición del mapa (`mapa/repeticion.py`, `frontend/src/repeticion.ts`): el mapa se pinta viaje por viaje, en orden de `fecha_inicio`, como la repetición de una partida.
+   - Arranca con lo que no tiene fecha (hogares, visitas sueltas, viajes sin fecha) y termina en el mapa de hoy. Solo pinta lo visitado, con las marcas aplicadas. La cámara no se mueve.
+   - Va junto al selector de Época y no se mezcla con él: arrancar una apaga la otra. No va a la URL.
+5. Lo escrito a mano no se pierde:
    - Lo que no se guardó todavía (fichas, formularios de viaje) queda en el navegador: `hooks/useBorrador.ts`.
    - `manage.py respaldar` guarda viajes, visitas, marcas, fichas y fotos en un `.zip`. El servidor hace uno solo al arrancar si el último tiene más de 7 días (`mapa/respaldos.py`), en `RESPALDOS_DIR`.
 

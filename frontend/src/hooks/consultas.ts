@@ -9,6 +9,7 @@ const CLAVES = {
   visitasSueltas: ['visitas-sueltas'],
   estadisticas: ['estadisticas'],
   logros: ['logros'],
+  repeticion: ['repeticion'],
   fotos: ['fotos'],
   // Prefijo de los años disponibles y de cada época: invalidarlo recalcula las entidades pisadas.
   historia: ['historia'],
@@ -47,6 +48,8 @@ export function usePedirEpocaPorAdelantado() {
 export const useEstadisticas = () => useQuery({ queryKey: CLAVES.estadisticas, queryFn: api.obtenerEstadisticas })
 
 export const useLogros = () => useQuery({ queryKey: CLAVES.logros, queryFn: api.obtenerLogros })
+
+export const useRepeticion = () => useQuery({ queryKey: CLAVES.repeticion, queryFn: api.obtenerRepeticion })
 
 export const useRegion = (codigo: string | null) =>
   useQuery({

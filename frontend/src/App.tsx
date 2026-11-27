@@ -2,13 +2,16 @@ import { useMemo, useState } from 'react'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
 import Mapa from './components/mapa/Mapa'
 import Panel from './components/Panel'
+import SelectorRepeticion from './components/Repeticion'
 import SelectorLente from './components/SelectorLente'
 import {
-  useAniosHistoricos, useEpoca, useEstados, useFichas, useFotos, useLogros, useReintentarFallidas, useViajes,
+  useAniosHistoricos, useEpoca, useEstados, useFichas, useFotos, useLogros, useReintentarFallidas, useRepeticion,
+  useViajes,
 } from './hooks/consultas'
 import { useAcercar } from './hooks/useAcercar'
 import { useEstadoUrl } from './hooks/useEstadoUrl'
 import { useMarcarRegion } from './hooks/useMarcarRegion'
+import { estadosHasta, nuevasEn, type ParadaRepeticion } from './repeticion'
 import { abrirFicha, regionesDe, resaltadasDe, type Seleccion, viajeElegido } from './seleccion'
 import { useTema } from './tema/contexto'
 
@@ -19,6 +22,7 @@ export default function App() {
   const fotos = useFotos()
   const logros = useLogros()
   const anios = useAniosHistoricos()
+  const repeticion = useRepeticion()
   const { anio: anioUrl, lente, seleccion, cambiar } = useEstadoUrl()
   // Un año que no tiene snapshot (un enlace viejo, una URL escrita a mano) es el presente.
   const anio = anioUrl !== null && anios.data?.includes(anioUrl) ? anioUrl : null
@@ -26,15 +30,27 @@ export default function App() {
   // Al volver al presente la consulta queda deshabilitada pero conserva el último año como placeholder.
   const epoca = anio === null ? undefined : epocaConsulta.data
   const [marcando, setMarcando] = useState(false)
+  // La repetición de mi mapa no va a la URL: es algo que se mira de paso, como una animación.
+  const [paradaRepeticion, setParadaRepeticion] = useState<ParadaRepeticion>(null)
+  const enRepeticion = paradaRepeticion !== null && repeticion.data !== undefined
   const [aviso, setAviso] = useState<string | null>(null)
 
   const viaje = viajeElegido(seleccion, viajes.data)
   const alClickearRegion = useMarcarRegion(viaje, setAviso)
   const respuestaFichas = useFichas().data
   const fichas = useMemo(() => new Set(respuestaFichas?.map((f) => f.codigo)), [respuestaFichas])
-  const resaltadas = useMemo(
+  const resaltadasSeleccion = useMemo(
     () => resaltadasDe(seleccion, viajes.data, logros.data),
     [seleccion, viajes.data, logros.data],
+  )
+  // Durante la repetición el mapa muestra lo pintado hasta ese viaje, con lo nuevo resaltado.
+  const estadosRepeticion = useMemo(
+    () => (enRepeticion ? estadosHasta(repeticion.data!, paradaRepeticion!) : undefined),
+    [enRepeticion, repeticion.data, paradaRepeticion],
+  )
+  const resaltadas = useMemo(
+    () => (enRepeticion ? nuevasEn(repeticion.data!, paradaRepeticion!) : resaltadasSeleccion),
+    [enRepeticion, repeticion.data, paradaRepeticion, resaltadasSeleccion],
   )
 
   const { encuadre, irA } = useAcercar(seleccion, viajes.data, logros.data)
@@ -60,7 +76,7 @@ export default function App() {
   }
 
   // Sin estos datos el mapa queda mudo, sin explicar por qué: se avisa encima de él.
-  const consultaFallida = [estados, fotos, logros, anios, epocaConsulta].find((consulta) => consulta.error)
+  const consultaFallida = [estados, fotos, logros, anios, epocaConsulta, repeticion].find((consulta) => consulta.error)
   const reintentarFallidas = useReintentarFallidas()
 
   return (
@@ -81,7 +97,7 @@ export default function App() {
       <Mapa
         tema={tema}
         lente={lente}
-        estados={estados.data}
+        estados={estadosRepeticion ?? estados.data}
         resaltadas={resaltadas}
         encuadre={encuadre}
         alClickearRegion={marcando ? alClickearRegion : undefined}
@@ -101,7 +117,20 @@ export default function App() {
           {anios.data && anios.data.length > 0 && (
             <SelectorEpoca
               anios={anios.data} anio={anio} cargando={epocaConsulta.isPlaceholderData}
-              onCambiar={(nuevo) => cambiar({ anio: nuevo }, 'reemplazar')}
+              onCambiar={(nuevo) => {
+                // Un año y la repetición no se mezclan: el mapa muestra uno o la otra.
+                setParadaRepeticion(null)
+                cambiar({ anio: nuevo }, 'reemplazar')
+              }}
+            />
+          )}
+          {repeticion.data && repeticion.data.pasos.length + Object.keys(repeticion.data.inicio.regiones).length > 0 && (
+            <SelectorRepeticion
+              repeticion={repeticion.data} parada={paradaRepeticion}
+              onCambiar={(nueva) => {
+                if (nueva !== null && anio !== null) cambiar({ anio: null }, 'reemplazar')
+                setParadaRepeticion(nueva)
+              }}
             />
           )}
           <SelectorLente lente={lente} onCambiar={(nueva) => cambiar({ lente: nueva }, 'reemplazar')} />
