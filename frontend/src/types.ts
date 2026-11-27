@@ -1,5 +1,5 @@
-/** Estado de una región en el mapa: visitada, o en la lista de deseos. */
-export type EstadoRegion = 'visitada' | 'deseo'
+/** Estado de una región en el mapa: visitada, hogar (viví ahí) o en la lista de deseos. */
+export type EstadoRegion = 'visitada' | 'hogar' | 'deseo'
 
 /** Respuesta de /api/estados/: código de región → estado. Las regiones sin estado no aparecen. */
 export type EstadosRegiones = Record<string, EstadoRegion>
@@ -79,6 +79,23 @@ export interface Logro {
   }[]
 }
 
+/** Lo que digo yo de una región, marcado a mano. Le gana a las visitas a esa región sin borrarlas;
+ *  `ninguno` es "no fui": anula lo que digan. */
+export type EstadoMarca = 'visitada' | 'hogar' | 'deseo' | 'ninguno'
+
+export interface Marca {
+  estado: EstadoMarca
+  actualizada: string
+}
+
+/** Un elemento de /api/marcas/. */
+export interface MarcaResumen {
+  codigo: string
+  nombre: string
+  nivel: NivelRegion
+  estado: EstadoMarca
+}
+
 /** Texto en markdown escrito a mano sobre una región. */
 export interface Ficha {
   texto: string
@@ -93,6 +110,7 @@ export interface RegionDetalle {
   /** De la más chica a la más grande: provincia, país. */
   ancestros: { codigo: string; nombre: string }[]
   ficha: Ficha | null
+  marca: Marca | null
   /** Visitas a la región o a algo que está adentro (sus departamentos). */
   visitas: {
     id: number
@@ -103,6 +121,7 @@ export interface RegionDetalle {
     region: string
     region_nombre: string
     realizada: boolean
+    desde_notion: boolean
   }[]
   /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido. */
   historia: { desde: number; hasta: number; entidad: string; nombre: string }[]

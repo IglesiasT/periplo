@@ -81,6 +81,9 @@ def servidores():
 
 
 def main() -> int:
+    # La consola de Windows usa cp1252 y no sabe escribir lo que imprimen vitest o tsc (╭, ✓).
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
     # Una lista y no un any(): que se corran todas aunque falle la primera.
     resultados = [correr(*paso) for paso in PASOS]
     # Último: es lo que más tarda. Solo mira, no guarda nada en la base.

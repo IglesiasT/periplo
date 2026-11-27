@@ -68,13 +68,15 @@ const TIENE_DEPARTAMENTOS: ExpressionSpecification = ['in', ['get', 'padre'], ['
 
 const ES_DESEO: ExpressionSpecification = ['case', ['==', ESTADO, 'deseo'], 1, 0]
 
-const VISITADA: ExpressionSpecification = ['==', ESTADO, 'visitada']
+// El hogar cuenta como visitado: en un año histórico se entinta igual.
+const VISITADA: ExpressionSpecification = ['in', ESTADO, ['literal', ['visitada', 'hogar']]]
 
 /** El color de cada región sale de su feature-state "estado"; si no tiene (o es un deseo), queda la tierra. */
 export function colorRelleno(tema: Tema): ExpressionSpecification {
   return [
     'match', ESTADO,
     'visitada', tema.estados.visitada,
+    'hogar', tema.estados.hogar,
     tema.mapa.noVisitado,
   ]
 }

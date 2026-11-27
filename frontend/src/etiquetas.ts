@@ -1,4 +1,4 @@
-import type { EstadoRegion, EstadoViaje, NivelRegion, Visita } from './types'
+import type { EstadoMarca, EstadoRegion, EstadoViaje, NivelRegion, Visita } from './types'
 
 export const ETIQUETAS_ESTADO_VIAJE: Record<EstadoViaje, string> = {
   deseo: 'Deseo',
@@ -10,7 +10,16 @@ export const ETIQUETAS_ESTADO_VIAJE: Record<EstadoViaje, string> = {
 /** Cómo se ve cada región en el mapa (la leyenda y el popup). */
 export const ETIQUETAS_ESTADO: Record<EstadoRegion, string> = {
   visitada: 'Visitada',
+  hogar: 'Hogar',
   deseo: 'Deseo',
+}
+
+/** Lo que se puede marcar a mano en una región: los botones de su ficha. */
+export const ETIQUETAS_MARCA: Record<EstadoMarca, string> = {
+  visitada: 'Fui',
+  hogar: 'Viví acá',
+  deseo: 'Quiero ir',
+  ninguno: 'No fui',
 }
 
 export const ETIQUETAS_NIVEL: Record<NivelRegion, string> = {

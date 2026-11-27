@@ -199,7 +199,8 @@ textarea {
 }
 
 /* Botones: un marco sobre el papel, con la letra de las etiquetas. Los activos se rellenan. */
-.panel button {
+.panel button,
+.confirmacion button {
   cursor: pointer;
   min-height: 36px;
   padding: 6px 12px;
@@ -212,7 +213,8 @@ textarea {
   text-transform: var(--caso-etiqueta);
 }
 
-.panel button:hover:not(:disabled) {
+.panel button:hover:not(:disabled),
+.confirmacion button:hover:not(:disabled) {
   background: var(--papel-hondo);
 }
 
@@ -494,6 +496,12 @@ textarea {
   display: flex;
   gap: 18px;
   margin-bottom: 6px;
+}
+
+/* Los botones de marca de la ficha: los mismos filtros, que bajan de renglón si no entran. */
+.filtros.marcas {
+  flex-wrap: wrap;
+  gap: 6px 16px;
 }
 
 .panel .filtros button {
@@ -1240,6 +1248,37 @@ textarea {
   border-bottom: 1px solid var(--carmin);
   color: var(--carmin-oscuro);
   font-size: 0.875rem;
+}
+
+/* El modal que pregunta antes de pisar o borrar algo (Confirmacion.tsx): una tarjeta del panel sobre el mapa. */
+.confirmacion {
+  max-width: min(440px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 22px 24px;
+  border: 1px solid var(--marco);
+  border-radius: var(--radio);
+  background: var(--panel);
+  color: var(--tinta);
+  box-shadow: var(--sombra);
+}
+
+.confirmacion::backdrop {
+  background: var(--velo);
+  backdrop-filter: var(--desenfoque);
+}
+
+.confirmacion h2 {
+  margin: 0 0 10px;
+  font-family: var(--titulo);
+  font-weight: var(--peso-titulo);
+  font-size: 1.375rem;
+  line-height: 1.15;
+  text-transform: var(--caso-titulo);
+}
+
+.confirmacion p {
+  margin: 0 0 18px;
+  line-height: 1.45;
 }
 
 /* La barrera de errores: reemplaza a toda la app. */

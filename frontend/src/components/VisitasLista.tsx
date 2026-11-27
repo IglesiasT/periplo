@@ -1,6 +1,7 @@
 import { ETIQUETAS_NIVEL, etiquetaVisita } from '../etiquetas'
 import { useActualizarVisita, useBorrarVisita } from '../hooks/consultas'
 import type { Visita } from '../types'
+import { useConfirmar } from '../hooks/useConfirmar'
 
 interface Props {
   visitas: Visita[]
@@ -11,6 +12,17 @@ export default function VisitasLista({ visitas, onAviso }: Props) {
   const alFallar = { onError: (error: Error) => onAviso(error.message) }
   const actualizar = useActualizarVisita()
   const borrar = useBorrarVisita()
+  const confirmar = useConfirmar()
+
+  // Sacar un deseo no pierde nada; sacar algo visitado, sí: que no pase por un descuido.
+  const quitar = async (visita: Visita) => {
+    if (visita.realizada && !(await confirmar({
+      titulo: `¿Quitar ${visita.region_nombre} del viaje?`,
+      mensaje: 'Se pierde que fuiste ahí en este viaje. Si es una corrección del mapa, mejor marcala desde su ficha.',
+      aceptar: 'Quitar',
+    }))) return
+    borrar.mutate(visita.id, alFallar)
+  }
 
   if (!visitas.length) {
     return <p className="vacio">Todavía no tiene regiones.</p>
@@ -39,7 +51,7 @@ export default function VisitasLista({ visitas, onAviso }: Props) {
                 />
                 fui
               </label>
-              <button type="button" className="icono" title="Quitar" onClick={() => borrar.mutate(visita.id, alFallar)}>×</button>
+              <button type="button" className="icono" title="Quitar" onClick={() => quitar(visita)}>×</button>
             </div>
           )}
         </li>

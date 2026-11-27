@@ -1,6 +1,6 @@
 import type {
-  DatosViaje, DatosVisita, Epoca, Estadisticas, EstadosRegiones, Ficha, FichaResumen, Foto, Logro, RegionDetalle,
-  Viaje, Visita,
+  DatosViaje, DatosVisita, Epoca, EstadoMarca, Estadisticas, EstadosRegiones, Ficha, FichaResumen, Foto, Logro, Marca,
+  MarcaResumen, RegionDetalle, Viaje, Visita,
 } from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
@@ -52,6 +52,11 @@ export const obtenerRegion = (codigo: string) => pedir<RegionDetalle>('GET', url
 /** Un texto vacío borra la ficha (204, sin respuesta). */
 export const guardarFicha = (codigo: string, texto: string) =>
   pedir<Ficha | undefined>('PUT', `${urlRegion(codigo)}ficha/`, { texto })
+/** Sacar la marca (DELETE) vuelve a mostrar lo que dicen las visitas. */
+export const guardarMarca = (codigo: string, estado: EstadoMarca) =>
+  pedir<Marca>('PUT', `${urlRegion(codigo)}marca/`, { estado })
+export const borrarMarca = (codigo: string) => pedir<void>('DELETE', `${urlRegion(codigo)}marca/`)
+export const listarMarcas = () => pedir<MarcaResumen[]>('GET', '/api/marcas/')
 export const listarFichas = () => pedir<FichaResumen[]>('GET', '/api/fichas/')
 
 /** Recuadro [oeste, sur, este, norte] que contiene a esas regiones; null si ninguna existe. */

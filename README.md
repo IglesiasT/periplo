@@ -13,7 +13,8 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - Colores por estado:
   - papel sin pintar para sin visitar;
   - solo un contorno índigo para la lista de deseos;
-  - color lleno para lo visitado.
+  - color lleno para lo visitado;
+  - otro color lleno para el hogar, donde viví.
 - Viajes y visitas sincronizados desde Notion (bases Destinations y Lugares).
 - Todo queda en la URL (año, lente, pestaña, lo elegido y la posición): al recargar se mantiene, se puede guardar un enlace y Atrás vuelve a lo anterior.
 
@@ -21,6 +22,9 @@ La visión, el modelo de datos y las fases están en [CLAUDE.md](CLAUDE.md).
 - **Viajes:** crear, editar y borrar. Los que vienen de Notion solo admiten editar fechas y notas. Lo que se visitó sin viaje aparece como "Lugares sueltos".
 - **Elegir un viaje, un logro o una ficha** desde el panel resalta sus regiones en el mapa y lo acerca a ellas. Las regiones elegidas se ven en cualquier zoom; de lejos también se marca el país o la provincia que las contiene. Abrir una ficha haciendo click en el mapa no lo mueve. Un viaje elegido sigue resaltado mientras se mira otra pestaña o se lee una ficha, hasta que se vuelve a la lista.
 - **Marcar en el mapa:** con un viaje abierto, cada click en una región avanza su estado: visitada → deseo → sin marcar. Marca el nivel que se ve (país, provincia o departamento).
+- **Corregir a mano:** sin viaje, "Marcar en el mapa" (en la pestaña Viajes) avanza la marca de cada región: visitada → hogar → deseo → sin marca. La ficha tiene los mismos botones, más "No fui".
+  - La marca le gana a lo que digan los viajes y Notion, pero no los borra: si la sacás, vuelve a verse lo de antes.
+  - Si una marca esconde algo (bajar a deseo algo visitado), la app pregunta antes. El sync avisa qué marcas contradicen a Notion.
 - **Fotos:**
   - subir JPG, PNG o WebP;
   - si tienen GPS en el EXIF, aparecen en el mapa (agrupadas cuando están cerca) y se ubican en su región;
@@ -141,7 +145,7 @@ Vite reenvía las llamadas a `/api` hacia Django (ver `frontend/vite.config.ts`)
 
 ## Respaldos
 
-Las fichas, las fotos y las visitas cargadas a mano viven solo en `db.sqlite3` y `media/`, que no están en git.
+Las fichas, las fotos, las marcas y las visitas cargadas a mano viven solo en `db.sqlite3` y `media/`, que no están en git.
 El servidor las guarda solo en un `.zip` al arrancar, si el último respaldo tiene más de 7 días, y conserva los últimos 8 automáticos (los hechos a mano no se borran nunca). Las regiones y la capa histórica no van: salen de los comandos de datos.
 
 Por defecto quedan en `backend/respaldos/`, en el mismo disco. Para que sobrevivan a una rotura, apuntá `RESPALDOS_DIR` en `backend/.env` a otro disco o a una carpeta sincronizada.

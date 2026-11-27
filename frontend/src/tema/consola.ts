@@ -94,6 +94,8 @@ export const consola: Tema = {
   },
   estados: {
     visitada: lima,
+    // Hogar: rosa de fósforo.
+    hogar: '#ff6b9d',
     deseo: cian,
   },
   // Fósforos de pantalla para lo pisado y grafito apenas teñido para lo demás.

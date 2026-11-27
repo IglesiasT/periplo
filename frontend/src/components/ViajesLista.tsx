@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_NIVEL, etiquetaVisita } from '../etiquetas'
+import { ETIQUETAS_ESTADO_VIAJE, ETIQUETAS_MARCA, ETIQUETAS_NIVEL, etiquetaVisita } from '../etiquetas'
 import { rangoMeses } from '../fechas'
-import { useVisitasSueltas } from '../hooks/consultas'
+import { useMarcas, useVisitasSueltas } from '../hooks/consultas'
 import type { Viaje } from '../types'
 
 type Filtro = 'todos' | 'hechos' | 'planes'
@@ -20,9 +20,15 @@ interface Props {
   onNuevo: () => void
   /** Abre la ficha de una región. */
   onElegirRegion: (codigo: string) => void
+  /** El modo de marcar sin viaje: cada click en el mapa avanza la marca de esa región. */
+  marcando: boolean
+  onCambiarMarcando: (marcando: boolean) => void
+  aviso: string | null
 }
 
-export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo, onElegirRegion }: Props) {
+export default function ViajesLista({
+  viajes, cargando, error, onElegir, onNuevo, onElegirRegion, marcando, onCambiarMarcando, aviso,
+}: Props) {
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const visibles = viajes?.filter(FILTROS[filtro].incluye) ?? []
   return (
@@ -37,6 +43,19 @@ export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo
         </div>
         <button onClick={onNuevo}>+ Viaje</button>
       </div>
+      <div className="encabezado-seccion">
+        <span className="tenue cursiva">Sin viaje: corregir o marcar donde viviste.</span>
+        <button className={marcando ? 'activa' : ''} onClick={() => onCambiarMarcando(!marcando)}>
+          {marcando ? 'Listo' : 'Marcar en el mapa'}
+        </button>
+      </div>
+      {marcando && (
+        <p className="aviso">
+          Hacé click en una región. Cada click avanza: visitada → hogar → deseo → sin marca.
+          Le gana a lo que digan los viajes y Notion, sin borrarlos; si pisa algo, te pregunta antes.
+        </p>
+      )}
+      {aviso && <p className="aviso-accion">{aviso}</p>}
 
       {cargando && <p className="vacio">Cargando…</p>}
       {error && <p className="error">No se pudieron cargar los viajes: {error.message}</p>}
@@ -60,8 +79,34 @@ export default function ViajesLista({ viajes, cargando, error, onElegir, onNuevo
         ))}
       </ul>
 
+      <MarcadoAMano onElegir={onElegirRegion} />
       <LugaresSueltos onElegir={onElegirRegion} />
     </>
+  )
+}
+
+/** Lo que marqué a mano en el mapa, sin viaje: correcciones y donde viví. */
+function MarcadoAMano({ onElegir }: { onElegir: (codigo: string) => void }) {
+  const { data } = useMarcas()
+  if (!data?.length) return null
+  return (
+    <section>
+      <h3>Marcado a mano</h3>
+      <ul className="viajes">
+        {data.map((marca) => (
+          <li key={marca.codigo}>
+            <button onClick={() => onElegir(marca.codigo)}>
+              <span className={marca.estado === 'deseo' || marca.estado === 'ninguno' ? 'marca marca-plan' : 'marca marca-hecho'}
+                    aria-hidden="true" />
+              <span className="viaje-texto">
+                <strong>{marca.nombre}</strong>
+                <span className="tenue">{ETIQUETAS_NIVEL[marca.nivel]} · {ETIQUETAS_MARCA[marca.estado]}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 

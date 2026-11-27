@@ -4,7 +4,7 @@ from unittest import mock
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
 
-from ..models import Region, Viaje, Visita
+from ..models import Marca, Region, Viaje, Visita
 from ..notion import Destino, Lugar, Place, parsear_destino, parsear_lugar
 from ..sincronizacion import planificar_visitas
 from ..ubicacion import Ubicacion, area_bbox_km2, normalizar
@@ -170,6 +170,14 @@ class SincronizarNotionTests(TestCase):
         salida = self.sincronizar([])
         self.assertTrue(Viaje.objects.filter(notion_id='d1').exists())
         self.assertIn('ya no está en Notion', salida)
+
+    def test_no_toca_las_marcas_y_avisa_las_que_contradicen(self):
+        Marca.objects.create(region=self.peru, estado=Marca.Estado.NINGUNO)
+        Marca.objects.create(region=self.tucuman, estado=Marca.Estado.VISITADA)  # sobre un deseo: agrega, no avisa
+        salida = self.sincronizar([Destino('d1', 'Peru', 'hecho', None), Destino('d2', 'Tucuman', 'deseo', None)])
+        self.assertEqual(Marca.objects.count(), 2)
+        self.assertIn('Marcas que contradicen a Notion (1)', salida)
+        self.assertIn('Perú: Notion dice visitada, tu marca dice "No fui"', salida)
 
     def test_dry_run_no_guarda_nada(self):
         self.sincronizar([Destino('d1', 'Peru', 'hecho', None)], dry_run=True)

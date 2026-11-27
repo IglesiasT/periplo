@@ -1,10 +1,12 @@
 import Markdown from 'react-markdown'
-import { ETIQUETAS_NIVEL, etiquetaVisita, formatearFecha } from '../etiquetas'
+import { avisoMarca, estadoDeVisitas, pisa } from '../conflictos'
+import { ETIQUETAS_ESTADO, ETIQUETAS_MARCA, ETIQUETAS_NIVEL, etiquetaVisita, formatearFecha } from '../etiquetas'
 import { rangoMeses } from '../fechas'
 import { formatearAnio } from '../historia'
-import { useGuardarFicha, useRegion } from '../hooks/consultas'
+import { useGuardarFicha, useMarcar, useRegion } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
-import type { RegionDetalle } from '../types'
+import type { EstadoMarca, RegionDetalle } from '../types'
+import { useConfirmar } from '../hooks/useConfirmar'
 
 interface Props {
   codigo: string
@@ -27,6 +29,7 @@ export default function RegionFicha({ codigo, onElegirViaje }: Props) {
         {ancestros.length ? `${capitalizar(ETIQUETAS_NIVEL[nivel])} de ${ancestros.map((a) => a.nombre).join(', ')}`
           : capitalizar(ETIQUETAS_NIVEL[nivel])}
       </p>
+      <EnElMapa region={region.data} />
       {/* key: al cambiar de región, el editor arranca cerrado y con el texto de la nueva. */}
       <Texto key={codigo} region={region.data} />
       <Visitas region={region.data} onElegirViaje={onElegirViaje} />
@@ -42,13 +45,16 @@ function capitalizar(texto: string): string {
 function Texto({ region }: { region: RegionDetalle }) {
   const [borrador, setBorrador] = useBorrador<string>(`ficha.${region.codigo}`)
   const guardar = useGuardarFicha()
+  const confirmar = useConfirmar()
   const { ficha } = region
   const sinGuardar = borrador !== null && borrador !== (ficha?.texto ?? '')
 
-  const enviar = () => {
+  const enviar = async () => {
     const texto = borrador ?? ''
     // Vaciar una ficha escrita la borra para siempre: que no pase por un descuido.
-    if (ficha && !texto.trim() && !window.confirm(`¿Borrar la ficha de ${region.nombre}? No se puede deshacer.`)) return
+    if (ficha && !texto.trim() && !(await confirmar({
+      titulo: `¿Borrar la ficha de ${region.nombre}?`, mensaje: 'Lo escrito no se puede recuperar.', aceptar: 'Borrar',
+    }))) return
     guardar.mutate({ codigo: region.codigo, texto }, { onSuccess: () => setBorrador(null) })
   }
 
@@ -83,6 +89,52 @@ function Texto({ region }: { region: RegionDetalle }) {
       ) : (
         <p className="vacio">Todavía no escribiste nada sobre {region.nombre}.</p>
       )}
+    </section>
+  )
+}
+
+const ORDEN_MARCAS: EstadoMarca[] = ['visitada', 'hogar', 'deseo', 'ninguno']
+
+/** Lo que digo yo de la región: le gana a lo que digan las visitas, sin borrarlas. */
+function EnElMapa({ region }: { region: RegionDetalle }) {
+  const marcar = useMarcar()
+  const confirmar = useConfirmar()
+  const visitas = estadoDeVisitas(region)
+  const actual = region.marca?.estado ?? null
+  // "No fui" solo tiene sentido si hay visitas que anular (o si ya está puesto).
+  const opciones = ORDEN_MARCAS.filter((m) => m !== 'ninguno' || visitas !== null || actual === 'ninguno')
+
+  const cambiar = async (nueva: EstadoMarca | null) => {
+    const aviso = avisoMarca(region, nueva)
+    if (aviso && !(await confirmar(aviso))) return
+    marcar.mutate({ codigo: region.codigo, estado: nueva })
+  }
+
+  // Las dos fuentes, cuando la marca esconde lo que dicen las visitas (no cuando solo agrega, como hogar).
+  const esconde = actual !== null && visitas !== null && pisa(actual, visitas)
+
+  return (
+    <section>
+      <div className="encabezado-seccion">
+        <h3>En el mapa</h3>
+        {actual && (
+          <button className="enlace" onClick={() => cambiar(null)} disabled={marcar.isPending}>Quitar marca</button>
+        )}
+      </div>
+      <div className="filtros marcas">
+        {opciones.map((m) => (
+          <button key={m} className={m === actual ? 'activa' : ''} aria-pressed={m === actual}
+                  disabled={marcar.isPending} onClick={() => cambiar(m === actual ? null : m)}>
+            {ETIQUETAS_MARCA[m]}
+          </button>
+        ))}
+      </div>
+      {esconde && (
+        <p className="tenue cursiva">
+          Las visitas dicen {ETIQUETAS_ESTADO[visitas].toLowerCase()}; manda lo que marcaste. Los viajes no cambian.
+        </p>
+      )}
+      {marcar.error && <p className="error">{marcar.error.message}</p>}
     </section>
   )
 }

@@ -1,6 +1,7 @@
 """
-Respaldos en .zip de lo que no se puede regenerar: viajes, visitas, fichas y fotos. Las regiones y la capa histórica
-no van: salen de los comandos de datos. Las regiones se guardan por código, no por id: sirve aunque se vuelvan a cargar.
+Respaldos en .zip de lo que no se puede regenerar: viajes, visitas, marcas, fichas y fotos. Las regiones y la capa
+histórica no van: salen de los comandos de datos. Las regiones se guardan por código, no por id: sirve aunque se
+vuelvan a cargar.
 
 Además de `manage.py respaldar`, el servidor hace uno solo al arrancar si el último es viejo (ver apps.py). Esos llevan
 otro nombre y son los únicos que se borran para hacer lugar: un respaldo hecho a mano no se toca nunca.
@@ -20,7 +21,7 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-MODELOS = ['mapa.Viaje', 'mapa.Visita', 'mapa.Foto', 'mapa.FichaRegion']
+MODELOS = ['mapa.Viaje', 'mapa.Visita', 'mapa.Foto', 'mapa.FichaRegion', 'mapa.Marca']
 ARCHIVO_DATOS = 'diario.json'
 CARPETA_MEDIA = 'media'
 PREFIJO_MANUAL = 'periplo-'

@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 self.stdout.write(f'Borrada {region}: ya no está en los datos.')
             except ProtectedError:
                 self.stdout.write(self.style.WARNING(
-                    f'{region} ya no está en los datos pero tiene visitas o una ficha: no se borró. '
+                    f'{region} ya no está en los datos pero tiene visitas, una marca o una ficha: no se borró. '
                     'Reasignalas desde el admin.'))
 
     def upsert(self, regiones: list[Region]):

@@ -70,9 +70,10 @@ describe.each(Object.values(TEMAS))('tema $id', (tema) => {
   })
 
   it('lo visitado y los deseos se separan de la tierra sin visitar', () => {
-    const { visitada, deseo } = tema.estados
+    const { visitada, hogar, deseo } = tema.estados
     const tierra = tema.mapa.noVisitado
     expect(contraste(visitada, tierra)).toBeGreaterThanOrEqual(3)
+    expect(contraste(hogar, tierra)).toBeGreaterThanOrEqual(3)
     expect(contraste(deseo, tierra)).toBeGreaterThanOrEqual(3)
   })
 
@@ -104,6 +105,10 @@ describe.each(Object.values(TEMAS))('tema $id', (tema) => {
       expect(menorDistancia(entintadas)).toBeGreaterThanOrEqual(0.04)
       expect(menorDistancia(diluidas)).toBeGreaterThanOrEqual(0.02)
     })
+  })
+
+  it('el hogar no se confunde con lo visitado', () => {
+    expect(distancia(tema.estados.hogar, tema.estados.visitada)).toBeGreaterThanOrEqual(0.15)
   })
 })
 

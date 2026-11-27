@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 
 from .. import respaldos
-from ..models import FichaRegion, Foto, Region, Viaje, Visita
+from ..models import FichaRegion, Foto, Marca, Region, Viaje, Visita
 
 
 class RespaldarTests(TestCase):
@@ -21,6 +21,7 @@ class RespaldarTests(TestCase):
             viaje = Viaje.objects.create(nombre='NOA', notas='Llevar abrigo')
             Visita.objects.create(viaje=viaje, region=region, realizada=False)
             FichaRegion.objects.create(region=region, texto='# Tilcara\nÑandú y cardones.')
+            Marca.objects.create(region=region, estado=Marca.Estado.HOGAR)
             foto = Foto(viaje=viaje, region=region)
             foto.archivo.save('tilcara.jpg', ContentFile(b'bytes de la foto'))
             ruta_foto = foto.archivo.name
@@ -32,6 +33,7 @@ class RespaldarTests(TestCase):
             # Se pierde todo menos las regiones, que se regeneran con cargar_regiones.
             Viaje.objects.all().delete()
             FichaRegion.objects.all().delete()
+            Marca.objects.all().delete()
             self.assertFalse(Foto.objects.exists())
 
             restaurado = Path(carpeta) / 'restaurado'
@@ -44,6 +46,7 @@ class RespaldarTests(TestCase):
             self.assertFalse(viaje.visitas.get().realizada)
             self.assertEqual(viaje.visitas.get().region, region)
             self.assertEqual(FichaRegion.objects.get().texto, '# Tilcara\nÑandú y cardones.')
+            self.assertEqual(Marca.objects.get().estado, 'hogar')
             self.assertEqual(Foto.objects.get().archivo.name, ruta_foto)
             self.assertEqual((restaurado / 'media' / ruta_foto).read_bytes(), b'bytes de la foto')
 
