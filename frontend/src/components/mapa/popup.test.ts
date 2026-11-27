@@ -25,6 +25,11 @@ describe('htmlPopupRegion', () => {
     expect(htmlPopupRegion(base).match(/<em>/g)).toHaveLength(1)
   })
 
+  it('lleva la bandera del país solo si la tiene', () => {
+    expect(htmlPopupRegion({ ...base, bandera: '/banderas/ARG.svg' })).toContain('<img class="bandera" src="/banderas/ARG.svg"')
+    expect(htmlPopupRegion({ ...base, bandera: null })).not.toContain('<img')
+  })
+
   it('escapa los nombres', () => {
     const html = htmlPopupRegion({ ...base, nombre: '<img src=x>', entidad: 'A & B' })
     expect(html).not.toContain('<img')

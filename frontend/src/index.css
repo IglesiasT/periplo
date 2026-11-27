@@ -788,6 +788,36 @@ textarea {
   color: var(--tenue);
 }
 
+/* El nombre largo sigue a la derecha del color, no debajo. */
+.tramo-entidad {
+  display: flex;
+  align-items: baseline;
+}
+
+.tramo-entidad .leyenda-color {
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+/* --- Banderas: traen sus propios colores, así que cada tema las filtra (forma.filtroBandera) --- */
+
+.con-bandera .bandera {
+  height: 0.8em;
+  margin-right: 0.4em;
+  vertical-align: -0.04em;
+}
+
+.bandera {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--linea);
+  border-radius: calc(var(--radio-control) / 4);
+  filter: var(--filtro-bandera);
+}
+
+.maplibregl-popup-content .bandera {
+  height: 0.75em;
+}
+
 /* --- Lista de visitas --- */
 
 .visitas li {
