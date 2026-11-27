@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "e2e": "node e2e/recorrido.mjs",
+    "banderas": "node scripts/banderas.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "flag-icons": "^7.6.0",
     "mapshaper": "^0.7.97",
     "oxlint": "^1.88.0",
     "typescript": "~6.0.3",

@@ -2,11 +2,14 @@ import Markdown from 'react-markdown'
 import { avisoMarca, estadoDeVisitas, pisa } from '../conflictos'
 import { ETIQUETAS_ESTADO, ETIQUETAS_MARCA, ETIQUETAS_NIVEL, etiquetaVisita, formatearFecha } from '../etiquetas'
 import { rangoMeses } from '../fechas'
-import { formatearAnio } from '../historia'
+import { paisConBandera } from '../banderas'
+import { colorDeTono, formatearAnio } from '../historia'
 import { useGuardarFicha, useMarcar, useRegion } from '../hooks/consultas'
 import { useBorrador } from '../hooks/useBorrador'
 import type { EstadoMarca, RegionDetalle } from '../types'
 import { useConfirmar } from '../hooks/useConfirmar'
+import { useTema } from '../tema/contexto'
+import Bandera from './Bandera'
 
 interface Props {
   codigo: string
@@ -22,10 +25,14 @@ export default function RegionFicha({ codigo, onElegirViaje }: Props) {
   if (region.error) return <p className="error">No se pudo cargar la región: {region.error.message}</p>
 
   const { nombre, nivel, ancestros } = region.data
+  // Un país lleva su bandera junto al nombre; una provincia o un departamento, la de su país junto a "de Argentina".
+  const pais = paisConBandera([codigo, ...ancestros.map((a) => a.codigo)])
+  const nombrePais = pais === codigo ? nombre : ancestros.find((a) => a.codigo === pais)?.nombre ?? ''
   return (
     <>
-      <h2>{nombre}</h2>
-      <p className="cursiva">
+      <h2 className="con-bandera">{pais === codigo && <Bandera codigo={pais} nombre={nombrePais} />}{nombre}</h2>
+      <p className="cursiva con-bandera">
+        {pais !== codigo && <Bandera codigo={pais} nombre={nombrePais} />}
         {ancestros.length ? `${capitalizar(ETIQUETAS_NIVEL[nivel])} de ${ancestros.map((a) => a.nombre).join(', ')}`
           : capitalizar(ETIQUETAS_NIVEL[nivel])}
       </p>
@@ -169,6 +176,7 @@ function Visitas({ region, onElegirViaje }: { region: RegionDetalle; onElegirVia
 }
 
 function Historia({ region }: { region: RegionDetalle }) {
+  const { tema } = useTema()
   if (region.historia.length === 0) return null
   return (
     <section>
@@ -180,7 +188,13 @@ function Historia({ region }: { region: RegionDetalle }) {
               {tramo.desde === tramo.hasta ? formatearAnio(tramo.desde)
                 : `${formatearAnio(tramo.desde)} – ${formatearAnio(tramo.hasta)}`}
             </span>
-            <span>{tramo.nombre}</span>
+            <span className="tramo-entidad">
+              {/* El color con que el mapa pinta a la entidad, para reconocerla al mirar ese año. */}
+              {tramo.tono !== null && (
+                <span className="leyenda-color" style={{ background: colorDeTono(tramo.tono, true, tema.aguadas) }} />
+              )}
+              {tramo.nombre}
+            </span>
           </li>
         ))}
       </ol>

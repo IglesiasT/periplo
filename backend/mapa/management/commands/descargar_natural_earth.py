@@ -49,8 +49,11 @@ def anexar(gdf: gpd.GeoDataFrame, destino: str, origen: pd.Series) -> gpd.GeoDat
 def normalizar_paises(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     # ADM0_A3 es único y es el que usan las provincias para referir a su país.
     # (ISO_A3 no sirve: Francia y Noruega figuran como -99.)
+    # El ISO de dos letras elige la bandera (ver frontend/scripts/banderas.mjs). ISO_A2_EH es la versión de
+    # ISO_A2 que sí trae a Francia y Noruega; -99 queda para los que no tienen código (Somalilandia, Cachemira).
+    gdf = gdf.assign(iso_a2=gdf['ISO_A2_EH'].where(gdf['ISO_A2_EH'] != '-99'))
     gdf = gdf.rename(columns={'ADM0_A3': 'codigo', 'NAME_ES': 'nombre', 'CONTINENT': 'continente'})[
-        ['codigo', 'nombre', 'continente', 'geometry']
+        ['codigo', 'nombre', 'continente', 'iso_a2', 'geometry']
     ]
     return anexar(gdf, ARGENTINA, gdf['codigo'].isin(ISLAS_ATLANTICO_SUR))
 

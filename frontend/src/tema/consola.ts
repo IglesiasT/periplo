@@ -69,6 +69,7 @@ export const consola: Tema = {
     estiloCursiva: 'normal',
     desenfoque: 'none',
     filtroIconos: 'invert(1)',
+    filtroBandera: 'grayscale(1) contrast(1.1) brightness(0.85)',
   },
   rasgos: { panel: 'fijo', pestanias: 'caja', sello: 'disco', rosa: false },
   voz: {

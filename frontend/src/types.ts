@@ -123,8 +123,9 @@ export interface RegionDetalle {
     realizada: boolean
     desde_notion: boolean
   }[]
-  /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido. */
-  historia: { desde: number; hasta: number; entidad: string; nombre: string }[]
+  /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido.
+   *  `tono` es la aguada con que se pinta en el último año del tramo; null si no se sabe. */
+  historia: { desde: number; hasta: number; entidad: string; nombre: string; tono: number | null }[]
 }
 
 /** Un elemento de /api/fichas/. */

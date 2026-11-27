@@ -1,6 +1,7 @@
 import * as maplibregl from 'maplibre-gl'
 import type { GeoJSONSource } from 'maplibre-gl'
 import type { Point } from 'geojson'
+import { paisConBandera, urlBandera } from '../../banderas'
 import { ETIQUETAS_ESTADO } from '../../etiquetas'
 import { nombreEntidad } from '../../historia'
 import type { Epoca, EstadoRegion } from '../../types'
@@ -47,6 +48,8 @@ export function conectarInteracciones(map: maplibregl.Map, estado: () => EstadoI
       .setLngLat(e.lngLat)
       .setHTML(htmlPopupRegion({
         nombre: String(feature.properties.nombre),
+        // Un país, la suya; una provincia, la de su país (`padre`). Los departamentos no saben su país.
+        bandera: urlBandera(paisConBandera([codigo, feature.properties.padre])),
         entidad: epoca && (original ? nombreEntidad(original, epoca) : 'Sin entidad en este mapa'),
         detalle: visita ? ETIQUETAS_ESTADO[visita] : 'Sin visitar',
         marcando: Boolean(alClickearRegion),

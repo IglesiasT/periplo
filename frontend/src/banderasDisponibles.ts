@@ -1,0 +1,25 @@
+// Generado por scripts/banderas.mjs (npm run banderas): no editar a mano.
+/** Los países con bandera en public/banderas/, por su código en el mapa. */
+export const BANDERAS: ReadonlySet<string> = new Set([
+  'ABW', 'AFG', 'AGO', 'AIA', 'ALB', 'ALD', 'AND', 'ARE', 'ARG', 'ARM', 'ASM', 'ATA',
+  'ATC', 'ATF', 'ATG', 'AUS', 'AUT', 'AZE', 'BDI', 'BEL', 'BEN', 'BFA', 'BGD', 'BGR',
+  'BHR', 'BHS', 'BIH', 'BLM', 'BLR', 'BLZ', 'BMU', 'BOL', 'BRA', 'BRB', 'BRI', 'BRN',
+  'BTN', 'BWA', 'CAF', 'CAN', 'CHE', 'CHL', 'CHN', 'CIV', 'CLP', 'CMR', 'COD', 'COG',
+  'COK', 'COL', 'COM', 'CPV', 'CRI', 'CSI', 'CUB', 'CUW', 'CYM', 'CYP', 'CZE', 'DEU',
+  'DJI', 'DMA', 'DNK', 'DOM', 'DZA', 'ECU', 'EGY', 'ERI', 'ESP', 'EST', 'ETH', 'FIN',
+  'FJI', 'FRA', 'FRO', 'FSM', 'GAB', 'GBR', 'GEO', 'GGY', 'GHA', 'GIB', 'GIN', 'GMB',
+  'GNB', 'GNQ', 'GRC', 'GRD', 'GRL', 'GTM', 'GUM', 'GUY', 'HKG', 'HMD', 'HND', 'HRV',
+  'HTI', 'HUN', 'IDN', 'IMN', 'IND', 'IOA', 'IOT', 'IRL', 'IRN', 'IRQ', 'ISL', 'ISR',
+  'ITA', 'JAM', 'JEY', 'JOR', 'JPN', 'KAB', 'KAZ', 'KEN', 'KGZ', 'KHM', 'KIR', 'KNA',
+  'KOR', 'KOS', 'KWT', 'LAO', 'LBN', 'LBR', 'LBY', 'LCA', 'LIE', 'LKA', 'LSO', 'LTU',
+  'LUX', 'LVA', 'MAC', 'MAF', 'MAR', 'MCO', 'MDA', 'MDG', 'MDV', 'MEX', 'MHL', 'MKD',
+  'MLI', 'MLT', 'MMR', 'MNE', 'MNG', 'MNP', 'MOZ', 'MRT', 'MSR', 'MUS', 'MWI', 'MYS',
+  'NAM', 'NCL', 'NER', 'NFK', 'NGA', 'NIC', 'NIU', 'NLD', 'NOR', 'NPL', 'NRU', 'NZL',
+  'OMN', 'PAK', 'PAN', 'PCN', 'PER', 'PHL', 'PLW', 'PNG', 'POL', 'PRI', 'PRK', 'PRT',
+  'PRY', 'PSX', 'PYF', 'QAT', 'ROU', 'RUS', 'RWA', 'SAH', 'SAU', 'SDN', 'SDS', 'SEN',
+  'SGP', 'SHN', 'SLB', 'SLE', 'SLV', 'SMR', 'SOM', 'SPM', 'SRB', 'STP', 'SUR', 'SVK',
+  'SVN', 'SWE', 'SWZ', 'SXM', 'SYC', 'SYR', 'TCA', 'TCD', 'TGO', 'THA', 'TJK', 'TKM',
+  'TLS', 'TON', 'TTO', 'TUN', 'TUR', 'TUV', 'TWN', 'TZA', 'UGA', 'UKR', 'UMI', 'URY',
+  'USA', 'UZB', 'VAT', 'VCT', 'VEN', 'VGB', 'VIR', 'VNM', 'VUT', 'WLF', 'WSM', 'YEM',
+  'ZAF', 'ZMB', 'ZWE',
+])

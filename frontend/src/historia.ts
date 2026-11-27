@@ -14,6 +14,11 @@ export function nombreEntidad(entidad: string, epoca: Epoca): string {
 /** Color de la entidad: la aguada de su tono, distinta de la de sus vecinas (lo reparte cruzar_historia).
  *  `intenso` es la entintada (lo que pisé); si no, la diluida. */
 export function colorEntidad(entidad: string, epoca: Epoca, intenso: boolean, aguadas: Tema['aguadas']): string {
-  const [entintada, diluida] = aguadas[(epoca.tonos[entidad] ?? 0) % aguadas.length]
+  return colorDeTono(epoca.tonos[entidad] ?? 0, intenso, aguadas)
+}
+
+/** La aguada de un tono: la misma cuenta que usa el mapa, para que la ficha muestre el color que se ve en él. */
+export function colorDeTono(tono: number, intenso: boolean, aguadas: Tema['aguadas']): string {
+  const [entintada, diluida] = aguadas[tono % aguadas.length]
   return intenso ? entintada : diluida
 }
