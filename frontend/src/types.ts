@@ -165,3 +165,22 @@ export interface Foto {
   region_en_viaje: boolean | null
   descripcion: string
 }
+
+/** Lo que se pinta en un momento de la repetición: solo lo nuevo, ya subido hasta el país, y lo pintado hasta ahí. */
+export interface MomentoRepeticion {
+  regiones: EstadosRegiones
+  paises: number
+  provincias: number
+}
+
+/** Respuesta de /api/repeticion/: cómo se fue pintando el mapa. `inicio` es lo que no tiene fecha (hogares, visitas
+ *  sueltas, viajes sin fecha); después, cada viaje con fecha y visitas realizadas, del más viejo al más nuevo. */
+export interface Repeticion {
+  inicio: MomentoRepeticion
+  pasos: (MomentoRepeticion & {
+    viaje: number
+    nombre: string
+    fecha_inicio: string
+    fecha_fin: string | null
+  })[]
+}

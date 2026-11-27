@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { colorEntidad, formatearAnio, nombreEntidad } from '../historia'
+import { usePedirEpocaPorAdelantado } from '../hooks/consultas'
 import { useReproduccion } from '../hooks/useReproduccion'
 import { esAntiguo, type Parada, paradaAnterior, paradasDe, paradaSiguiente } from '../paradas'
 import { periodoDe } from '../periodos'
@@ -27,7 +28,11 @@ export function SelectorEpoca({ anios, anio, cargando, onCambiar }: SelectorProp
   const [verAntiguos, setVerAntiguos] = useState(false)
   const conAntiguos = verAntiguos || esAntiguo(anio)
   const paradas = paradasDe(anios, conAntiguos)
-  const { reproduciendo, alternar, detener } = useReproduccion(paradas, anio, cargando, onCambiar)
+  const pedirPorAdelantado = usePedirEpocaPorAdelantado()
+  const { reproduciendo, alternar, detener } = useReproduccion(paradas, anio, cargando, onCambiar, (parada) => {
+    // Para que el año siguiente ya esté acá cuando le toque.
+    if (parada !== null) pedirPorAdelantado(parada)
+  })
   const anterior = paradaAnterior(paradas, anio)
   const siguiente = paradaSiguiente(paradas, anio)
   const periodo = anio === null ? 'El mapa de hoy' : periodoDe(anio)

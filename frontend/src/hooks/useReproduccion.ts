@@ -1,41 +1,43 @@
 import { useEffect, useEffectEvent, useState } from 'react'
-import { type Parada, paradaSiguiente } from '../paradas'
-import { usePedirEpocaPorAdelantado } from './consultas'
 
-const TIEMPO_POR_ANIO = 1500 // milisegundos
+const TIEMPO_POR_PARADA = 1500 // milisegundos
 
 /**
- * El mapa recorre los años solo, de la parada actual hasta el presente. El tiempo de cada año empieza a correr
- * cuando su mapa ya llegó (`cargando` en falso): si la API se demora, ningún año se saltea.
+ * Recorre las paradas solas, de la actual hasta la última (el presente), y ahí frena: los años del slider de época
+ * y los viajes de la repetición. El tiempo de cada parada empieza a correr cuando ya llegó lo que muestra
+ * (`cargando` en falso): si la API se demora, ninguna se saltea. `alAcercarse` recibe la parada que viene, para
+ * pedirla por adelantado.
  */
-export function useReproduccion(paradas: Parada[], actual: Parada, cargando: boolean, onCambiar: (parada: Parada) => void) {
+export function useReproduccion<T>(
+  paradas: T[], actual: T, cargando: boolean, onCambiar: (parada: T) => void, alAcercarse?: (parada: T) => void,
+) {
   const [reproduciendo, setReproduciendo] = useState(false)
-  const siguiente = paradaSiguiente(paradas, actual)
+  const indice = paradas.indexOf(actual)
+  const ultima = paradas.length - 1
+  const siguiente: T | undefined = paradas[indice + 1]
 
   const avanzar = useEffectEvent(() => {
-    if (siguiente === undefined) return setReproduciendo(false)
-    onCambiar(siguiente)
-    if (siguiente === null) setReproduciendo(false)
+    if (indice >= ultima) return setReproduciendo(false)
+    onCambiar(paradas[indice + 1])
+    if (indice + 1 === ultima) setReproduciendo(false)
   })
 
   useEffect(() => {
     if (!reproduciendo || cargando) return
-    const temporizador = setTimeout(avanzar, TIEMPO_POR_ANIO)
+    const temporizador = setTimeout(avanzar, TIEMPO_POR_PARADA)
     return () => clearTimeout(temporizador)
   }, [reproduciendo, cargando, actual])
 
-  // Para que el año siguiente ya esté acá cuando le toque.
-  const pedirPorAdelantado = usePedirEpocaPorAdelantado()
-  const pedirSiguiente = useEffectEvent(() => {
-    if (siguiente !== undefined && siguiente !== null) pedirPorAdelantado(siguiente)
+  const acercarse = useEffectEvent(() => {
+    if (indice < ultima) alAcercarse?.(paradas[indice + 1])
   })
   useEffect(() => {
-    if (reproduciendo) pedirSiguiente()
+    if (reproduciendo) acercarse()
   }, [reproduciendo, siguiente])
 
   const alternar = () => {
-    // Desde el presente no hay a dónde avanzar: arranca de nuevo desde la primera parada.
-    if (!reproduciendo && actual === null) onCambiar(paradas[0])
+    // Desde la última no hay a dónde avanzar: arranca de nuevo desde la primera.
+    if (!reproduciendo && indice === ultima) onCambiar(paradas[0])
     setReproduciendo(!reproduciendo)
   }
 
