@@ -101,16 +101,17 @@ export const cristal: Tema = {
     hogar: '#0f8f7e',
     deseo: magenta,
   },
+  // Más suaves que el cobalto de lo visitado, y lejos del magenta del deseo.
   aguadas: [
-    ['#f2a93b', '#fbe4be'], // naranja
-    ['#34a77b', '#c4e8d9'], // verde
-    ['#e8604c', '#f9cfc8'], // coral
-    ['#3b82f6', '#cbdefc'], // azul
-    ['#9b6de8', '#e0d2f8'], // violeta
-    ['#14b8c4', '#bfebee'], // turquesa
-    ['#8d8f99', '#dadbdf'], // gris
-    ['#e85d9b', '#f9cee1'], // rosa
-    ['#8fa63a', '#d3dfa6'], // oliva
-    ['#e6cf3a', '#f7f0be'], // amarillo
+    ['#bc644a', '#eac9bf'], // coral
+    ['#d78355', '#fee1d2'], // naranja
+    ['#b6a23f', '#ebe1b2'], // amarillo
+    ['#8d8e42', '#eef0cd'], // oliva
+    ['#5ab78c', '#d0efde'], // verde
+    ['#3c9b85', '#c1e1d8'], // turquesa
+    ['#549ec1', '#bad4e2'], // cielo
+    ['#977dcd', '#d9d0ef'], // violeta
+    ['#c19bd0', '#f5e4fc'], // lila
+    ['#738195', '#dae1ec'], // pizarra
   ],
 }

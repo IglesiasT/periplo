@@ -103,17 +103,18 @@ export const orbita: Tema = {
     hogar: '#e85d9a',
     deseo: azul,
   },
-  // Sobre fondo oscuro, la entintada es la encendida y la diluida apenas se separa de la tierra.
+  // Sobre fondo oscuro, la entintada es la encendida y la diluida apenas se separa de la tierra:
+  // de noche, solo lo pisado se prende. Ninguna se acerca al ámbar de lo visitado ni al azul del deseo.
   aguadas: [
-    ['#e0a458', '#4a3b27'], // miel
-    ['#7fb685', '#2b402f'], // verde
-    ['#d97b66', '#4c2f29'], // coral
-    ['#6fa8dc', '#28394c'], // azul
-    ['#b08bd9', '#3a2f4a'], // violeta
-    ['#5ec4b6', '#1f4340'], // turquesa
-    ['#a8a29a', '#3a3936'], // piedra
-    ['#e08fb0', '#4c2f3d'], // rosa
-    ['#a8b45c', '#383d22'], // oliva
-    ['#e6d35a', '#5a5320'], // limón
+    ['#bcc5cd', '#2a2e32'], // plata
+    ['#e08a76', '#3c2823'], // sodio
+    ['#b7b269', '#292818'], // lima pálida
+    ['#79a76a', '#303c2c'], // aurora
+    ['#77cbb2', '#22362f'], // jade
+    ['#57a8a4', '#182c2b'], // cian helado
+    ['#ab9c83', '#38332c'], // arena
+    ['#d6bcff', '#2c2537'], // violeta
+    ['#af86c1', '#372c3c'], // lila
+    ['#e8a0c8', '#44323b'], // rosa
   ],
 }

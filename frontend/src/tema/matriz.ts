@@ -100,16 +100,17 @@ export const matriz: Tema = {
     hogar: '#7a0f0a',
     deseo: negro,
   },
+  // Grises teñidos: el único rojo del mapa es lo visitado y el negro es la tinta.
   aguadas: [
-    ['#e3241b', '#f4b7b3'], // rojo
-    ['#1f4fe0', '#bccaf5'], // azul
-    ['#0a0a0a', '#abaaa5'], // negro
-    ['#f2b705', '#f8e3a0'], // amarillo
-    ['#0e9f6e', '#b3e0cf'], // verde
-    ['#8b3fd9', '#d9c3f2'], // violeta
-    ['#ff7a1a', '#fbd2b3'], // naranja
-    ['#0fb5c9', '#b5e6ec'], // cian
-    ['#e23d9b', '#f6c1df'], // magenta
-    ['#7a7a45', '#d2d2b5'], // oliva
+    ['#4e697d', '#bac5cd'], // grafito azul
+    ['#668691', '#c6d2d6'], // pizarra
+    ['#3f5a4b', '#b3bdb7'], // verde gris
+    ['#6a7154', '#c4c7bb'], // liquen
+    ['#89785d', '#c1b9ae'], // arena
+    ['#716158', '#d3ccc8'], // humo
+    ['#5f4b5e', '#c9c1c9'], // ciruela gris
+    ['#797993', '#c9c9d3'], // lavanda gris
+    ['#557d79', '#bdccca'], // petróleo
+    ['#5a5a5a', '#bfbfbf'], // gris neutro
   ],
 }

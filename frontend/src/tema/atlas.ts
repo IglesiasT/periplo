@@ -110,15 +110,15 @@ export const atlas: Tema = {
   // Cada una de otra familia de color: el backend reparte los tonos para que dos vecinas no repitan número,
   // y si dos aguadas se parecieran (un ocre y una mostaza), las vecinas igual se confundirían.
   aguadas: [
-    ['#c49a4a', '#e6d3a8'], // ocre
-    ['#8a9a5b', '#cfd6b4'], // salvia
-    ['#b9714f', '#e3c2ae'], // siena
-    ['#6f8aa1', '#c4d0da'], // pizarra
-    ['#a07a9a', '#dccbd8'], // malva
-    ['#7f9c8c', '#c9d8cf'], // verde agua
-    ['#9c7b56', '#d9c7b0'], // tierra de sombra
-    ['#b58f8a', '#e4d0cc'], // rosa viejo
-    ['#8c8f6a', '#d1d2bb'], // oliva
-    ['#d1b84a', '#efe3a6'], // amarillo paja
+    ['#ad8a3c', '#e0cda7'], // ocre
+    ['#8ea26f', '#cedabd'], // salvia
+    ['#b87459', '#e7c1b3'], // siena
+    ['#7896b3', '#c6d7e8'], // pizarra
+    ['#af89aa', '#e3cee0'], // malva
+    ['#628e87', '#b7d6d0'], // verde agua
+    ['#b99378', '#edd1be'], // tierra de sombra
+    ['#986d74', '#d6babe'], // rosa viejo
+    ['#7d8651', '#c5cba8'], // oliva
+    ['#9d720a', '#ddc08d'], // amarillo paja
   ],
 }
