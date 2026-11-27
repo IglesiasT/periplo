@@ -71,12 +71,13 @@ export const consola: Tema = {
     filtroIconos: 'invert(1)',
     filtroBandera: 'grayscale(1) contrast(1.1) brightness(0.85)',
   },
-  rasgos: { panel: 'fijo', pestanias: 'caja', sello: 'disco', rosa: false },
+  rasgos: { panel: 'fijo', pestanias: 'caja', sello: 'disco', rosa: false, lamina: 'hud' },
   voz: {
     lema: 'Registro de campo',
     cargando: 'Cargando capas…',
     completos: 'completos',
     completo: 'Completo',
+    tituloLamina: '> registro de viajes',
   },
   mapa: {
     mar,

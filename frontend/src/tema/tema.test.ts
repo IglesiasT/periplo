@@ -116,8 +116,23 @@ it('el tema por defecto es el atlas', () => {
   expect(TEMA_POR_DEFECTO).toBe(atlas)
 })
 
+const COLOR_LITERAL = /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi
+
 it('index.css no define colores propios: todos vienen del tema', () => {
-  expect(css.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi)).toBeNull()
+  expect(css.match(COLOR_LITERAL)).toBeNull()
+})
+
+// La imagen exportada se dibuja en un canvas, sin CSS: también tiene que sacar todo color del tema.
+const lamina = import.meta.glob<string>(
+  ['../lamina/*.ts', '!../lamina/*.test.ts'], { query: '?raw', import: 'default', eager: true },
+)
+
+it('la lámina existe para revisarla', () => {
+  expect(Object.keys(lamina).length).toBeGreaterThan(0)
+})
+
+it.each(Object.entries(lamina))('%s no define colores propios', (_, codigo) => {
+  expect(codigo.match(COLOR_LITERAL)).toBeNull()
 })
 
 it('variablesCss pasa los nombres a guiones y suma las fuentes', () => {

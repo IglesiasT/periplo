@@ -78,12 +78,13 @@ export const atlas: Tema = {
     filtroIconos: 'none',
     filtroBandera: 'sepia(0.45) saturate(0.75) contrast(0.95)',
   },
-  rasgos: { panel: 'fijo', pestanias: 'filete', sello: 'lacre', rosa: true },
+  rasgos: { panel: 'fijo', pestanias: 'filete', sello: 'lacre', rosa: true, lamina: 'cartela' },
   voz: {
     lema: 'Atlas y diario de viajes',
     cargando: 'Grabando las planchas del mapa…',
     completos: 'sellados',
     completo: 'Sellado',
+    tituloLamina: 'Mi periplo',
   },
   mapa: {
     mar: aguada,

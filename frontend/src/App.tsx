@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import type * as maplibregl from 'maplibre-gl'
 import { EntidadesPisadas, SelectorEpoca } from './components/Epoca'
+import Exportar from './components/Exportar'
 import Mapa from './components/mapa/Mapa'
 import Panel from './components/Panel'
 import SelectorRepeticion from './components/Repeticion'
@@ -34,6 +36,7 @@ export default function App() {
   const [paradaRepeticion, setParadaRepeticion] = useState<ParadaRepeticion>(null)
   const enRepeticion = paradaRepeticion !== null && repeticion.data !== undefined
   const [aviso, setAviso] = useState<string | null>(null)
+  const [mapa, setMapa] = useState<maplibregl.Map | null>(null)
 
   const viaje = viajeElegido(seleccion, viajes.data)
   const alClickearRegion = useMarcarRegion(viaje, setAviso)
@@ -105,6 +108,7 @@ export default function App() {
         fichas={fichas}
         fotos={fotos.data}
         epoca={epoca}
+        alCargar={setMapa}
       >
         <div className="controles-mapa">
           {consultaFallida?.error && (
@@ -136,6 +140,10 @@ export default function App() {
           <SelectorLente lente={lente} onCambiar={(nueva) => cambiar({ lente: nueva }, 'reemplazar')} />
         </div>
         {epoca && <EntidadesPisadas epoca={epoca} />}
+        <Exportar
+          tema={tema} lente={lente} estados={estados.data} resaltadas={resaltadas} epoca={epoca} fotos={fotos.data}
+          viaje={viaje} mapa={mapa}
+        />
       </Mapa>
     </div>
   )

@@ -170,7 +170,7 @@ Roles que todo tema llena (el tipo `Tema` en `tipos.ts`):
 - `estados`: visitada y deseo.
 - **Al menos 10 aguadas** `[entintada, diluida]`.
 - `forma`: tamaño base, radios, peso y caso de títulos y etiquetas, estilo de las aclaraciones, desenfoque del panel. Son variables CSS, igual que `ui`.
-- `rasgos`: lo que cambia el layout o qué se dibuja: panel `fijo` o `flotante`, pestañas `filete`, `pastilla` o `caja`, sello `lacre` o `disco`, rosa de los vientos sí o no.
+- `rasgos`: lo que cambia el layout o qué se dibuja: panel `fijo` o `flotante`, pestañas `filete`, `pastilla` o `caja`, sello `lacre` o `disco`, rosa de los vientos sí o no. También cómo se enmarca la imagen exportada: `lamina` `cartela` o `hud`.
 - `voz`: los textos que dependen de la personalidad del tema.
 
 Los ornamentos que son solo de un tema van al final de `index.css`, bajo `:root[data-tema='…']`. Los tests también fallan si el texto no se lee sobre el papel o si lo visitado no se separa de la tierra.
@@ -323,6 +323,12 @@ Son lacres SVG: un disco carmín con anillo y estrella de papel cuando el logro 
 ### Cifras
 La cifra de países va a 54px y peso 500, con numerales antiguos y una acotación en cursiva al lado. Debajo van tres cifras chicas en grilla y barras de 3px (pista en `linea`, avance en carmín).
 
+
+### Lámina exportada (signature)
+La imagen que se comparte (PNG de 2160 px de lado corto). Arriba el mapa, rendido 1,5 veces más grande que en pantalla para que los rótulos se lean en un teléfono; abajo un pie con el título, una acotación (`cursiva`), la leyenda en una fila y la atribución en `tenue`, con "Periplo" a la derecha.
+- **Cartela** (Atlas, Órbita, Cristal): marco doble en `marco`, filete en `borde` alrededor del mapa y rosa de los vientos si el tema la tiene.
+- **HUD** (Consola, Matriz): esquinas en ángulo en `carmin`, el título en `carmin-oscuro` y la acotación en `cifra`.
+- Sin nada elegido, el título es `voz.tituloLamina` de cada tema.
 ## Do's and Don'ts
 
 Las reglas sobre el tema, los deseos y el mapa valen para todos los temas. Las de forma (esquinas, sombras, desenfoque, blanco y negro puros, el uso del carmín) son del Atlas: cada tema define las suyas en su archivo.

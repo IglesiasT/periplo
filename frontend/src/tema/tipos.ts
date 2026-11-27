@@ -97,6 +97,8 @@ export interface Tema {
     sello: 'lacre' | 'disco'
     /** Rosa de los vientos sobre el mapa. */
     rosa: boolean
+    /** Cómo se enmarca la imagen que se exporta: cartela de atlas (marco doble) o recuadro de pantalla (esquinas). */
+    lamina: 'cartela' | 'hud'
   }
   /** Los textos que dependen de la personalidad del tema. */
   voz: {
@@ -106,6 +108,8 @@ export interface Tema {
     completos: string
     /** Un logro completo. */
     completo: string
+    /** Título de la imagen exportada cuando no hay nada elegido. */
+    tituloLamina: string
   }
   mapa: {
     mar: string

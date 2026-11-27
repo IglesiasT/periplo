@@ -74,12 +74,13 @@ export const cristal: Tema = {
     filtroIconos: 'none',
     filtroBandera: 'none',
   },
-  rasgos: { panel: 'flotante', pestanias: 'pastilla', sello: 'disco', rosa: false },
+  rasgos: { panel: 'flotante', pestanias: 'pastilla', sello: 'disco', rosa: false, lamina: 'cartela' },
   voz: {
     lema: 'Tu mapa del mundo',
     cargando: 'Cargando el mapa…',
     completos: 'completados',
     completo: 'Completado',
+    tituloLamina: 'Mi mapa del mundo',
   },
   mapa: {
     mar,

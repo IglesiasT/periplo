@@ -73,12 +73,13 @@ export const matriz: Tema = {
     filtroIconos: 'none',
     filtroBandera: 'grayscale(1) contrast(1.15)',
   },
-  rasgos: { panel: 'fijo', pestanias: 'pastilla', sello: 'disco', rosa: false },
+  rasgos: { panel: 'fijo', pestanias: 'pastilla', sello: 'disco', rosa: false, lamina: 'hud' },
   voz: {
     lema: 'Sistema de viajes',
     cargando: 'Cargando…',
     completos: 'completos',
     completo: 'Completo',
+    tituloLamina: 'SISTEMA://periplo',
   },
   mapa: {
     mar,
