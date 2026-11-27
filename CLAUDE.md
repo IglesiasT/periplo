@@ -16,6 +16,7 @@ Registro personal que acompaña mis viajes y cruza tres intereses: los juegos de
 - **Frontend:** React + TypeScript + Vite, con **MapLibre GL** para el mapa.
   - **Todo color y toda fuente salen del tema** (`frontend/src/tema/`). No escribir colores en el CSS ni en los componentes: el CSS usa las variables que escribe el tema (`var(--papel)`), y el estilo del mapa se arma con `crearEstilo(tema)`. Para sumar un tema: un archivo nuevo con un `Tema` completo y una línea en `TEMAS`. Los tests (`npm test`) fallan si aparece un color fuera del tema, y también si el texto no se lee sobre el papel o lo visitado no se separa de la tierra.
   - Un tema también decide la forma (`forma`: radios, letra de las etiquetas, tamaño base), lo que cambia el layout o qué se dibuja (`rasgos`: panel fijo o flotante, pestañas, sello, rosa de los vientos) y sus textos (`voz`). Los ornamentos que son solo de un tema van al final de `index.css`, bajo `:root[data-tema='…']`.
+  - Las banderas traen sus propios colores: cada tema las filtra con `forma.filtroBandera` (sepia en Atlas, gris en Consola y Matriz).
   - Temas: Atlas de gabinete (por defecto), Órbita, Consola, Cristal y Matriz. Se cambian a mano con los puntos al pie del panel; la elección se recuerda en el navegador. Cambiar de tema crea otro mapa en la misma posición.
 - **Procesamiento geográfico:** scripts Python con **geopandas / shapely**, ejecutados como *management commands* de Django. Precalculan una sola vez los datos pesados (áreas, intersecciones con fronteras históricas) y guardan el resultado en la base. **No usar PostGIS ni GeoDjango.**
 - **Notion:** la sincronización la hace el backend. La API de Notion no admite llamadas desde el navegador (CORS) y el token tiene que quedar del lado del servidor, en una variable de entorno.
@@ -126,7 +127,10 @@ Lo que se pinta sale de dos fuentes que pueden no coincidir: las **visitas** (de
 2. Fotos: subida local. Si tienen GPS en el EXIF, se ubican solas en el mapa.
 3. Estadísticas: países visitados, provincias argentinas, continentes y entidades históricas pisadas.
    - Las rutas de viaje (GPX, KML o dibujadas) y las cifras en km o km² se probaron y se sacaron: no aportaban.
-4. Lo escrito a mano no se pierde:
+4. Mi periplo, la repetición del mapa (`mapa/repeticion.py`, `frontend/src/repeticion.ts`): el mapa se pinta viaje por viaje, en orden de `fecha_inicio`, como la repetición de una partida.
+   - Arranca con lo que no tiene fecha (hogares, visitas sueltas, viajes sin fecha) y termina en el mapa de hoy. Solo pinta lo visitado, con las marcas aplicadas. La cámara no se mueve.
+   - Va junto al selector de Época y no se mezcla con él: arrancar una apaga la otra. No va a la URL.
+5. Lo escrito a mano no se pierde:
    - Lo que no se guardó todavía (fichas, formularios de viaje) queda en el navegador: `hooks/useBorrador.ts`.
    - `manage.py respaldar` guarda viajes, visitas, marcas, fichas y fotos en un `.zip`. El servidor hace uno solo al arrancar si el último tiene más de 7 días (`mapa/respaldos.py`), en `RESPALDOS_DIR`.
 5. Exportar el mapa como imagen, para compartirlo: el botón Exportar arma una "lámina" PNG (`components/Exportar.tsx`).
@@ -175,5 +179,6 @@ Antes de dar algo por terminado, tiene que pasar entero.
     - no sugerir que el IGN avala el proyecto.
 - **GADM:** descartado para los datos que se commitean. Su licencia es solo para uso no comercial y prohíbe redistribuir.
 - **historical-basemaps:** fronteras históricas.
+- **flag-icons** (MIT): banderas de los países. `npm run banderas` las copia a `frontend/public/banderas/` con el código del mapa (`ARG.svg`), usando el `iso_a2` que `descargar_natural_earth` deja en `paises.geojson`, y escribe la lista en `src/banderasDisponibles.ts`. Los países sin ISO (Somalilandia, Bir Tawil) quedan sin bandera.
 - **Nominatim:** geocodificación, si hace falta.
 - **API de Notion:** base Destinations del Travel Planner.

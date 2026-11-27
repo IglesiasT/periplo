@@ -74,6 +74,7 @@ export const orbita: Tema = {
     estiloCursiva: 'normal',
     desenfoque: 'blur(18px)',
     filtroIconos: 'invert(1)',
+    filtroBandera: 'none',
   },
   rasgos: { panel: 'flotante', pestanias: 'pastilla', sello: 'disco', rosa: false, lamina: 'cartela' },
   voz: {

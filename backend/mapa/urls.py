@@ -13,6 +13,7 @@ urlpatterns = [
     path('estados/', regiones.estados, name='estados'),
     path('estadisticas/', numeros.estadisticas, name='estadisticas'),
     path('logros/', numeros.logros, name='logros'),
+    path('repeticion/', numeros.repeticion, name='repeticion'),
     path('historia/', historia.historia, name='historia'),
     # re_path y no <int:anio>: los años a. C. son negativos.
     re_path(r'^historia/(?P<anio>-?\d+)/$', historia.epoca, name='epoca'),

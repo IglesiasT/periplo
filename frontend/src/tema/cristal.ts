@@ -72,6 +72,7 @@ export const cristal: Tema = {
     estiloCursiva: 'normal',
     desenfoque: 'blur(24px) saturate(1.5)',
     filtroIconos: 'none',
+    filtroBandera: 'none',
   },
   rasgos: { panel: 'flotante', pestanias: 'pastilla', sello: 'disco', rosa: false, lamina: 'cartela' },
   voz: {

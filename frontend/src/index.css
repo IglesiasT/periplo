@@ -788,6 +788,36 @@ textarea {
   color: var(--tenue);
 }
 
+/* El nombre largo sigue a la derecha del color, no debajo. */
+.tramo-entidad {
+  display: flex;
+  align-items: baseline;
+}
+
+.tramo-entidad .leyenda-color {
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+/* --- Banderas: traen sus propios colores, así que cada tema las filtra (forma.filtroBandera) --- */
+
+.con-bandera .bandera {
+  height: 0.8em;
+  margin-right: 0.4em;
+  vertical-align: -0.04em;
+}
+
+.bandera {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--linea);
+  border-radius: calc(var(--radio-control) / 4);
+  filter: var(--filtro-bandera);
+}
+
+.maplibregl-popup-content .bandera {
+  height: 0.75em;
+}
+
 /* --- Lista de visitas --- */
 
 .visitas li {
@@ -927,6 +957,24 @@ textarea {
   padding-bottom: 6px;
   margin-bottom: 6px;
   border-bottom: 1px solid var(--linea);
+}
+
+/* La repetición de mi mapa: con el mismo aspecto que el selector de época, y un solo renglón mientras no corre. */
+.repeticion {
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.repeticion-cerrada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.repeticion-cerrada .epoca-mandos {
+  gap: 8px;
+  font-size: 0.875rem;
 }
 
 .epoca-periodo {
@@ -1073,7 +1121,8 @@ textarea {
   color: var(--tinta);
 }
 
-.epoca-selector input[type='range'] {
+.epoca-selector input[type='range'],
+.repeticion input[type='range'] {
   width: 100%;
   margin: 4px 0 0;
   accent-color: var(--carmin);

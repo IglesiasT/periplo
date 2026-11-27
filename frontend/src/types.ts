@@ -123,8 +123,9 @@ export interface RegionDetalle {
     realizada: boolean
     desde_notion: boolean
   }[]
-  /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido. */
-  historia: { desde: number; hasta: number; entidad: string; nombre: string }[]
+  /** Entidad principal en cada tramo de snapshots consecutivos. `nombre` ya viene en castellano si está traducido.
+   *  `tono` es la aguada con que se pinta en el último año del tramo; null si no se sabe. */
+  historia: { desde: number; hasta: number; entidad: string; nombre: string; tono: number | null }[]
 }
 
 /** Un elemento de /api/fichas/. */
@@ -164,4 +165,23 @@ export interface Foto {
   region_nombre: string | null
   region_en_viaje: boolean | null
   descripcion: string
+}
+
+/** Lo que se pinta en un momento de la repetición: solo lo nuevo, ya subido hasta el país, y lo pintado hasta ahí. */
+export interface MomentoRepeticion {
+  regiones: EstadosRegiones
+  paises: number
+  provincias: number
+}
+
+/** Respuesta de /api/repeticion/: cómo se fue pintando el mapa. `inicio` es lo que no tiene fecha (hogares, visitas
+ *  sueltas, viajes sin fecha); después, cada viaje con fecha y visitas realizadas, del más viejo al más nuevo. */
+export interface Repeticion {
+  inicio: MomentoRepeticion
+  pasos: (MomentoRepeticion & {
+    viaje: number
+    nombre: string
+    fecha_inicio: string
+    fecha_fin: string | null
+  })[]
 }

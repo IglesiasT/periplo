@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 
-from ..models import EntidadPoliticaHistorica, FichaRegion, Marca, Region, RegionEpoca, Viaje, Visita
+from ..models import EntidadEpoca, EntidadPoliticaHistorica, FichaRegion, Marca, Region, RegionEpoca, Viaje, Visita
 
 
 class EncuadreApiTests(APITestCase):
@@ -58,6 +58,15 @@ class FichasApiTests(APITestCase):
              (1783, 1815, 'Virreinato del Río de la Plata'),
              (1900, 2010, 'Argentina')],
         )
+
+    def test_cada_tramo_trae_el_tono_de_su_ultimo_anio(self):
+        rio = EntidadPoliticaHistorica.objects.get(nombre='Viceroyalty of the Río de la Plata')
+        arg = EntidadPoliticaHistorica.objects.get(nombre='Argentina')
+        for anio, entidad, tono in [(1783, rio, 1), (1815, rio, 4), (2010, arg, 2)]:
+            EntidadEpoca.objects.create(anio=anio, entidad=entidad, lon=0, lat=0, area_km2=1, tono=tono)
+        # Perú en 1700 no tiene EntidadEpoca: sin tono.
+        historia = self.client.get('/api/regiones/AR-Y/').data['historia']
+        self.assertEqual([t['tono'] for t in historia], [None, 4, 2])
 
     def test_guardar_editar_y_borrar_la_ficha(self):
         respuesta = self.client.put('/api/regiones/AR-Y/ficha/', {'texto': '# Jujuy\nLa quebrada.'}, format='json')

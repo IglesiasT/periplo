@@ -255,6 +255,19 @@ try {
     comprobar('reproducir llega al presente y frena', await hasta("document.querySelector('.epoca-anio')?.textContent === 'Hoy' && document.querySelector('.epoca-mandos button[aria-label=\"Recorrer los años\"]')", 8000))
   }
 
+  const repeticion = await evaluar("fetch('/api/repeticion/').then((r) => r.json())")
+  if (repeticion?.pasos?.length) {
+    await abrir('/#2/0/0')
+    await hasta("document.querySelector('.repeticion-cerrada')", 5000)
+    await evaluar("document.querySelector('.repeticion button[aria-label=\"Ver cómo se pintó el mapa\"]').click()")
+    comprobar('la repetición arranca en lo que no tiene fecha', await hasta("document.querySelector('.repeticion .epoca-anio')?.textContent === 'Sin fecha'", 3000))
+    await evaluar("document.querySelector('.repeticion button[aria-label=\"Pausar\"]').click()")
+    await evaluar("document.querySelector('.repeticion button[aria-label=\"Viaje siguiente\"]').click()")
+    comprobar('el botón siguiente pasa al primer viaje', await hasta(`document.querySelector('.repeticion .epoca-periodo')?.textContent.startsWith(${JSON.stringify(repeticion.pasos[0].nombre)})`, 3000))
+    await evaluar("document.querySelector('.repeticion .epoca-plegar').click()")
+    comprobar('volver al mapa de hoy cierra la repetición', await hasta("document.querySelector('.repeticion-cerrada')", 3000))
+  }
+
   comprobar('una URL rara no rompe nada', await abrir('/?anio=hoy&lente=mundo&viaje=abc&pestania=nada#99/999/999') && !(await evaluar("Boolean(document.querySelector('.fallo'))")))
   comprobar('sin excepciones en la página', excepciones.length === 0, excepciones.slice(0, 3).join(' | '))
   ws.close()

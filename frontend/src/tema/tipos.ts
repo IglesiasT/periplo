@@ -85,6 +85,8 @@ export interface Tema {
     desenfoque: string
     /** `filter` de los íconos de MapLibre, que son oscuros: `invert(1)` en un tema oscuro. */
     filtroIconos: string
+    /** `filter` de las banderas, que traen sus propios colores: envejecidas en un atlas, en gris en una consola. */
+    filtroBandera: string
   }
   /** Lo que no es un valor CSS: cambia el layout o qué se dibuja. */
   rasgos: {

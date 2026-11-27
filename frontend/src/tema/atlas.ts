@@ -76,6 +76,7 @@ export const atlas: Tema = {
     estiloCursiva: 'italic',
     desenfoque: 'none',
     filtroIconos: 'none',
+    filtroBandera: 'sepia(0.45) saturate(0.75) contrast(0.95)',
   },
   rasgos: { panel: 'fijo', pestanias: 'filete', sello: 'lacre', rosa: true, lamina: 'cartela' },
   voz: {

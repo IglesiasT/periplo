@@ -1,6 +1,6 @@
 import type {
   DatosViaje, DatosVisita, Epoca, EstadoMarca, Estadisticas, EstadosRegiones, Ficha, FichaResumen, Foto, Logro, Marca,
-  MarcaResumen, RegionDetalle, Viaje, Visita,
+  MarcaResumen, RegionDetalle, Repeticion, Viaje, Visita,
 } from './types'
 
 /** Error de la API. DRF devuelve los errores de validación como { campo: ["mensaje"] }. */
@@ -43,6 +43,7 @@ async function pedir<T>(metodo: string, url: string, cuerpo?: unknown): Promise<
 export const obtenerEstados = () => pedir<EstadosRegiones>('GET', '/api/estados/')
 export const obtenerEstadisticas = () => pedir<Estadisticas>('GET', '/api/estadisticas/')
 export const obtenerLogros = () => pedir<Logro[]>('GET', '/api/logros/')
+export const obtenerRepeticion = () => pedir<Repeticion>('GET', '/api/repeticion/')
 export const obtenerAniosHistoricos = () => pedir<number[]>('GET', '/api/historia/')
 export const obtenerEpoca = (anio: number) => pedir<Epoca>('GET', `/api/historia/${anio}/`)
 

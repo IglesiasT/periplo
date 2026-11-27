@@ -71,6 +71,7 @@ export const matriz: Tema = {
     estiloCursiva: 'normal',
     desenfoque: 'none',
     filtroIconos: 'none',
+    filtroBandera: 'grayscale(1) contrast(1.15)',
   },
   rasgos: { panel: 'fijo', pestanias: 'pastilla', sello: 'disco', rosa: false, lamina: 'hud' },
   voz: {

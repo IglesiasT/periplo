@@ -49,7 +49,9 @@ def aplicar_nombres_es(ruta: Path = NOMBRES_ES) -> int:
 
 def linea_historica(region) -> list[dict]:
     """A qué entidad perteneció la región en cada snapshot, juntando los consecutivos de la misma:
-    [{desde, hasta, entidad, nombre}]. `desde` y `hasta` son años de snapshot: entre uno y otro no hay datos."""
+    [{desde, hasta, entidad, nombre, tono}]. `desde` y `hasta` son años de snapshot: entre uno y otro no hay datos.
+    `tono` es la aguada con que se pinta la entidad en `hasta` (puede cambiar de un año a otro si choca con una
+    vecina); None si ese año no tiene EntidadEpoca."""
     filas = (RegionEpoca.objects.filter(region=region)
              .values_list('anio', 'entidad__nombre', 'entidad__nombre_es', 'porcentaje_superficie'))
     ocupacion: dict[int, Ocupacion] = defaultdict(list)
@@ -71,6 +73,12 @@ def linea_historica(region) -> list[dict]:
         else:
             tramos.append({'desde': anio, 'hasta': anio, 'entidad': entidad, 'nombre': nombres[entidad]})
         continua = True
+
+    tonos = dict(((anio, entidad), tono) for anio, entidad, tono in EntidadEpoca.objects
+                 .filter(anio__in={t['hasta'] for t in tramos}, entidad__nombre__in={t['entidad'] for t in tramos})
+                 .values_list('anio', 'entidad__nombre', 'tono'))
+    for tramo in tramos:
+        tramo['tono'] = tonos.get((tramo['hasta'], tramo['entidad']))
     return tramos
 
 

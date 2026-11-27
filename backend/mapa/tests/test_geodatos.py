@@ -18,6 +18,7 @@ class AnexarTests(SimpleTestCase):
                 'ADM0_A3': ['ARG', 'FLK', 'SGS', 'CHL'],
                 'NAME_ES': ['Argentina', 'Islas Malvinas', 'Georgias', 'Chile'],
                 'CONTINENT': ['South America'] * 4,
+                'ISO_A2_EH': ['AR', 'FK', 'GS', '-99'],
             },
             geometry=[box(-70, -55, -55, -22), box(-61, -53, -57, -51),
                       box(-38, -55, -26, -54), box(-75, -56, -70, -17)],
@@ -29,6 +30,21 @@ class AnexarTests(SimpleTestCase):
         argentina = resultado.set_index('codigo').geometry['ARG']
         self.assertTrue(argentina.contains(box(-60, -52, -59, -51.5)))   # Malvinas
         self.assertTrue(argentina.contains(box(-37, -54.5, -36, -54.2)))  # Georgias del Sur
+
+    def test_el_iso_de_dos_letras_queda_vacio_si_natural_earth_no_lo_tiene(self):
+        import geopandas as gpd
+        from shapely.geometry import box
+
+        from ..management.commands.descargar_natural_earth import normalizar_paises
+
+        paises = gpd.GeoDataFrame(
+            {'ADM0_A3': ['ARG', 'SOL'], 'NAME_ES': ['Argentina', 'Somalilandia'], 'CONTINENT': ['', ''],
+             'ISO_A2_EH': ['AR', '-99']},
+            geometry=[box(0, 0, 1, 1), box(2, 2, 3, 3)], crs='EPSG:4326',
+        )
+        iso = normalizar_paises(paises).set_index('codigo')['iso_a2']
+        self.assertEqual(iso['ARG'], 'AR')
+        self.assertTrue(iso.isna()['SOL'])
 
 
 class EncuadreTests(SimpleTestCase):
