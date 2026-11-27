@@ -22,16 +22,16 @@ colors:
   rotulo-pais: "#4f4232"
   rotulo-provincia: "#3b2f22"
   rotulo-agua: "#4d6b63"
-  aguada-ocre: "#c49a4a"
-  aguada-salvia: "#8a9a5b"
-  aguada-siena: "#b9714f"
-  aguada-pizarra: "#6f8aa1"
-  aguada-malva: "#a07a9a"
-  aguada-verde-agua: "#7f9c8c"
-  aguada-tierra-de-sombra: "#9c7b56"
-  aguada-rosa-viejo: "#b58f8a"
-  aguada-oliva: "#8c8f6a"
-  aguada-amarillo-paja: "#d1b84a"
+  aguada-ocre: "#ad8a3c"
+  aguada-salvia: "#8ea26f"
+  aguada-siena: "#b87459"
+  aguada-pizarra: "#7896b3"
+  aguada-malva: "#af89aa"
+  aguada-verde-agua: "#628e87"
+  aguada-tierra-de-sombra: "#b99378"
+  aguada-rosa-viejo: "#986d74"
+  aguada-oliva: "#7d8651"
+  aguada-amarillo-paja: "#9d720a"
 typography:
   display:
     fontFamily: "'IM Fell English SC', 'EB Garamond', Georgia, serif"
@@ -197,6 +197,8 @@ Los valores exactos de cada uno están en su archivo de `frontend/src/tema/`.
 ### Tertiary
 - **Las diez aguadas** (`aguada-ocre` … `aguada-amarillo-paja`): las entidades históricas de cada época, cada una con su par diluido. Son de familias de color distintas a propósito, para que dos vecinas nunca se confundan, y ninguna es un rojo puro, para no confundirse con el carmín.
 
+Cada tema saca sus aguadas de su propio mundo, no de una rueda de colores común: pigmentos apagados en el Atlas, luces sobre la noche en Órbita, fósforos sobre grafito en Consola, tonos suaves en Cristal y grises teñidos en Matriz. *(Invariante entre temas, y los tests lo controlan:)* ninguna entintada se acerca a lo visitado ni al deseo (ΔE OKLab ≥ 0,10), lo pisado se separa de lo no pisado de la misma entidad (contraste ≥ 1,9 en temas claros y ≥ 3,5 en oscuros), la diluida se separa de la tierra (ΔE ≥ 0,04) y dos aguadas vecinas no se confunden (ΔE ≥ 0,04 entre entintadas y ≥ 0,02 entre diluidas).
+
 ### Neutral
 - **Papel crudo** (`papel`): fondo del panel, de las tarjetas sobre el mapa y de los popups. Es el color del documento.
 - **Papel hondo** (`papel-hondo`): hover de botones y fondo de avisos.
@@ -327,7 +329,7 @@ Las reglas sobre el tema, los deseos y el mapa valen para todos los temas. Las d
 
 ### Do:
 - **Do** sacar cada color y cada fuente del tema activo: `var(--papel)` en el CSS, `tema.mapa.*` en el estilo del mapa.
-- **Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas de familias de color distintas y sin rojos que compitan con lo visitado.
+- **Do** dar a cada tema nuevo los roles completos de `Tema`, con al menos 10 aguadas sacadas de su propio mundo, que no se parezcan al color de lo visitado ni al del deseo.
 - **Do** separar con filetes (1px, o 3px dobles para abrir una sección) en vez de cajas o fondos.
 - **Do** escribir las notas, los estados vacíos y los vínculos de vuelta en cursiva Fell, como acotaciones al margen.
 - **Do** mantener el foco de teclado visible con un contorno de 2px en carmín.

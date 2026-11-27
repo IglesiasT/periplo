@@ -96,16 +96,18 @@ export const consola: Tema = {
     visitada: lima,
     deseo: cian,
   },
+  // Fósforos de pantalla para lo pisado y grafito apenas teñido para lo demás.
+  // Sin el lima de lo visitado ni el cian del deseo: esos dos son la señal de la consola.
   aguadas: [
-    ['#c8f135', '#3e4a17'], // lima
-    ['#35d6f5', '#17444e'], // cian
-    ['#ff8a5c', '#4f2e20'], // naranja
-    ['#8c9eff', '#2d3353'], // lavanda
-    ['#e26ee5', '#472549'], // magenta
-    ['#4be0a0', '#184632'], // menta
-    ['#b9a98a', '#3b362b'], // arena
-    ['#ff6f91', '#50242f'], // frambuesa
-    ['#7d8f69', '#26331f'], // musgo
-    ['#ffd23f', '#50431a'], // ámbar
+    ['#fe9da2', '#3b1c1e'], // frambuesa
+    ['#ee8362', '#51332a'], // naranja
+    ['#eeab43', '#3c2b12'], // ámbar fósforo
+    ['#989575', '#3f3e33'], // arena
+    ['#b3cea0', '#2d3727'], // musgo
+    ['#46c19e', '#0d2e24'], // menta
+    ['#749be7', '#303d56'], // azul radar
+    ['#bdb7fe', '#25233c'], // lavanda
+    ['#cd6ec5', '#422a40'], // magenta
+    ['#afb0a5', '#2b2b27'], // fósforo blanco
   ],
 }
