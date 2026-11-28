@@ -5,8 +5,8 @@ import { paisConBandera, urlBandera } from '../../banderas'
 import { ETIQUETAS_ESTADO } from '../../etiquetas'
 import { nombreEntidad } from '../../historia'
 import type { Epoca, EstadoRegion } from '../../types'
-import { CAPAS_FOTOS, capasConsultables, type Lente } from './estilo'
-import { htmlPopupFoto, htmlPopupRegion } from './popup'
+import { CAPAS_FOTOS, capasConsultables, type Lente, provinciasComoPaises } from './estilo'
+import { htmlPopupEntidad, htmlPopupFoto, htmlPopupRegion } from './popup'
 
 /** Lo que los handlers del mapa necesitan saber de React en el momento de cada evento. */
 export interface EstadoInteracciones {
@@ -29,6 +29,13 @@ export function conectarInteracciones(map: maplibregl.Map, estado: () => EstadoI
   // queryRenderedFeatures devuelve primero la capa de más arriba: el departamento si lo hay.
   const regionEn = (punto: maplibregl.PointLike) =>
     map.queryRenderedFeatures(punto, { layers: capasConsultables(map.getZoom(), estado().lente, Boolean(estado().epoca)) })[0]
+  // En un año, de lejos, el mapa pinta provincias pero se lee como países (las entidades): el click va al país.
+  const comoPais = () => provinciasComoPaises(map.getZoom(), estado().lente, Boolean(estado().epoca))
+  const codigoEn = (punto: maplibregl.PointLike) => {
+    const feature = regionEn(punto)
+    if (!feature) return undefined
+    return String(comoPais() ? feature.properties.padre : feature.properties.codigo)
+  }
 
   // Nombre de la región al pasar el mouse: país, provincia o departamento según el zoom.
   const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
@@ -44,33 +51,39 @@ export function conectarInteracciones(map: maplibregl.Map, estado: () => EstadoI
     const visita = feature.state.estado as EstadoRegion | undefined
     const original = epoca?.regiones[codigo]
     map.getCanvas().style.cursor = alClickearRegion ? 'crosshair' : 'pointer'
-    popup
-      .setLngLat(e.lngLat)
-      .setHTML(htmlPopupRegion({
+    // De lejos en un año se ve la entidad, no la provincia de hoy: solo su nombre y si la pisé.
+    const html = epoca && comoPais()
+      ? htmlPopupEntidad({
+        nombre: original ? nombreEntidad(original, epoca) : 'Sin entidad en este mapa',
+        pisada: Boolean(original && epoca.pisadas.some((p) => p.entidad === original)),
+        marcando: Boolean(alClickearRegion),
+      })
+      : htmlPopupRegion({
         nombre: String(feature.properties.nombre),
         // Un país, la suya; una provincia, la de su país (`padre`). Los departamentos no saben su país.
-        bandera: urlBandera(paisConBandera([codigo, feature.properties.padre])),
+        // En un año no: la bandera de hoy no es la de la entidad que ocupaba la región.
+        bandera: epoca ? null : urlBandera(paisConBandera([codigo, feature.properties.padre])),
         entidad: epoca && (original ? nombreEntidad(original, epoca) : 'Sin entidad en este mapa'),
         detalle: visita ? ETIQUETAS_ESTADO[visita] : 'Sin visitar',
         marcando: Boolean(alClickearRegion),
         tieneFicha: Boolean(fichas?.has(codigo)),
-      }))
-      .addTo(map)
+      })
+    popup.setLngLat(e.lngLat).setHTML(html).addTo(map)
   })
   map.getCanvas().addEventListener('mouseleave', () => popup.remove())
 
   map.on('click', async (e) => {
     const { alClickearRegion, alElegirRegion } = estado()
     if (alClickearRegion) {
-      const feature = regionEn(e.point)
-      if (feature) alClickearRegion(String(feature.properties.codigo))
+      const codigo = codigoEn(e.point)
+      if (codigo) alClickearRegion(codigo)
       return
     }
 
     const [foto] = map.queryRenderedFeatures(e.point, { layers: CAPAS_FOTOS })
     if (!foto) {
-      const region = regionEn(e.point)
-      if (region) alElegirRegion?.(String(region.properties.codigo))
+      const codigo = codigoEn(e.point)
+      if (codigo) alElegirRegion?.(codigo)
       return
     }
     const punto = (foto.geometry as Point).coordinates as [number, number]

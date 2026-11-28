@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { htmlPopupFoto, htmlPopupRegion } from './popup'
+import { htmlPopupEntidad, htmlPopupFoto, htmlPopupRegion } from './popup'
 
 const base = { nombre: 'Jujuy', detalle: 'Visitada', marcando: false, tieneFicha: false }
 
@@ -34,6 +34,20 @@ describe('htmlPopupRegion', () => {
     const html = htmlPopupRegion({ ...base, nombre: '<img src=x>', entidad: 'A & B' })
     expect(html).not.toContain('<img')
     expect(html).not.toContain('A & B')
+  })
+})
+
+describe('htmlPopupEntidad', () => {
+  it('nombra solo la entidad, sin bandera, y dice si la pisé', () => {
+    const html = htmlPopupEntidad({ nombre: 'Yugoslavia', pisada: false, marcando: false })
+    expect(html).toContain('<strong>Yugoslavia</strong>')
+    expect(html).toContain('Sin pisar')
+    expect(html).not.toContain('<img')
+    expect(htmlPopupEntidad({ nombre: 'Yugoslavia', pisada: true, marcando: false })).toContain('Pisaste su territorio')
+  })
+
+  it('escapa el nombre', () => {
+    expect(htmlPopupEntidad({ nombre: '<b>', pisada: false, marcando: true })).not.toContain('<b>')
   })
 })
 
