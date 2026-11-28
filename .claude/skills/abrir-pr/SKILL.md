@@ -26,7 +26,7 @@ Agregar los archivos por nombre (`git add <rutas>`), no `git add -A`.
 
 ## 3. Rama y commit
 
-- Si se está en `main`, crear una rama antes (`claude/<tema-corto>`).
+- La rama se llama `<tipo>/<tema-corto>`, con el mismo tipo que el commit (`feat/`, `fix/`, `docs/`, `test/`, `refactor/`, `chore/`). **Nunca `claude/`.** Si se está en `main`, crearla antes; si la app la creó como `claude/…`, renombrarla (`git branch -m <tipo>/<tema-corto>`) antes de pushear. Si ya está pusheada o tiene PR, preguntar antes de renombrar.
 - Mensaje en español, con prefijo convencional: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`. Ejemplos del historial: `feat: Mi periplo, la repetición del mapa viaje por viaje`, `fix: colores de época propios de cada tema`.
 - Terminar el mensaje con la línea `Co-Authored-By` que indique el sistema para esta sesión.
 

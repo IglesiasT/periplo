@@ -168,6 +168,11 @@ Cuando eso se vea en pantalla, se suman las capas en el orden de las fases.
 `python verificar.py` corre Ruff, el chequeo de migraciones, los tests de los dos lados, TypeScript, Oxlint, el build y un recorrido de la app en un Chrome sin ventana (`frontend/e2e/recorrido.mjs`), que solo mira y no guarda nada.
 Antes de dar algo por terminado, tiene que pasar entero.
 
+## Git
+
+- Las ramas, también las de los worktrees, se llaman `<tipo>/<tema-corto>`: `feat/`, `fix/`, `docs/`, `test/`, `refactor/` o `chore/`. **Nunca `claude/`.**
+- La app crea las ramas de sesión con prefijo `claude/`: renombrarlas (`git branch -m <tipo>/<tema-corto>`) antes de commitear o pushear. Si ya están pusheadas o tienen PR, preguntar antes.
+
 ## Fuentes de datos
 
 - **Natural Earth:** países y provincias. Dominio público.
