@@ -7,7 +7,7 @@ import type { Tema } from '../../tema'
 import { atlas } from '../../tema/atlas'
 import type { Epoca } from '../../types'
 import {
-  capasConsultables, crearEstilo, type Lente, lenteSinFundido, PAISES_CON_DEPARTAMENTOS, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
+  capasConsultables, crearEstilo, type Lente, lenteSinFundido, PAISES_CON_DEPARTAMENTOS, provinciasComoPaises, rellenoHistorico, rotulosComoGeoJSON, SOURCES, UMBRALES, umbralesDe,
   visibilidadRotulos,
 } from './estilo'
 
@@ -199,17 +199,39 @@ describe('en un año histórico', () => {
     }
   })
 
-  it('las fronteras internas de hoy se atenúan, y las de los países y los deseos no', () => {
-    const opacidad = (id: string, enEpoca: boolean) => {
-      const capa = crearEstilo(atlas, BASE, 'automatica', enEpoca).layers.find((c) => c.id === id)!
-      return (capa.paint as Record<string, unknown> | undefined)?.['line-opacity']
-    }
-    expect(opacidad('departamentos-frontera', false)).toBe(1)
-    expect(opacidad('departamentos-frontera', true)).toBeLessThan(1)
-    expect(JSON.stringify(opacidad('provincias-frontera', true))).not.toBe(JSON.stringify(opacidad('provincias-frontera', false)))
-    for (const id of ['paises-frontera', 'provincias-deseo', 'paises-deseo']) {
+  const opacidad = (id: string, enEpoca: boolean, lente: Lente = 'automatica') => {
+    const capa = crearEstilo(atlas, BASE, lente, enEpoca).layers.find((c) => c.id === id)!
+    return (capa.paint as Record<string, unknown> | undefined)?.['line-opacity']
+  }
+  // Las paradas [zoom, opacidad] de un interpolate sin expresiones adentro (las de antes de los departamentos).
+  const paradas = (valor: unknown) => {
+    const [, , , ...resto] = valor as unknown[]
+    return Array.from({ length: resto.length / 2 }, (_, i) => [resto[2 * i], resto[2 * i + 1]])
+      .filter(([, o]) => typeof o === 'number') as [number, number][]
+  }
+
+  it('de lejos, las fronteras de provincias de hoy se atenúan; las de países y deseos no', () => {
+    const [primera] = paradas(opacidad('provincias-frontera', true))
+    expect(primera[1]).toBeLessThan(1)
+    expect(paradas(opacidad('provincias-frontera', false)).every(([, o]) => o === 1)).toBe(true)
+    for (const id of ['paises-frontera', 'provincias-deseo', 'paises-deseo', 'departamentos-frontera']) {
       expect(opacidad(id, true)).toEqual(opacidad(id, false))
     }
+  })
+
+  it('desde el zoom donde se verían provincias sin año, sus fronteras se ven enteras', () => {
+    const plenas = paradas(opacidad('provincias-frontera', true)).filter(([, o]) => o === 1)
+    expect(plenas[0][0]).toBeLessThanOrEqual(UMBRALES.automatica.provincias + 0.5)
+    // Con la lente de provincias, siempre.
+    expect(paradas(opacidad('provincias-frontera', true, 'provincias'))[1]).toEqual([UMBRALES.provincias.provincias + 0.5, 1])
+  })
+
+  it('entre los dos umbrales de provincias, el mapa se lee como países', () => {
+    expect(provinciasComoPaises(3, 'automatica', true)).toBe(true)
+    expect(provinciasComoPaises(3, 'automatica', false)).toBe(false)
+    expect(provinciasComoPaises(5, 'automatica', true)).toBe(false)
+    expect(provinciasComoPaises(1, 'automatica', true)).toBe(false)
+    expect(provinciasComoPaises(3, 'provincias', true)).toBe(false)
   })
 
   // aplicarCapas solo pisa lo que el estilo nuevo trae: una propiedad que esté de un solo lado quedaría pegada.

@@ -25,6 +25,25 @@ export function htmlPopupRegion({ nombre, bandera, entidad, detalle, marcando, t
   ].join('<br>')
 }
 
+interface PopupEntidad {
+  /** La entidad de la época que ocupaba lo que está bajo el mouse. */
+  nombre: string
+  /** Si pisé su territorio en alguna visita realizada. */
+  pisada: boolean
+  marcando: boolean
+}
+
+/** El popup en un año, de lejos: el mapa se lee como países, así que se nombra la entidad, sin la bandera de hoy.
+ *  El click va al país de hoy, que es el que tiene ficha. */
+export function htmlPopupEntidad({ nombre, pisada, marcando }: PopupEntidad): string {
+  const accion = marcando ? 'Click para marcar el país de hoy' : 'Click para abrir la ficha del país de hoy'
+  return [
+    `<strong>${escapar(nombre)}</strong>`,
+    pisada ? 'Pisaste su territorio' : 'Sin pisar',
+    `<em>${accion}</em>`,
+  ].join('<br>')
+}
+
 export function htmlPopupFoto(archivo: string, miniatura: string, detalle: string): string {
   return `<div class="popup-foto"><a href="${escapar(archivo)}" target="_blank" rel="noreferrer">`
     + `<img src="${escapar(miniatura)}" alt=""></a>${escapar(detalle)}</div>`

@@ -51,8 +51,17 @@ export function lenteSinFundido(lente: Lente, zoom: number, enEpoca: boolean): L
   return lente
 }
 
-// Las fronteras internas de hoy no existían en un mapa histórico: quedan apenas como referencia, para que
-// manden los colores de las entidades.
+/**
+ * En un año, con la lente automática, entre el umbral de provincias de la época y el de siempre: el mapa pinta
+ * provincias (para que cada una tome su entidad) pero se lee como un mapa de países, porque lo que se ve son las
+ * entidades. Ahí las fronteras de provincias casi no se ven y el popup habla de la entidad, no de la provincia.
+ */
+export function provinciasComoPaises(zoom: number, lente: Lente, enEpoca: boolean): boolean {
+  return enEpoca && zoom >= umbralesDe(lente, enEpoca).provincias && zoom < UMBRALES[lente].provincias
+}
+
+// En esa franja, las fronteras de provincias de hoy quedan apenas como referencia, para que manden los colores
+// de las entidades. Desde el zoom donde se verían provincias sin año, se ven enteras.
 const OPACIDAD_FRONTERA_INTERNA_EN_EPOCA = 0.25
 
 const FUNDIDO = 0.5 // medio nivel de zoom hacia cada lado
@@ -294,7 +303,9 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
   const umbrales = umbralesDe(lente, enEpoca)
   const { provincias: p, departamentos: d } = umbrales
   const relleno = colorRelleno(tema)
-  const fronteraInterna = enEpoca ? OPACIDAD_FRONTERA_INTERNA_EN_EPOCA : 1
+  // Zoom desde el que las provincias se leen como provincias (ver provinciasComoPaises).
+  const pProvincias = UMBRALES[lente].provincias
+  const fronteraLejos = enEpoca ? OPACIDAD_FRONTERA_INTERNA_EN_EPOCA : 1
   // Contorno solo para las regiones de la lista de deseos: es todo lo que las marca en el mapa.
   const contornoDeseo = { 'line-color': tema.estados.deseo, 'line-width': 1.2, 'line-opacity': ES_DESEO }
   // Paradas [zoom, opacidad] del relleno de cada nivel.
@@ -353,7 +364,7 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
       {
         id: 'departamentos-frontera', type: 'line', source: 'departamentos',
         minzoom: acotar(d - FUNDIDO),
-        paint: { 'line-color': tema.mapa.fronteraProvincia, 'line-width': 0.75, 'line-opacity': fronteraInterna },
+        paint: { 'line-color': tema.mapa.fronteraProvincia, 'line-width': 0.75, 'line-opacity': 1 },
       },
       {
         id: 'departamentos-deseo', type: 'line', source: 'departamentos',
@@ -370,8 +381,10 @@ export function crearEstilo(tema: Tema, base: string, lente: Lente = 'automatica
           // Las fronteras de Natural Earth no coinciden exacto con las del IGN: con departamentos se ocultan.
           'line-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            d - FUNDIDO, fronteraInterna,
-            d + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, fronteraInterna],
+            pProvincias - FUNDIDO, fronteraLejos,
+            pProvincias + FUNDIDO, 1,
+            d - FUNDIDO, 1,
+            d + FUNDIDO, ['case', TIENE_DEPARTAMENTOS, 0, 1],
           ],
         },
       },
